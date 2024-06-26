@@ -1,150 +1,152 @@
 <template>
-  <div class="main-container">
-    <!-- 左侧文案输入区 -->
-    <div class="llm-left-container">
-      <NForm label-placement="top" label-align="left">
-        <NGradientText style="padding: 5px" :size="14" type="danger">
-          *描述您的创作主题或想要表达的内容
-        </NGradientText>
-        <NInput
-          v-model:value="videoStore.videoTheme"
-          type="textarea"
-          autosize
-          placeholder="输入视频主题"
-          style="max-height: 8vh; max-width: 90%"
-        />
-        <NGradientText style="padding: 5px" :size="14" type="danger">
-          请选择生成的文案风格
-        </NGradientText>
-
-        <div class="video-category-container">
-          <div class="radio-buttons-container">
-            <NButton
-              v-for="option in videoStyleOptions"
-              :key="option.value"
-              :class="['radio-button', { selected: videoStore.videoCategory === option.value }]"
-              strong
-              secondary
-              type="primary"
-              class="radio-button"
-              @click="videoStore.videoCategory = option.value"
-            >
-              <div class="radio-top">
-                <img :src="option.img" alt="icon" class="radio-icon" />
-                <div class="radio-label">{{ option.label }}</div>
-              </div>
-              <div class="radio-description">
-                {{ option.description }}
-              </div>
-            </NButton>
-          </div>
-        </div>
-
-        <div class="llm-left-buttom">
-          <div class="word-count-label">
-            <NGradientText style="padding: 5px" :size="14" type="danger"> 字数 </NGradientText>
-            <NInputNumber v-model:value="videoStore.wordCount" />
-          </div>
-
-          <div class="script-button-group">
-            <NButton
-              strong
-              secondary
-              type="success"
-              class="tool-button"
-              @click="videoStore.handleGenerateScript"
-            >
-              <div class="tool-button-container">
-                <img :src="GenerateTextIcon" alt="icon" class="tool-button-icon" />
-                <div class="tool-button-label">生成文案</div>
-              </div>
-            </NButton>
-
-            <NButton
-              strong
-              secondary
-              type="warning"
-              class="tool-button"
-              @click="videoStore.handleResetScript"
-            >
-              <div class="tool-button-container">
-                <img :src="CancelIcon" alt="icon" class="tool-button-icon" />
-                <div class="tool-button-label">清空文案</div>
-              </div>
-            </NButton>
-          </div>
-        </div>
-      </NForm>
-    </div>
-
-    <!-- 右侧文案生成区 -->
-    <div class="llm-right-container">
-      <div class="llm-preview-container">
-        <div class="video-title-area">
-          <NGradientText :size="24" type="warning">
-            {{ videoStore.videoTitle }}
+  <NCard items-left flex justify-between rounded-10>
+    <div class="main-container">
+      <!-- 左侧文案输入区 -->
+      <div class="llm-left-container">
+        <NForm label-placement="top" label-align="left">
+          <NGradientText style="padding: 5px" :size="14" type="danger">
+            *描述您的创作主题或想要表达的内容
           </NGradientText>
-        </div>
-        <div class="input-container">
           <NInput
-            v-model:value="videoStore.videoScript"
-            class="paragraph-card"
-            placeholder="生成的文案在此展示"
+            v-model:value="videoStore.videoTheme"
             type="textarea"
             autosize
-            style="font-size: 16px"
+            placeholder="输入视频主题"
+            style="max-height: 8vh; max-width: 90%"
           />
-          <div v-if="videoStore.loadingScript" class="loading-script-container">
-            <NSpin />
-            <div class="loading-text">文案努力生成中...</div>
-          </div>
-          <div class="keywords-container">
-            <div :class="['word-count', { exceeded: videoStore.wordCountExceeded }]">
-              {{ videoStore.videoScript.length }}/{{ videoStore.wordCount }}
-            </div>
-          </div>
-          <div class="action-buttons">
-            <NButton
-              strong
-              secondary
-              type="primary"
-              class="tool-button"
-              @click="videoStore.handleAIRefinementSciprt"
-              @mouseover="showTooltip('AI润色消耗10积分')"
-              @mouseleave="hideTooltip"
-              ><div class="tool-button-container">
-                <img :src="AIRefinementIcon" alt="icon" class="tool-button-icon" />
-                <div class="tool-button-label">AI润色</div>
-              </div>
-            </NButton>
-            <NButton
-              strong
-              secondary
-              type="primary"
-              class="tool-button"
-              @click="videoStore.handleAIContinueSciprt"
-              @mouseover="showTooltip('AI续写消耗20积分')"
-              @mouseleave="hideTooltip"
-              ><div class="tool-button-container">
-                <img :src="AIContinueIcon" alt="icon" class="tool-button-icon" />
-                <div class="tool-button-label">AI续写</div>
-              </div>
-            </NButton>
-            <div v-if="tooltip.visible" class="tooltip">{{ tooltip.text }}</div>
-          </div>
-        </div>
+          <NGradientText style="padding: 5px" :size="14" type="danger">
+            请选择生成的文案风格
+          </NGradientText>
 
-        <div v-if="videoStore.videoKeywords.length" class="keywords">
-          <NGradientText :size="14" type="danger"> 关键词 </NGradientText>
-          <span v-for="(keyword, index) in videoStore.videoKeywords" :key="index">
-            <div class="keyword">
-              <NGradientText :size="14" type="danger"> {{ keyword }} </NGradientText>
+          <div class="video-category-container">
+            <div class="radio-buttons-container">
+              <NButton
+                v-for="option in videoStyleOptions"
+                :key="option.value"
+                :class="['radio-button', { selected: videoStore.videoCategory === option.value }]"
+                strong
+                secondary
+                type="primary"
+                class="radio-button"
+                @click="videoStore.videoCategory = option.value"
+              >
+                <div class="radio-top">
+                  <img :src="option.img" alt="icon" class="radio-icon" />
+                  <div class="radio-label">{{ option.label }}</div>
+                </div>
+                <div class="radio-description">
+                  {{ option.description }}
+                </div>
+              </NButton>
             </div>
-          </span>
+          </div>
+
+          <div class="llm-left-buttom">
+            <div class="word-count-label">
+              <NGradientText style="padding: 5px" :size="14" type="danger"> 字数 </NGradientText>
+              <NInputNumber v-model:value="videoStore.wordCount" />
+            </div>
+
+            <div class="script-button-group">
+              <NButton
+                strong
+                secondary
+                type="success"
+                class="tool-button"
+                @click="videoStore.handleGenerateScript"
+              >
+                <div class="tool-button-container">
+                  <img :src="GenerateTextIcon" alt="icon" class="tool-button-icon" />
+                  <div class="tool-button-label">生成文案</div>
+                </div>
+              </NButton>
+
+              <NButton
+                strong
+                secondary
+                type="warning"
+                class="tool-button"
+                @click="videoStore.handleResetScript"
+              >
+                <div class="tool-button-container">
+                  <img :src="CancelIcon" alt="icon" class="tool-button-icon" />
+                  <div class="tool-button-label">清空文案</div>
+                </div>
+              </NButton>
+            </div>
+          </div>
+        </NForm>
+      </div>
+
+      <!-- 右侧文案生成区 -->
+      <div class="llm-right-container">
+        <div class="llm-preview-container">
+          <div class="video-title-area">
+            <NGradientText :size="24" type="warning">
+              {{ videoStore.videoTitle }}
+            </NGradientText>
+          </div>
+          <div class="input-container">
+            <NInput
+              v-model:value="videoStore.videoScript"
+              class="paragraph-card"
+              placeholder="生成的文案在此展示"
+              type="textarea"
+              autosize
+              style="font-size: 16px"
+            />
+            <div v-if="videoStore.loadingScript" class="loading-script-container">
+              <NSpin />
+              <div class="loading-text">文案努力生成中...</div>
+            </div>
+            <div class="keywords-container">
+              <div :class="['word-count', { exceeded: videoStore.wordCountExceeded }]">
+                {{ videoStore.videoScript.length }}/{{ videoStore.wordCount }}
+              </div>
+            </div>
+            <div class="action-buttons">
+              <NButton
+                strong
+                secondary
+                type="primary"
+                class="tool-button"
+                @click="videoStore.handleAIRefinementSciprt"
+                @mouseover="showTooltip('AI润色消耗10积分')"
+                @mouseleave="hideTooltip"
+                ><div class="tool-button-container">
+                  <img :src="AIRefinementIcon" alt="icon" class="tool-button-icon" />
+                  <div class="tool-button-label">AI润色</div>
+                </div>
+              </NButton>
+              <NButton
+                strong
+                secondary
+                type="primary"
+                class="tool-button"
+                @click="videoStore.handleAIContinueSciprt"
+                @mouseover="showTooltip('AI续写消耗20积分')"
+                @mouseleave="hideTooltip"
+                ><div class="tool-button-container">
+                  <img :src="AIContinueIcon" alt="icon" class="tool-button-icon" />
+                  <div class="tool-button-label">AI续写</div>
+                </div>
+              </NButton>
+              <div v-if="tooltip.visible" class="tooltip">{{ tooltip.text }}</div>
+            </div>
+          </div>
+
+          <div v-if="videoStore.videoKeywords.length" class="keywords">
+            <NGradientText :size="14" type="danger"> 关键词 </NGradientText>
+            <span v-for="(keyword, index) in videoStore.videoKeywords" :key="index">
+              <div class="keyword">
+                <NGradientText :size="14" type="danger"> {{ keyword }} </NGradientText>
+              </div>
+            </span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </NCard>
 </template>
 
 <script setup>

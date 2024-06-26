@@ -1,8 +1,4 @@
 import tiktokImg from '@/assets/icon/genre/TikTok.jpg'
-import instrumentalImg from '@/assets/icon/genre/Instrumental.jpg'
-import beatImg from '@/assets/icon/genre/Beat.jpg'
-import vlogImg from '@/assets/icon/genre/Vlog.jpg'
-import travelImg from '@/assets/icon/genre/Travel.jpg'
 import horrorImg from '@/assets/icon/genre/TikTok.jpg'
 import briskImg from '@/assets/icon/genre/TikTok.jpg'
 import funnyImg from '@/assets/icon/genre/TikTok.jpg'
@@ -20,13 +16,10 @@ import coolImg from '@/assets/icon/genre/TikTok.jpg'
 import freshImg from '@/assets/icon/genre/TikTok.jpg'
 import montageImg from '@/assets/icon/genre/TikTok.jpg'
 import gameImg from '@/assets/icon/genre/TikTok.jpg'
-
-// 脚本语音
-const scriptLanguageOptions = [
-  { label: '自动检测', value: 'auto-detect' },
-  { label: '中文', value: 'zh' },
-  { label: '英文', value: 'en' },
-]
+import instrumentalImg from '@/assets/icon/genre/Instrumental.jpg'
+import beatImg from '@/assets/icon/genre/Beat.jpg'
+import vlogImg from '@/assets/icon/genre/Vlog.jpg'
+import travelImg from '@/assets/icon/genre/Travel.jpg'
 import genericImg from '@/assets/icon/style/generic.png'
 import viralImg from '@/assets/icon/style/viralImg.png'
 import painPointImg from '@/assets/icon/style/painPointImg.png'
@@ -46,6 +39,13 @@ import AudioSettingsIcon from '@/assets/icon/tools/AudioSettingsIcon.png'
 import FontSettingsIcon from '@/assets/icon/tools/FontSettingsIcon.png'
 import VoiceSettingsIcon from '@/assets/icon/tools/VoiceSettingsIcon.png'
 import VideoCreateIcon from '@/assets/icon/tools/VideoCreateIcon.png'
+
+// 脚本语音
+const scriptLanguageOptions = [
+  { label: '自动检测', value: 'auto-detect' },
+  { label: '中文', value: 'zh' },
+  { label: '英文', value: 'en' },
+]
 
 // 新的文案风格选项
 const videoStyleOptions = [
@@ -201,6 +201,13 @@ const genreOptions = [
   { label: '游戏', value: 'Game', img: gameImg },
 ]
 // 播放的音乐类型
+const VoiceNavBarType = Object.freeze({
+  ONLINE: 'online',
+  MYMUSIC: 'myMusic',
+  RECENT: 'recent',
+  FAVORITES: 'favorites',
+})
+// 播放的音乐类型
 const MusicType = Object.freeze({
   VOICE: 'voice',
   BGM: 'bgm',
@@ -238,4 +245,5 @@ export {
   VoiceSettingsIcon,
   VideoCreateIcon,
   HotSearchIcon,
+  VoiceNavBarType,
 }

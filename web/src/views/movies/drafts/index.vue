@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-
+import ToolsBar from '../onecut/component/ToolsBar.vue'
 const works = ref([])
 
 const fetchData = async () => {
@@ -183,6 +183,7 @@ const formatDuration = (ms) => {
 onMounted(fetchData)
 </script>
 <template>
+  <ToolsBar />
   <NCard style="height: 100%">
     <div class="works-container">
       <div class="works-create-button">

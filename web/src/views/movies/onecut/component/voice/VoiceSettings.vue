@@ -8,40 +8,40 @@
           secondary
           type="error"
           class="nav-button"
-          :class="{ selected: selectedTab === 'online' }"
-          @click="selectTab('online')"
-          >热门人声</NButton
-        >
+          :class="{ selected: selectedTab === VoiceNavBarType.ONLINE }"
+          @click="selectTab(VoiceNavBarType.ONLINE)"
+          >热门人声
+        </NButton>
         <NButton
           size="small"
           strong
           secondary
           type="error"
           class="nav-button"
-          :class="{ selected: selectedTab === 'myMusic' }"
-          @click="selectTab('myMusic')"
-          >高级人声</NButton
-        >
+          :class="{ selected: selectedTab === VoiceNavBarType.MYMUSIC }"
+          @click="selectTab(VoiceNavBarType.MYMUSIC)"
+          >高级人声
+        </NButton>
         <NButton
           size="small"
           strong
           secondary
           type="error"
           class="nav-button"
-          :class="{ selected: selectedTab === 'recent' }"
+          :class="{ selected: selectedTab === VoiceNavBarType.RECENT }"
           @click="selectTab('recent')"
-          >最近使用</NButton
-        >
+          >最近使用
+        </NButton>
         <NButton
           size="small"
           strong
           secondary
           type="error"
           class="nav-button"
-          :class="{ selected: selectedTab === 'favorites' }"
+          :class="{ selected: selectedTab === VoiceNavBarType.FAVORITES }"
           @click="selectTab('favorites')"
-          >克隆音色</NButton
-        >
+          >克隆音色
+        </NButton>
       </div>
       <div class="nav-middle">
         <div class="nav-current-music">
@@ -137,7 +137,13 @@ import {
   Male,
   VolumeMediumOutline,
 } from '@vicons/ionicons5'
-import { voiceNames, voiceLanguages, voiceCountry, MusicType } from '@/config/videoOptions'
+import {
+  voiceNames,
+  voiceLanguages,
+  voiceCountry,
+  MusicType,
+  VoiceNavBarType,
+} from '@/config/videoOptions'
 
 const videoStore = useVideoStore()
 let currentAudio = new Audio()
@@ -164,18 +170,11 @@ const fetchVoicesOptions = async () => {
   }
 }
 
-const closeAudio = () => {
-  if (currentAudio) {
-    currentAudio.pause()
-    currentAudio.currentTime = 0
-  }
-}
-
 const selectVoice = (voice) => {
   videoStore.selectedVoiceLabel = voice.label
 }
 
-const togglePlayAudio = async (index, playOptions, musicType) => {
+const togglePlayAudio = async (index, playOptions) => {
   try {
     if (!playOptions || !playOptions[index]) {
       console.error('播放音频时出错: 无效的音频选项')
@@ -255,6 +254,7 @@ onMounted(async () => {
   display: flex;
   gap: 1px;
 }
+
 .nav-middle {
   display: flex;
   align-items: center;
@@ -319,9 +319,10 @@ onMounted(async () => {
   align-items: center;
   width: calc(33.333% - 10px);
   padding: 10px;
-  background: #720d23;
-  color: #ffffff;
   border-radius: 8px;
+  background: #292929;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  color: #ffffff;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
 }

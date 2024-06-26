@@ -284,7 +284,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
                 logger.error("GPT returned an empty response")
 
             # Check for error messages in the response
-            if final_response and "V2当日额度已消耗完" in final_response:
+            if final_response and "当日额度已消耗完" in final_response:
                 raise ValueError(final_response)
 
             if final_response:
@@ -293,7 +293,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
             logger.error(f"Failed to generate script and terms: {e}")
 
         if i < _max_retries:
-            logger.warning(f"Failed to generate  video script and terms, trying again... {i + 1}")
+            logger.warning(f"Failed to generate video script and terms, trying again... {i + 1}")
 
     if not final_response:
         raise RuntimeError("Failed to generate video script and terms after maximum retries.")

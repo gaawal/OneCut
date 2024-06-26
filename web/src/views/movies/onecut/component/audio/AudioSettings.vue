@@ -163,7 +163,7 @@ import {
   MusicalNotesOutline,
 } from '@vicons/ionicons5'
 import { genreOptions, MusicType } from '@/config/videoOptions'
-import WaveformCanvas from './audio/WaveformCanvas.vue'
+import WaveformCanvas from './WaveformCanvas.vue'
 let currentAudio = new Audio()
 const videoStore = useVideoStore()
 const filteredMusic = ref([])
@@ -415,6 +415,7 @@ onBeforeUnmount(() => {
 
 .genre-item {
   display: flex;
+  border-radius: 8px;
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
@@ -424,8 +425,9 @@ onBeforeUnmount(() => {
 
 .genre-label {
   font-size: 14px;
-  color: #ffffff;
-  padding: 5px 12px;
+  font-weight: bold;
+  color: #ee8873;
+  padding: 5px 10px;
   white-space: nowrap;
   transition: background 0.2s, transform 0.2s, color 0.2s;
 }
@@ -448,9 +450,10 @@ onBeforeUnmount(() => {
 .audio-card {
   display: flex;
   flex-direction: column;
-  background: #292929;
-  border-radius: 8px;
+
   padding: 10px;
+  border-radius: 8px;
+  background: #292929;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
 }

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import ToolsBar from '../onecut/component/ToolsBar.vue'
 const scenes = ref([])
 const selectedScene = ref(null)
 const videoKey = ref(0)
@@ -116,6 +117,7 @@ const selectScene = (scene) => {
 </script>
 
 <template>
+  <ToolsBar />
   <div class="main-container">
     <div class="resource-container">
       <div v-for="scene in scenes" :key="scene.sceneId" class="scene-card">
