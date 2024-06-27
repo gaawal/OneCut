@@ -4,7 +4,8 @@ import json
 import os
 import traceback
 
-from fastapi import Request, UploadFile, APIRouter, Depends
+import requests
+from fastapi import Request, UploadFile, APIRouter, Depends, HTTPException
 from fastapi.params import File
 from fastapi.responses import FileResponse
 from loguru import logger
@@ -15,6 +16,7 @@ from app.manager.redis_manager import RedisTaskManager
 from app.models.exception import HttpException
 from app.schemas import Success, Fail
 from app.schemas.movies import BgmUploadResponse, BgmRetrieveResponse, VoiceRetrieveResponse, StreamAudioRequest
+from app.schemas.voice_tts import TTSRequest
 from app.services import voice
 from app.services.redis_service import RedisService
 from app.services.voice import get_all_azure_voices
@@ -83,7 +85,7 @@ async def get_bgm_list(request: Request):
 
 
 @router.get("/stream-audio/{file_path:path}", summary="流媒体播放音频文件")
-async def stream_audio(request: Request, file_path: str, params: StreamAudioRequest= Depends()):
+async def stream_audio(request: Request, file_path: str, params: StreamAudioRequest = Depends()):
     song_dir = utils.song_dir()
     genre = params.genre
     file_path = os.path.join(song_dir, genre, file_path)  # 获取路径
@@ -111,7 +113,7 @@ async def stream_voice(request: Request, file_path: str):
         # 如果文件不存在，进行生成
         voice_name = file_path
         # 生成音频文件
-        sub_maker = await voice.tts(play_content, voice_name, audio_file)
+        sub_maker = voice.tts(play_content, voice_name, audio_file)
         if sub_maker and os.path.exists(audio_file):
             return FileResponse(audio_file, media_type="audio/mpeg")
         else:
@@ -142,3 +144,18 @@ def upload_bgm_file(request: Request, file: UploadFile = File(...)):
         return Success(data=response)
 
     raise HttpException('', status_code=400, message=f"{request_id}: Only *.mp3 files can be uploaded")
+
+
+@router.post("/chat_tts")
+def generate_tts(request: TTSRequest):
+    try:
+        chat_tts_url = movies_config.app.get("chat_tts_url", "")
+        response = requests.post(chat_tts_url, data=request.dict())
+        response_data = response.json()
+
+        if response_data.get("code") == 0:
+            return response_data["audio_files"]
+        else:
+            raise HTTPException(status_code=400, detail=response_data.get("msg", "Error occurred"))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

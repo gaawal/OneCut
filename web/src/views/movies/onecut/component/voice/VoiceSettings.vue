@@ -132,6 +132,7 @@ const currentComponent = computed(() => {
 <style scoped>
 .voice-config-container {
   display: flex;
+  height: 80vh;
   flex-direction: column;
   padding: 5px;
   background: #1d1d1d;
