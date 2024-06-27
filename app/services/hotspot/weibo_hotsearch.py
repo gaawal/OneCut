@@ -26,9 +26,7 @@ async def get_weibo_hotsearch(app: FastAPI):
 
         # 随机延迟以避免检测
         await asyncio.sleep(random.uniform(2, 5))
-
-        response = requests.get(url, headers=headers)
-
+        response = requests.get(url, headers=headers,verify=False)
         if response.status_code == 200:
             raw_data = response.json().get('data', {})
             hotsearch_data = []
