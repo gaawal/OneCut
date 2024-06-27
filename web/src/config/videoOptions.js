@@ -200,8 +200,15 @@ const genreOptions = [
   { label: '混剪', value: 'Montage', img: montageImg },
   { label: '游戏', value: 'Game', img: gameImg },
 ]
-// 播放的音乐类型
+// 人声页面菜单导航栏类型
 const VoiceNavBarType = Object.freeze({
+  ONLINE: 'online',
+  VIP: 'vip',
+  RECENT: 'recent',
+  CLONE: 'clones',
+})
+// 音乐页面菜单导航栏类型
+const AudioNavBarType = Object.freeze({
   ONLINE: 'online',
   MYMUSIC: 'myMusic',
   RECENT: 'recent',
@@ -246,4 +253,5 @@ export {
   VideoCreateIcon,
   HotSearchIcon,
   VoiceNavBarType,
+  AudioNavBarType,
 }

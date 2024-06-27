@@ -1,105 +1,54 @@
 <template>
-  <div class="audio-config-container">
-    <div class="nav-bar">
-      <div class="nav-left">
-        <NButton
-          size="small"
-          strong
-          secondary
-          type="error"
-          class="nav-button"
-          :class="{ selected: selectedTab === AudioNavBarType.ONLINE }"
-          @click="selectTab(AudioNavBarType.ONLINE)"
-          >在线音乐</NButton
-        >
-        <NButton
-          size="small"
-          strong
-          secondary
-          type="error"
-          class="nav-button"
-          :class="{ selected: selectedTab === AudioNavBarType.MYMUSIC }"
-          @click="selectTab(AudioNavBarType.MYMUSIC)"
-          >我的音乐</NButton
-        >
-        <NButton
-          size="small"
-          strong
-          secondary
-          type="error"
-          class="nav-button"
-          :class="{ selected: selectedTab === AudioNavBarType.RECENT }"
-          @click="selectTab(AudioNavBarType.RECENT)"
-          >最近使用</NButton
-        >
-        <NButton
-          size="small"
-          strong
-          secondary
-          type="error"
-          class="nav-button"
-          :class="{ selected: selectedTab === AudioNavBarType.FAVORITES }"
-          @click="selectTab(AudioNavBarType.FAVORITES)"
-          >收藏</NButton
-        >
-      </div>
-      <div class="nav-middle">
-        <div class="nav-current-music">
-          <NButton size="small" strong secondary type="error">
-            <Icon class="control-icon favorite" size="20">
-              <MusicalNotesOutline />
-            </Icon>
-            <span>已选：</span>
-            <span class="selected-music-title">
-              {{ videoStore.selectedBgmLabel || '当前无选中音乐' }}</span
-            >
-          </NButton>
-        </div>
-      </div>
-      <div class="nav-right">
-        <NInput
-          v-model:value="videoStore.searchQuery"
-          placeholder="搜索音频"
-          clearable
-          size="small"
-          class="search-input"
-          @input="filterMusic"
-        />
-        <NIcon size="24" style="margin-left: 5px; cursor: pointer">
-          <VolumeMediumOutline />
-        </NIcon>
-        <NSlider
-          v-model:value="videoStore.bgmVolume"
-          :min="0.0"
-          :max="1.0"
-          step="0.1"
-          style="width: 100px; margin-left: 8px"
-          @update:value="adjustVolume"
-        />
-      </div>
-    </div>
+  <NSpin v-if="videoStore.loadingBgms"></NSpin>
 
-    <div class="fixed-container">
-      <div class="genre-grid-container">
-        <div class="genre-scroll">
-          <div
-            v-for="genre in genreOptions"
-            :key="genre.value"
-            class="genre-item"
-            :class="{ selected: videoStore.selectedGenre === genre.value }"
-            @click="selectGenre(genre.value)"
-          >
-            <span class="genre-label">{{ genre.label }}</span>
+  <div class="cards-container">
+    <div
+      v-for="(music, index) in filteredMusic"
+      :key="music.name"
+      class="audio-card"
+      @click="selectMusic(music)"
+    >
+      <div class="music-card-content">
+        <div class="music-info-container">
+          <img
+            v-if="music.image"
+            :src="'data:image/jpeg;base64,' + music.image"
+            alt="Album Cover"
+            class="album-cover"
+          />
+          <div class="music-info">
+            <span v-if="music.title" class="music-title">{{ music.title }}</span>
+            <span v-else class="music-title">{{ music.name }}</span>
+            <span class="music-duration">{{ music.duration }} {{ music.artist }}</span>
+            <span class="music-genre">{{ music.genres }}</span>
           </div>
         </div>
+        <div class="music-waveform">
+          <WaveformCanvas :audio-data="music.waveform" :canvas-id="'waveform-' + index" />
+        </div>
+        <div class="music-controls">
+          <Icon
+            v-if="!videoStore.isPlayingArray[index]"
+            class="control-icon"
+            size="24"
+            @click.stop="togglePlayAudio(index, filteredMusic, MusicType.BGM)"
+          >
+            <PlayCircleSharp />
+          </Icon>
+          <Icon
+            v-else
+            class="control-icon"
+            size="24"
+            @click.stop="togglePlayAudio(index, filteredMusic, MusicType.BGM)"
+          >
+            <PauseCircle />
+          </Icon>
+          <Icon class="control-icon favorite" size="24" @click.stop="toggleFavorite(index)">
+            <HeartOutline />
+          </Icon>
+        </div>
       </div>
     </div>
-
-    <NForm label-placement="left" label-align="left">
-      <keep-alive>
-        <component :is="currentComponent" />
-      </keep-alive>
-    </NForm>
   </div>
 </template>
 
@@ -107,19 +56,14 @@
 import { useVideoStore } from '@/store'
 import { watch, ref, onMounted, onBeforeUnmount } from 'vue'
 import api from '@/api'
+import axios from 'axios'
 import { Icon } from '@vicons/utils'
-import OnlinesAudio from './pages/OnlinesAudio.vue'
-import MyMusic from './pages/MyMusic.vue'
-import RecentAudio from './pages/RecentAudio.vue'
-import FavoriteAudio from './pages/FavoriteAudio.vue'
-import { VolumeMediumOutline, MusicalNotesOutline } from '@vicons/ionicons5'
-
-import { genreOptions } from '@/config/videoOptions'
+import { PlayCircleSharp, PauseCircle, HeartOutline } from '@vicons/ionicons5'
+import { MusicType } from '@/config/videoOptions'
+import WaveformCanvas from './WaveformCanvas.vue'
 
 const videoStore = useVideoStore()
 const filteredMusic = ref([])
-import { AudioNavBarType } from '@/config/videoOptions'
-const selectedTab = ref(AudioNavBarType.ONLINE)
 
 const closeAudio = () => {
   videoStore.isPlayingArray = new Array(videoStore.bgmOptions.length).fill(false)
@@ -129,9 +73,61 @@ const closeAudio = () => {
   }
 }
 
-const selectGenre = (genre) => {
-  videoStore.selectedGenre = genre
-  filterMusic()
+const selectMusic = (music) => {
+  videoStore.selectedBgmLabel = music.label
+}
+
+const togglePlayAudio = async (index, playOptions, musicType) => {
+  try {
+    if (!playOptions || !playOptions[index]) {
+      console.error('播放音频时出错: 无效的音频选项')
+      return
+    }
+    if (videoStore.isPlayingArray[index]) {
+      closeAudio()
+      videoStore.isPlayingArray[index] = false
+    } else {
+      closeAudio()
+      const musicName = playOptions[index].name
+      let requestUrl
+      let genre = playOptions[index].genres
+      if (musicType === MusicType.BGM) {
+        requestUrl = `/api/v1/audio/stream-audio/${encodeURIComponent(
+          musicName
+        )}?genre=${encodeURIComponent(genre)}`
+      }
+      const response = await axios.get(requestUrl, {
+        responseType: 'blob',
+      })
+      if (response.status === 200) {
+        const blob = response.data
+        const audioUrl = URL.createObjectURL(blob)
+        playAudio(audioUrl)
+      } else {
+        console.error('V2版本暂不支持播放')
+      }
+      videoStore.isPlayingArray.fill(false)
+      videoStore.isPlayingArray[index] = true
+    }
+
+    videoStore.currentAudio.onended = () => {
+      videoStore.isPlayingArray[index] = false
+    }
+  } catch (error) {
+    console.error('播放音频时出错:', error)
+  }
+}
+
+const playAudio = async (audioUrl) => {
+  try {
+    videoStore.currentAudio.pause()
+    videoStore.currentAudio.currentTime = 0
+    videoStore.currentAudio.src = audioUrl
+    await videoStore.currentAudio.play()
+    videoStore.currentAudio.volume = videoStore.bgmVolume
+  } catch (error) {
+    console.error('Error playing audio:', error)
+  }
 }
 
 const filterMusic = () => {
@@ -141,16 +137,6 @@ const filterMusic = () => {
     (bgm) =>
       (bgm.label.includes(query) || bgm.artist.includes(query)) && bgm.genres.includes(genres)
   )
-}
-
-const adjustVolume = (value) => {
-  if (videoStore.currentAudio) {
-    videoStore.currentAudio.volume = value
-  }
-}
-
-const selectTab = (tab) => {
-  selectedTab.value = tab
 }
 
 watch([() => videoStore.selectedGenre, () => videoStore.searchQuery], () => {
@@ -191,20 +177,7 @@ const fetchMusicOptions = async () => {
     videoStore.loadingBgms = false
   }
 }
-const currentComponent = computed(() => {
-  switch (selectedTab.value) {
-    case AudioNavBarType.ONLINE:
-      return OnlinesAudio
-    case AudioNavBarType.RECENT:
-      return MyMusic
-    case AudioNavBarType.MYMUSIC:
-      return RecentAudio
-    case AudioNavBarType.FAVORITES:
-      return FavoriteAudio
-    default:
-      return OnlinesAudio
-  }
-})
+
 onBeforeUnmount(() => {
   closeAudio()
 })

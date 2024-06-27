@@ -48,6 +48,7 @@ export const useVideoStore = defineStore('video', {
     progressPercentage: '',
     progressState: 'wait',
     showTaskProgressModal: false,
+    currentAudio: new Audio(),
   }),
   getters: {
     wordCountExceeded: (state) => state.videoScript.length > state.wordCount,

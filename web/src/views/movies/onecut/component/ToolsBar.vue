@@ -198,7 +198,6 @@ import {
   LinkExtractIcon,
   ImportDocumentIcon,
 } from '@/config/videoIcons' //导入视频图标
-import ScriptArea from './script/ScriptArea.vue'
 import HotScripts from './hotspot/HotScripts.vue'
 import MaterialSettings from './material/MaterialSettings.vue'
 import AudioSettings from './audio/AudioSettings.vue'
