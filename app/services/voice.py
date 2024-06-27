@@ -1,7 +1,6 @@
 import asyncio
 import os
 import re
-import traceback
 from datetime import datetime
 from xml.sax.saxutils import unescape
 from edge_tts.submaker import mktimestamp
@@ -61,17 +60,12 @@ def is_azure_v2_voice(voice_name: str):
 
 
 def tts(text: str, voice_name: str, voice_file: str) -> [SubMaker, None]:
-    loop = asyncio.get_event_loop()
-    if loop.is_running():
-        # 如果事件循环已经在运行，使用create_task创建任务并等待完成
-        task = loop.create_task(azure_tts_v1(text, voice_name, voice_file))
-        return loop.run_until_complete(task)
-    else:
-        # 如果事件循环未运行，直接运行事件循环
-        return asyncio.run(azure_tts_v1(text, voice_name, voice_file))
+    # if is_azure_v2_voice(voice_name):
+    #     return azure_tts_v2(text, voice_name, voice_file)
+    return azure_tts_v1(text, voice_name, voice_file)
 
 
-async def azure_tts_v1(text: str, voice_name: str, voice_file: str) -> [SubMaker, None]:
+def azure_tts_v1(text: str, voice_name: str, voice_file: str) -> [SubMaker, None]:
     voice_name = parse_voice_name(voice_name)
     text = text.strip()
     for i in range(3):
@@ -89,7 +83,7 @@ async def azure_tts_v1(text: str, voice_name: str, voice_file: str) -> [SubMaker
                             sub_maker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
                 return sub_maker
 
-            sub_maker = await _do()
+            sub_maker = asyncio.run(_do())
             if not sub_maker or not sub_maker.subs:
                 logger.warning(f"failed, sub_maker is None or sub_maker.subs is None")
                 continue
@@ -97,7 +91,7 @@ async def azure_tts_v1(text: str, voice_name: str, voice_file: str) -> [SubMaker
             logger.info(f"tts completed, output file: {voice_file}")
             return sub_maker
         except Exception as e:
-            logger.error(f"failed, error: {str(e)}\n{traceback.format_exc()}")
+            logger.error(f"failed, error: {str(e)}")
     return None
 
 

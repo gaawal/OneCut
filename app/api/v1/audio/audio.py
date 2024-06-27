@@ -96,7 +96,7 @@ async def stream_audio(request: Request, file_path: str, params: StreamAudioRequ
 
 
 @router.get("/stream-voice/{file_path:path}", summary="流媒体播放人声文件")
-async def stream_voice(request: Request, file_path: str):
+def stream_voice(request: Request, file_path: str):
     try:
         logger.info(f"stream_voice file_path is {file_path}")
         suffix = ".mp3"
