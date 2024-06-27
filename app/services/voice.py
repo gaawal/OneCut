@@ -16,7 +16,7 @@ from app.utils import utils
 
 def get_all_azure_voices(filter_locals=None) -> list[dict]:
     if filter_locals is None:
-        filter_locals = ["zh-CN","zh-HK", "zh-TW"]
+        filter_locals = ["zh-CN", "zh-HK", "zh-TW"]
     voice_dir = utils.voice_dir()
     voices_list_path = os.path.join(voice_dir, "azure-voices.txt")
     # 读取配置文件内容
@@ -60,8 +60,6 @@ def is_azure_v2_voice(voice_name: str):
 
 
 def tts(text: str, voice_name: str, voice_file: str) -> [SubMaker, None]:
-    # if is_azure_v2_voice(voice_name):
-    #     return azure_tts_v2(text, voice_name, voice_file)
     return azure_tts_v1(text, voice_name, voice_file)
 
 
@@ -90,80 +88,6 @@ def azure_tts_v1(text: str, voice_name: str, voice_file: str) -> [SubMaker, None
 
             logger.info(f"tts completed, output file: {voice_file}")
             return sub_maker
-        except Exception as e:
-            logger.error(f"failed, error: {str(e)}")
-    return None
-
-
-def azure_tts_v2(text: str, voice_name: str, voice_file: str) -> [SubMaker, None]:
-    voice_name = is_azure_v2_voice(voice_name)
-    if not voice_name:
-        logger.error(f"invalid voice name: {voice_name}")
-        raise ValueError(f"invalid voice name: {voice_name}")
-    text = text.strip()
-
-    def _format_duration_to_offset(duration) -> int:
-        if isinstance(duration, str):
-            time_obj = datetime.strptime(duration, "%H:%M:%S.%f")
-            milliseconds = (time_obj.hour * 3600000) + (time_obj.minute * 60000) + (time_obj.second * 1000) + (
-                    time_obj.microsecond // 1000)
-            return milliseconds * 10000
-
-        if isinstance(duration, int):
-            return duration
-
-        return 0
-
-    for i in range(3):
-        try:
-            logger.info(f"start, voice name: {voice_name}, try: {i + 1}")
-
-            import azure.cognitiveservices.speech as speechsdk
-
-            sub_maker = SubMaker()
-
-            def speech_synthesizer_word_boundary_cb(evt: speechsdk.SessionEventArgs):
-                # print('WordBoundary event:')
-                # print('\tBoundaryType: {}'.format(evt.boundary_type))
-                # print('\tAudioOffset: {}ms'.format((evt.audio_offset + 5000)))
-                # print('\tDuration: {}'.format(evt.duration))
-                # print('\tText: {}'.format(evt.text))
-                # print('\tTextOffset: {}'.format(evt.text_offset))
-                # print('\tWordLength: {}'.format(evt.word_length))
-
-                duration = _format_duration_to_offset(str(evt.duration))
-                offset = _format_duration_to_offset(evt.audio_offset)
-                sub_maker.subs.append(evt.text)
-                sub_maker.offset.append((offset, offset + duration))
-
-            # Creates an instance of a speech config with specified subscription key and service region.
-            speech_key = movies_config.azure.get("speech_key", "")
-            service_region = movies_config.azure.get("speech_region", "")
-            audio_config = speechsdk.audio.AudioOutputConfig(filename=voice_file, use_default_speaker=True)
-            speech_config = speechsdk.SpeechConfig(subscription=speech_key,
-                                                   region=service_region)
-            speech_config.speech_synthesis_voice_name = voice_name
-            # speech_config.set_property(property_id=speechsdk.PropertyId.SpeechServiceResponse_RequestSentenceBoundary,
-            #                            value='true')
-            speech_config.set_property(property_id=speechsdk.PropertyId.SpeechServiceResponse_RequestWordBoundary,
-                                       value='true')
-
-            speech_config.set_speech_synthesis_output_format(
-                speechsdk.SpeechSynthesisOutputFormat.Audio48Khz192KBitRateMonoMp3)
-            speech_synthesizer = speechsdk.SpeechSynthesizer(audio_config=audio_config,
-                                                             speech_config=speech_config)
-            speech_synthesizer.synthesis_word_boundary.connect(speech_synthesizer_word_boundary_cb)
-
-            result = speech_synthesizer.speak_text_async(text).get()
-            if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-                logger.success(f"azure v2 speech synthesis succeeded: {voice_file}")
-                return sub_maker
-            elif result.reason == speechsdk.ResultReason.Canceled:
-                cancellation_details = result.cancellation_details
-                logger.error(f"azure v2 speech synthesis canceled: {cancellation_details.reason}")
-                if cancellation_details.reason == speechsdk.CancellationReason.Error:
-                    logger.error(f"azure v2 speech synthesis error: {cancellation_details.error_details}")
-            logger.info(f"completed, output file: {voice_file}")
         except Exception as e:
             logger.error(f"failed, error: {str(e)}")
     return None
