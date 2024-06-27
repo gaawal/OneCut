@@ -153,6 +153,6 @@ config.toml
 db.sqlite3
 db.sqlite3-shm
 db.sqlite3-wal
-storage
+/storage
 web/node_modules
 test
