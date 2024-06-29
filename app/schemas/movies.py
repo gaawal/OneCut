@@ -116,6 +116,9 @@ class VideoScriptParams:
     video_category: Optional[str] = "auto-detect"
     word_count: Optional[int] = 300
     amount: Optional[int] = 5
+    weibo_mid: Optional[str] = ""
+    weibo_url: Optional[str] = ""
+    weibo_title:Optional[str] = ""
 
 
 class VideoTermsParams:

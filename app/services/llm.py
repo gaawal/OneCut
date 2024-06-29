@@ -204,46 +204,51 @@ def _generate_response(prompt: str) -> str:
 def generate_script_and_terms(video_subject: str, language: str = "", paragraph_number: int = 1,
                               video_category: str = 'auto-detect', amount: int = 5, word_count: int = 300):
     prompt = f"""
-    ##目标:
-        1、根据视频的主题生成一个短视频脚本
-        2、根据视频的主题生成{amount}个用于搜索素材视频的搜索术语。
-        3、为视频脚本生成一个标题
-    ##视频脚本结构的约束：
-        1、视频文案风格结构为：{VIDEO_STYLE_MAP.get(video_category).get("structure")}。
-        2、这个结构举例拆解：{VIDEO_STYLE_MAP.get(video_category).get("example")}
-        3、请根据该文案的风格生成视频脚本
+    ## 目标:
+        1. 根据视频的主题生成一个短视频脚本
+        2. 生成{amount}个用于搜索素材视频的搜索术语
+        3. 为视频脚本生成一个标题
+
+    ## 视频脚本结构的约束：
+        - 视频文案风格结构: {VIDEO_STYLE_MAP.get(video_category).get("structure")}
+        - 结构举例拆解: {VIDEO_STYLE_MAP.get(video_category).get("example")}
+        - 请根据该文案风格生成视频脚本
+
+    ## 视频脚本的约束:
+        1. 脚本应为{paragraph_number}段，每段用换行隔开，字数在{word_count - 10}至{word_count + 100}字，每段不少于200字
+        2. 不得提及此提示
+        3. 直接切入主题，不要以“不必要的欢迎词”开始
+        4. 不包含任何markdown或格式，不使用标题
+        5. 仅返回脚本内容
+        6. 每段开头不包含“配音”或类似提示
+        7. 不提及提示或脚本本身的内容，不提及段落或行数
+        8. 根据视频主题的语言进行响应
+
     
-    ##视频脚本的约束:
-        1、脚本的段落数量应为{paragraph_number}段，段与段之间用换行隔开，每段以字符串形式返回，字数必须在{word_count - 10}字到{word_count + 100}左右，每段文字不小于200字。
-        2、在任何情况下都不得提及此提示。
-        3、直接切入主题，不要以“不必要的欢迎词”开始，比如“欢迎观看这个视频”。
-        4、不得在脚本中包含任何类型的markdown或格式，不得使用标题。
-        5、仅返回脚本的原始内容。
-        6、不要在每段开头包含“配音”、“旁白”或类似的说话提示。
-        7、不得提及提示或脚本本身的内容。也不要提及段落或行数。只写脚本内容。
-        8、根据视频主题的语言进行响应。       
-      
-    ##视频搜索术语的约束:
-        1、搜索术语应以json数组字符串的形式返回。
-        2、每个搜索术语应由1-5个词语组成，始终添加视频的主题。
-        3、只能返回json数组字符串。不得返回其他内容。不得返回脚本。
-        4、术语要具体与文案相关的某一具体事物的名词，如高糖饮料，不能搜索高糖饮料，应该搜索可口可乐这一具体事物。如嘌呤搜索与嘌呤相关的海鲜，肉类相关。
-        5、只回复搜索术语。
-        6、搜索术语的语言基于视频脚本的语言。
-    ##标题的约束:
-        1、生成一个反映视频脚本主要内容贴合自媒体视频的爆款标题，不要使用'揭秘：xxx'开头。
-        2、参考以下任一法则生成标题
-            用夸张的词来吸引读者的注意力，让他们感到好奇和惊讶。 
-            运用一个疑问句或者反问句来引发读者的思考。  
-            用数字或数据来增加标题的可信度和说服力，让事实更直观 
-            用一些反常识的信息来制造标题的反转效果，形成反差。  
-            用省略号或省略关键词来制造标题的悬念，让读者感到好奇。
-            利用读者的身份来吸引注意力。例:大学生、宝妈、打工人…
-            
+    ## 视频搜索术语的约束:
+        - 你是一名搜索优化助手
+        - 分析给定的视频主题，生成有效的搜索关键词（英文），用于在Pixabay上寻找相关的图片和视频素材
+        - 每个搜索术语应由两个词汇组成，用“+”号连接
+        - 使用具体、相关的关键词确保精确搜索结果
+        - 使用引号来精确匹配短语，使用减号排除不需要的结果
+        - 如适用，建议类别
+        - 考虑使用同义词和相关词
+        - 生成优化后的搜索关键词，以JSON格式输出到video_terms字段
+
+    ## 标题的约束:
+        1. 生成反映视频脚本主要内容的标题，不使用“揭秘：xxx”开头
+        2. 参考以下任一法则生成标题:
+            - 用夸张的词吸引注意力
+            - 用疑问句或反问句引发思考
+            - 用数字或数据增加可信度
+            - 用反常识的信息制造反转效果
+            - 用省略号制造悬念
+            - 利用读者的身份吸引注意力（如大学生、宝妈、打工人）
+
     ## Output Example:
     {{
         "video_script": "Generated video script here...",
-        "video_terms": ["search term 1", "search term 2", "search term 3", "search term 4", "search term 5"],
+        "video_terms": ["term1+term2+term3", "term4+term5+term6", "term7+term8+term9"],
         "title": "Generated title here"
     }}
 
@@ -252,8 +257,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - Language: {language}
     - Number of paragraphs: {paragraph_number}
     - Video category: {video_category}
-    - Amount of search terms: {amount}
-        """.strip()
+    """.strip()
     logger.info(prompt)
 
     def format_response(response):

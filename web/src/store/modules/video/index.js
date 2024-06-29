@@ -2,10 +2,14 @@ import { defineStore } from 'pinia'
 import api from '@/api'
 import axios from 'axios'
 import { MusicType } from '@/config/videoOptions'
+
 export const useVideoStore = defineStore('video', {
   state: () => ({
     videoTheme: '自媒体文案如何生成爆款',
     videoScript: '',
+    weiboUrl: '',
+    weiboMid: '',
+    weiboTitle: '',
     continueScript: '',
     wordCount: 300,
     videoKeywords: [],
@@ -61,16 +65,36 @@ export const useVideoStore = defineStore('video', {
         $message?.error('请填写视频主题')
         return
       }
+
+      // 如果有微博参数，更新视频主题和请求体
+      // 如果有微博参数，加入请求体
+      if (this.weiboUrl && this.weiboUrl.trim() !== '') {
+        this.videoTheme = this.weiboTitle
+      }
+
       this.loadingScript = true
       try {
-        const scriptResponse = await api.getScriptsTerms({
+        // 构建请求体
+        const requestBody = {
           video_subject: this.videoTheme,
           video_language: this.scriptLanguage,
           video_category: this.videoCategory,
           word_count: this.wordCount,
           paragraph_number: 3,
           amount: 5,
-        })
+        }
+
+        // 如果有微博参数，加入请求体
+        // 如果有微博参数，加入请求体
+        if (this.weiboUrl && this.weiboUrl.trim() !== '') {
+          requestBody.weibo_mid = this.weiboMid
+          requestBody.weibo_url = this.weiboUrl
+          requestBody.weibo_title = this.weiboTitle
+          console.log('如果有微博参数，加入请求体', requestBody)
+        }
+
+        // 发起请求
+        const scriptResponse = await api.getScriptsTerms(requestBody)
         this.videoScript = scriptResponse.data.video_script
         this.videoKeywords = scriptResponse.data.video_terms
         this.videoTitle = scriptResponse.data.video_title
@@ -130,6 +154,7 @@ export const useVideoStore = defineStore('video', {
       this.videoTheme = ''
       this.videoScript = ''
       this.videoKeywords = []
+      this.videoTitle = ''
     },
     async togglePlayAudio(index, playOptions, musicType) {
       try {

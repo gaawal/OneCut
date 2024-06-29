@@ -91,8 +91,11 @@ const selectHotSearch = (item) => {
 
 const generateText = async (item) => {
   try {
-    const generatedText = `这是关于 "${item.title}" 的生成文案。`
-    alert(`生成的文案: ${generatedText}`)
+    videoStore.weiboMid = item.mid
+    videoStore.weiboTitle = item.title
+    videoStore.weiboUrl = item.url
+    console.log('generateText,', videoStore.weiboUrl, videoStore.weiboId)
+    videoStore.handleGenerateScript()
   } catch (error) {
     console.error('Error generating text:', error)
   }

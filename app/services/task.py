@@ -58,31 +58,28 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
         subtitle_future = asyncio.create_task(generate_subtitle(task_id, params, audio_file, video_script, sub_maker))
         bgmfile_future = asyncio.create_task(
             get_bgm_file(request=request, bgm_type=params.bgm_type, bgm_file=params.bgm_file))
-        bgm_path = await bgmfile_future
+
         redis_state.update_task(task_id, state=TaskState.PROCESSING, progress=50,
                                 detail_state=TaskDetailState.DOWNLOADING_VIDEOS)
 
         download_videos_future = asyncio.create_task(
             material.download_videos(task_id, video_terms, params.video_source, params.video_aspect,
                                      params.video_concat_mode, audio_duration, params.video_clip_duration, redis_state))
-
+        bgm_path = await bgmfile_future
         subtitle_path = await subtitle_future
+        downloaded_videos = await download_videos_future
         if not subtitle_path:
             redis_state.update_task(task_id, state=TaskState.FAILED,
                                     failure_reason=TaskFailureReason.FAILED_GENERATING_SUBTITLE)
             return
-
-        downloaded_videos = await download_videos_future
         if not downloaded_videos:
             redis_state.update_task(task_id, state=TaskState.FAILED,
                                     failure_reason=TaskFailureReason.FAILED_DOWNLOADING_VIDEOS)
             return
-
         task_progress.subtitle_file = subtitle_path
         task_progress.downloaded_videos = downloaded_videos
         redis_state.update_task(task_id, state=TaskState.PROCESSING, progress=70,
                                 detail_state=TaskDetailState.VIDEO_DOWNLOAD_COMPLETE, **task_progress.dict())
-
         # 合并视频
         redis_state.update_task(task_id, state=TaskState.PROCESSING, progress=80,
                                 detail_state=TaskDetailState.COMBINING_VIDEOS)

@@ -198,14 +198,8 @@ def search_videos_pixabay(search_term: str,
 
     api_key = get_api_key("pixabay_api_keys")
     # Build URL
-    params = {
-        "q": search_term,
-        "video_type": "all",  # Accepted values: "all", "film", "animation"
-        "per_page": 50,
-        "key": api_key
-    }
-    query_url = f"https://pixabay.com/api/videos/?{urlencode(params)}"
-    logger.info(f"searching videos by search terms: {search_term}")
+    query_url = f"https://pixabay.com/api/videos/?q={search_term}&video_type=all&per_page=50&key={api_key}"
+    logger.info(f"searching videos by search terms: {search_term} query_url {query_url} ")
 
     try:
         r = requests.get(query_url, proxies=movies_config.proxy, verify=False, timeout=(30, 60))

@@ -143,7 +143,7 @@ def combine_videos(combined_video_path: str,
 
     video_clip = concatenate_videoclips(clips)
     video_clip = video_clip.set_fps(30)
-    logger.info(f"writing video clip")
+    logger.info(f"combined video clip")
     video_clip.write_videofile(filename=combined_video_path,
                                threads=threads,
                                logger=None,
@@ -305,5 +305,5 @@ def generate_video(video_path: str,
                                fps=30,
                                )
     video_clip.close()
-    logger.success(f"completed")
+    logger.success(f"task completed")
 
