@@ -14,6 +14,7 @@ from app.utils import utils
 
 def get_bgm_file(bgm_type: str = "random", bgm_file: str = ""):
     if not bgm_type:
+        logger.warning(f"get bgm file failed,{bgm_file} is not available")
         return ""
 
     if bgm_file and os.path.exists(bgm_file):
@@ -54,7 +55,7 @@ def combine_videos(combined_video_path: str,
     raw_clips = []
     for video_path in video_paths:
         cache_dir = utils.cache_videos_dir()
-        video_file = os.path.join(cache_dir, f"{video_path}.mp4")
+        video_file = os.path.join(cache_dir, f"{video_path}")
         clip = VideoFileClip(video_file).without_audio()
         clip_duration = clip.duration
         start_time = 0
@@ -262,7 +263,7 @@ def generate_video(video_path: str,
             clip = create_text_clip(subtitle_item=item)
             text_clips.append(clip)
         video_clip = CompositeVideoClip([video_clip, *text_clips])
-
+    # 加入背景音乐
     bgm_file = get_bgm_file(bgm_type=params.bgm_type, bgm_file=params.bgm_file)
     if bgm_file:
         try:

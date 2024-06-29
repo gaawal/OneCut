@@ -13,14 +13,18 @@
             <Icon
               v-if="!videoStore.isPlayingArray[index]"
               size="24"
-              @click.stop="togglePlayAudio(index, videoStore.voiceOptions, MusicType.VOICE)"
+              @click.stop="
+                videoStore.togglePlayAudio(index, videoStore.voiceOptions, MusicType.VOICE)
+              "
             >
               <MicCircleOutline />
             </Icon>
             <Icon
               v-else
               size="24"
-              @click.stop="togglePlayAudio(index, videoStore.voiceOptions, MusicType.VOICE)"
+              @click.stop="
+                videoStore.togglePlayAudio(index, videoStore.voiceOptions, MusicType.VOICE)
+              "
             >
               <MicCircle />
             </Icon>
@@ -44,7 +48,6 @@
 import { onMounted } from 'vue'
 import { useVideoStore } from '@/store'
 import api from '@/api'
-import axios from 'axios'
 import { Icon } from '@vicons/utils'
 import { MicCircleOutline, MicCircle, Female, Male } from '@vicons/ionicons5'
 import { voiceNames, voiceLanguages, voiceCountry, MusicType } from '@/config/videoOptions'
@@ -74,47 +77,6 @@ const fetchVoicesOptions = async () => {
 
 const selectVoice = (voice) => {
   videoStore.selectedVoiceLabel = voice.label
-}
-
-const togglePlayAudio = async (index, playOptions) => {
-  try {
-    if (!playOptions || !playOptions[index]) {
-      console.error('播放音频时出错: 无效的音频选项')
-      return
-    }
-    if (videoStore.isPlayingArray[index]) {
-      videoStore.isPlayingArray[index] = false
-    } else {
-      const voiceName = playOptions[index].name
-      const requestUrl = `/api/v1/audio/stream-voice/${encodeURIComponent(voiceName)}`
-      const response = await axios.get(requestUrl, { responseType: 'blob' })
-      if (response.status === 200) {
-        const blob = response.data
-        const audioUrl = URL.createObjectURL(blob)
-        await playAudio(audioUrl)
-      } else {
-        console.error('V2版本暂不支持播放')
-      }
-      videoStore.isPlayingArray.fill(false)
-      videoStore.isPlayingArray[index] = true
-    }
-    videoStore.currentAudio.onended = () => {
-      videoStore.isPlayingArray[index] = false
-    }
-  } catch (error) {
-    console.error('播放音频时出错:', error)
-  }
-}
-
-const playAudio = async (audioUrl) => {
-  try {
-    videoStore.currentAudio.pause()
-    videoStore.currentAudio.currentTime = 0
-    videoStore.currentAudio.src = audioUrl
-    await videoStore.currentAudio.play()
-  } catch (error) {
-    console.error('Error playing audio:', error)
-  }
 }
 
 onMounted(async () => {

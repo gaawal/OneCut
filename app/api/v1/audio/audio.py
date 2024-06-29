@@ -96,9 +96,9 @@ async def stream_audio(request: Request, file_path: str, params: StreamAudioRequ
 
 
 @router.get("/stream-voice/{file_path:path}", summary="流媒体播放人声文件")
-def stream_voice(request: Request, file_path: str):
+async def stream_voice(request: Request, file_path: str):
     try:
-        logger.info(f"stream_voice file_path is {file_path}")
+
         suffix = ".mp3"
         voice_dir = utils.voice_dir()
         parts = file_path.split('-')
@@ -107,13 +107,15 @@ def stream_voice(request: Request, file_path: str):
         language = parts[0]
         play_content = utils.tr("Voice Example", language)
         audio_file = os.path.join(voice_dir, f'{file_path}{suffix}')  # 获取路径
+        logger.info(f"stream_voice audio_file is {audio_file}")
         # 如果文件存在，直接返回
         if os.path.exists(audio_file):
+            logger.info(f"stream_voice audio exists")
             return FileResponse(audio_file, media_type="audio/mpeg")
         # 如果文件不存在，进行生成
         voice_name = file_path
         # 生成音频文件
-        sub_maker = voice.tts(play_content, voice_name, audio_file)
+        sub_maker = await voice.tts(play_content, voice_name, audio_file)
         if sub_maker and os.path.exists(audio_file):
             return FileResponse(audio_file, media_type="audio/mpeg")
         else:

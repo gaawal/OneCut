@@ -1,278 +1,262 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import ToolsBar from '../onecut/component/ToolsBar.vue'
-const works = ref([])
+const scenes = ref([])
+const selectedScene = ref(null)
+const videoKey = ref(0)
 
-const fetchData = async () => {
+onMounted(async () => {
   // Mock data based on the provided structure
-  const mockData = {
+  const response = {
     code: 1,
     msg: 'SUCCESS',
     data: {
-      page: 1,
-      limit: 20,
-      count: 2,
-      cursor: 0,
-      total: 2,
-      list: [
+      title: '胡塞武装为何如此强大？',
+      scenes: [
         {
-          auditStatus: 2,
-          downloadPic: '/thumbnail/demo.png',
-          downloadUrl:
-            'https://bin-trans.miaopai.com/stream/fUZnKfw3XjdYbiCDLtOrqWbNMpyAdJLVtx7dCg__.mp4?ssig=ba31f88f4fe57fd3e281aa8fc0ee089c&time_stamp=1718978646623&filename=【丝绸之路】.mp4',
-          duration: 142360,
-          fileSize: '54.99MB',
-          height: 1080,
-          levelTag: 0,
-          mediaId: '7208478320911810560',
-          nickname: '豁达大度的霸王龙GRZV',
-          onlineStatus: 0,
-          picture: '/thumbnail/demo.png',
-          productId: '162126464120470840',
-          shareUrl: 'https://h5.yizhentv.com/video-page.html?sid=HOf2K-WHRe4bDIEx-0KoiMtOSK2IuL7F',
-          showCreateUrl: 0,
-          status: 9,
-          title: '【丝绸之路】',
-          uid: '1243221032477718548',
-          uniqueIndexId: 1,
-          updateTime: '2024-06-17 22:43:17',
-          url: 'https://alicdnliz.miaopai.com/stream/fUZnKfw3XjdYbiCDLtOrqWbNMpyAdJLVtx7dCg__.mp4?ssig=ba31f88f4fe57fd3e281aa8fc0ee089c&time_stamp=1718978646623',
-          version: 1,
-          videoDownloadSize: 0,
-          videoType: 0,
-          width: 1920,
-          workId: '102126506135960881',
+          sceneId: '112128484224975782',
+          script:
+            '胡塞武装为什么这么厉害？这是一个让人好奇的问题。胡塞武装，又称也门胡塞武装，是也门内战中的重要力量。他们凭什么能够在这场战争中如此强大呢？',
+          duration: 11808,
+          startTime: '00:00',
+          endTime: '00:11',
+          keywords: ['胡塞武装', '军事武器'],
+          materials: [
+            {
+              mediaId: '6964833549132267520',
+              videoUrl: '/videos/video1.mp4',
+              videoId: ['6964833549132267520', '6964833549132267520'],
+              pictureUrl: '/thumbnail/demo.png',
+            },
+          ],
         },
         {
-          auditStatus: 3,
-          downloadPic: '/thumbnail/demo.png',
-          downloadUrl:
-            'https://bin-trans.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623&filename=广州一宝马冲撞人群_致多人受伤5死13伤这绝对是故意杀人_不过用的工具是车罢.mp4',
-          duration: 37000,
-          fileSize: '9.03MB',
-          height: 1080,
-          levelTag: 0,
-          mediaId: '7018923473452728320',
-          nickname: '豁达大度的霸王龙GRZV',
-          onlineStatus: 0,
-          picture: '/thumbnail/demo.png',
-          productId: '16645914991689856',
-          shareUrl: '',
-          showCreateUrl: 0,
-          status: 9,
-          title: '广州一宝马冲撞人群 致多人受伤#5死13伤！这绝对是故意杀人，不过用的工具是车罢',
-          uid: '1243221032477718548',
-          uniqueIndexId: 2,
-          updateTime: '2023-01-11 20:57:06',
-          url: 'https://alicdnliz.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623',
-          version: 1,
-          videoDownloadSize: 0,
-          videoType: 0,
-          width: 1920,
-          workId: '10645911348478048',
+          sceneId: '112128484224975783',
+          script:
+            '事实上，要解答这个问题，我们需要回顾一下历史。胡塞武装起源于20世纪90年代的也门，当时也门南北统一后，政治矛盾逐渐加剧。在过去的几十年里，胡塞武装经历了多次战争和冲突。',
+          duration: 13860,
+          startTime: '00:12',
+          endTime: '00:25',
+          keywords: ['胡塞武装', '军事武器'],
+          materials: [
+            {
+              mediaId: '6964833549132267520',
+              videoId: ['6964833549132267520'],
+              videoUrl: '/videos/video3.mp4',
+              pictureUrl: '/thumbnail/demo.png',
+            },
+          ],
         },
         {
-          auditStatus: 3,
-          downloadPic: '/thumbnail/demo.png',
-          downloadUrl:
-            'https://bin-trans.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623&filename=广州一宝马冲撞人群_致多人受伤5死13伤这绝对是故意杀人_不过用的工具是车罢.mp4',
-          duration: 37000,
-          fileSize: '9.03MB',
-          height: 1080,
-          levelTag: 0,
-          mediaId: '7018923473452728320',
-          nickname: '豁达大度的霸王龙GRZV',
-          onlineStatus: 0,
-          picture: '/thumbnail/demo.png',
-          productId: '16645914991689856',
-          shareUrl: '',
-          showCreateUrl: 0,
-          status: 9,
-          title: '广州一宝马冲撞人群 致多人受伤#5死13伤！这绝对是故意杀人，不过用的工具是车罢',
-          uid: '1243221032477718548',
-          uniqueIndexId: 2,
-          updateTime: '2023-01-11 20:57:06',
-          url: 'https://alicdnliz.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623',
-          version: 1,
-          videoDownloadSize: 0,
-          videoType: 0,
-          width: 1920,
-          workId: '10645911348478048',
+          sceneId: '112128484224975783',
+          script:
+            '事实上，要解答这个问题，我们需要回顾一下历史。胡塞武装起源于20世纪90年代的也门，当时也门南北统一后，政治矛盾逐渐加剧。在过去的几十年里，胡塞武装经历了多次战争和冲突。',
+          duration: 13860,
+          startTime: '00:12',
+          endTime: '00:25',
+          keywords: ['胡塞武装', '军事武器'],
+          materials: [
+            {
+              mediaId: '6964833549132267520',
+              videoId: ['6964833549132267520'],
+              videoUrl: '/videos/video3.mp4',
+              pictureUrl: '/thumbnail/demo.png',
+            },
+          ],
         },
         {
-          auditStatus: 3,
-          downloadPic: '/thumbnail/demo.png',
-          downloadUrl:
-            'https://bin-trans.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623&filename=广州一宝马冲撞人群_致多人受伤5死13伤这绝对是故意杀人_不过用的工具是车罢.mp4',
-          duration: 37000,
-          fileSize: '9.03MB',
-          height: 1080,
-          levelTag: 0,
-          mediaId: '7018923473452728320',
-          nickname: '豁达大度的霸王龙GRZV',
-          onlineStatus: 0,
-          picture: '/thumbnail/demo.png',
-          productId: '16645914991689856',
-          shareUrl: '',
-          showCreateUrl: 0,
-          status: 9,
-          title: '广州一宝马冲撞人群 致多人受伤#5死13伤！这绝对是故意杀人，不过用的工具是车罢',
-          uid: '1243221032477718548',
-          uniqueIndexId: 2,
-          updateTime: '2023-01-11 20:57:06',
-          url: 'https://alicdnliz.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623',
-          version: 1,
-          videoDownloadSize: 0,
-          videoType: 0,
-          width: 1920,
-          workId: '10645911348478048',
+          sceneId: '112128484224975783',
+          script:
+            '事实上，要解答这个问题，我们需要回顾一下历史。胡塞武装起源于20世纪90年代的也门，当时也门南北统一后，政治矛盾逐渐加剧。在过去的几十年里，胡塞武装经历了多次战争和冲突。',
+          duration: 13860,
+          startTime: '00:12',
+          endTime: '00:25',
+          keywords: ['胡塞武装', '军事武器'],
+          materials: [
+            {
+              mediaId: '6964833549132267520',
+              videoId: ['6964833549132267520'],
+              videoUrl: '/videos/video3.mp4',
+              pictureUrl: '/thumbnail/demo.png',
+            },
+          ],
         },
         {
-          auditStatus: 3,
-          downloadPic: '/thumbnail/demo.png',
-          downloadUrl:
-            'https://bin-trans.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623&filename=广州一宝马冲撞人群_致多人受伤5死13伤这绝对是故意杀人_不过用的工具是车罢.mp4',
-          duration: 37000,
-          fileSize: '9.03MB',
-          height: 1080,
-          levelTag: 0,
-          mediaId: '7018923473452728320',
-          nickname: '豁达大度的霸王龙GRZV',
-          onlineStatus: 0,
-          picture: '/thumbnail/demo.png',
-          productId: '16645914991689856',
-          shareUrl: '',
-          showCreateUrl: 0,
-          status: 9,
-          title: '广州一宝马冲撞人群 致多人受伤#5死13伤！这绝对是故意杀人，不过用的工具是车罢',
-          uid: '1243221032477718548',
-          uniqueIndexId: 2,
-          updateTime: '2023-01-11 20:57:06',
-          url: 'https://alicdnliz.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623',
-          version: 1,
-          videoDownloadSize: 0,
-          videoType: 0,
-          width: 1920,
-          workId: '10645911348478048',
+          sceneId: '112128484224975783',
+          script:
+            '事实上，要解答这个问题，我们需要回顾一下历史。胡塞武装起源于20世纪90年代的也门，当时也门南北统一后，政治矛盾逐渐加剧。在过去的几十年里，胡塞武装经历了多次战争和冲突。',
+          duration: 13860,
+          startTime: '00:12',
+          endTime: '00:25',
+          keywords: ['胡塞武装', '军事武器'],
+          materials: [
+            {
+              mediaId: '6964833549132267520',
+              videoId: ['6964833549132267520'],
+              videoUrl: '/videos/video3.mp4',
+              pictureUrl: '/thumbnail/demo.png',
+            },
+          ],
         },
       ],
-      hasMore: 0,
     },
   }
 
-  works.value = mockData.data.list
-}
+  if (response.code === 1) {
+    scenes.value = response.data.scenes
+    if (scenes.value.length > 0) {
+      selectedScene.value = scenes.value[0]
+    }
+  }
+})
 
-const createNewProject = () => {
-  console.log('Create new project clicked')
+const selectScene = (scene) => {
+  selectedScene.value = { ...scene }
+  videoKey.value++
 }
-
-const formatDate = (dateStr) => {
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}-${
-    date.getMonth() + 1
-  }-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
-}
-
-const formatDuration = (ms) => {
-  const minutes = Math.floor(ms / 60000)
-  const seconds = Math.floor((ms % 60000) / 1000)
-  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
-}
-
-onMounted(fetchData)
 </script>
+
 <template>
   <ToolsBar />
-  <NCard style="height: 100%">
-    <div class="works-container">
-      <div class="works-create-button">
-        <NButton type="primary" @click="createNewProject">创建项目</NButton>
-      </div>
-      <div class="work-list">
-        <NCard v-for="item in works" :key="item.workId" :hoverable="false" class="work-item">
-          <div class="work-image-container">
-            <img :src="item.downloadPic" class="work-image" />
-            <div class="work-info-overlay">
-              <span>{{ item.fileSize }}</span>
-              <span>{{ formatDuration(item.duration) }}</span>
-            </div>
-          </div>
-          <div class="work-details">
-            <div class="work-title">{{ item.title }}</div>
-            <div class="work-info">
-              <span>生成时间：</span>
-              <span>{{ item.updateTime }}</span>
+  <div class="main-container">
+    <div class="resource-container">
+      <div v-for="scene in scenes" :key="scene.sceneId" class="scene-card">
+        <NCard class="card" @click="selectScene(scene)">
+          <div class="card-content">
+            <img :src="scene.materials[0].pictureUrl" alt="素材图片" class="material-img" />
+            <div class="card-details">
+              <div class="scene-script">{{ scene.script }}</div>
+              <div class="card-footer">
+                <span>{{ scene.startTime }} - {{ scene.endTime }}</span>
+                <div class="card-buttons">
+                  <NButton size="small" type="primary">替换</NButton>
+                  <NButton size="small" type="primary">插入</NButton>
+                  <NButton size="small" type="primary">更多</NButton>
+                </div>
+              </div>
             </div>
           </div>
         </NCard>
       </div>
     </div>
-  </NCard>
+    <div v-if="selectedScene" class="preview-container">
+      <NCard class="full-height-card">
+        <div class="audio-controls">
+          <NButton size="small" type="primary">背景音乐</NButton>
+          <NButton size="small" type="primary">人声</NButton>
+        </div>
+        <div class="video-container">
+          <video :key="videoKey" controls class="preview-video">
+            <source :src="selectedScene.materials[0].videoUrl" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+        <div class="scene-info">
+          <div>素材时长: {{ selectedScene.startTime }} - {{ selectedScene.endTime }}</div>
+          <div class="scene-title">{{ selectedScene.script }}</div>
+        </div>
+      </NCard>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-.works-container {
-  padding: 10px;
-}
-
-.works-create-button {
-  margin-bottom: 10px;
-  padding: 10px;
-}
-
-.work-list {
+.main-container {
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+}
+.resource-container {
+  width: 50%;
+  max-height: 85vh; /* 确保容器高度适配视口 */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+.scene-card {
+  cursor: pointer;
+}
+.card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   gap: 10px;
 }
-
-.work-item {
-  max-width: 24%;
+.card-content {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}
+.material-img {
+  width: 30%;
+  height: auto;
+}
+.card-details {
+  width: 70%;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-}
-
-.work-image-container {
-  position: relative;
-  width: 100%;
-  height: auto;
-}
-
-.work-image {
-  width: 100%;
-  height: auto;
-}
-
-.work-info-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  color: rgba(255, 255, 255, 0.88);
-  padding: 5px;
-  font-size: 12px;
-  display: flex;
   justify-content: space-between;
 }
-
-.work-details {
+.scene-script {
+  font-size: 14px;
+  margin-bottom: 10px;
+  margin-left: 10px;
+}
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-left: 10px;
+}
+.card-buttons {
+  display: flex;
+  gap: 5px;
+}
+.preview-container {
+  width: 50%;
+  max-height: 85vh; /* 确保容器高度适配视口 */
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  overflow: hidden;
 }
-
-.work-title {
-  font-size: 14px;
-  font-weight: bold;
-  height: 70px; /* 固定高度 */
-  max-height: 65px;
+.full-height-card {
+  height: 100%;
   width: 100%;
-  overflow: auto; /* 超出部分隐藏 */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0;
 }
-
-.work-info {
-  font-size: 12px;
-  color: #666;
+.audio-controls {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.video-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  flex-grow: 1;
+}
+.preview-video {
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - 120px);
+  aspect-ratio: 16 / 9;
+  background: black;
+}
+.scene-info {
+  text-align: center;
+  padding: 10px;
 }
 </style>

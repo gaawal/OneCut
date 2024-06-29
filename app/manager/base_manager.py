@@ -2,10 +2,10 @@ import threading
 from typing import Callable, Any, Dict
 
 from app.settings.config import settings
-
+import asyncio
 
 class TaskManager:
-    def __init__(self ):
+    def __init__(self):
         self.max_concurrent_tasks = settings._max_concurrent_tasks
         self.current_tasks = 0
         self.lock = threading.Lock()
@@ -31,7 +31,13 @@ class TaskManager:
         try:
             with self.lock:
                 self.current_tasks += 1
-            func(*args, **kwargs)  # 在这里调用函数，传递*args和**kwargs
+            if asyncio.iscoroutinefunction(func):
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(func(*args, **kwargs))
+                loop.close()
+            else:
+                func(*args, **kwargs)
         finally:
             self.task_done()
 

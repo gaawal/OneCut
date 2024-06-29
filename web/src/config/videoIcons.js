@@ -17,6 +17,7 @@ import ImportDocumentIcon from '@/assets/icon/tools/ImportDocumentIcon.png'
 import CancelIcon from '@/assets/icon/tools/CancelIcon.png'
 import AIRefinementIcon from '@/assets/icon/tools/AIRefinementIcon.png'
 import AIContinueIcon from '@/assets/icon/tools/AIContinueIcon.png'
+import InspirationIcon from '@/assets/icon/tools/InspirationIcon.png'
 
 export {
   MaterialSettingsIcon,
@@ -37,4 +38,5 @@ export {
   CancelIcon,
   AIRefinementIcon,
   AIContinueIcon,
+  InspirationIcon,
 }

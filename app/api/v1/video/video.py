@@ -22,15 +22,7 @@ from app.utils import utils
 from app.utils.utils import tr
 
 router = APIRouter()
-
-_enable_redis = movies_config.app.get("enable_redis", False)
-
-
-# 根据配置选择合适的任务管理器
-if _enable_redis:
-    task_manager = RedisTaskManager()
-else:
-    task_manager = InMemoryTaskManager()
+task_manager = RedisTaskManager()
 
 
 @router.post("/createVideos", response_model=TaskResponse, summary="生成短视频")

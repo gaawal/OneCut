@@ -74,7 +74,7 @@
           :max="1.0"
           step="0.1"
           style="width: 100px; margin-left: 8px"
-          @update:value="adjustVolume"
+          @update:value="videoStore.adjustVolume"
         />
       </div>
     </div>
@@ -121,14 +121,6 @@ const filteredMusic = ref([])
 import { AudioNavBarType } from '@/config/videoOptions'
 const selectedTab = ref(AudioNavBarType.ONLINE)
 
-const closeAudio = () => {
-  videoStore.isPlayingArray = new Array(videoStore.bgmOptions.length).fill(false)
-  if (videoStore.currentAudio) {
-    videoStore.currentAudio.pause()
-    videoStore.currentAudio.currentTime = 0
-  }
-}
-
 const selectGenre = (genre) => {
   videoStore.selectedGenre = genre
   filterMusic()
@@ -141,12 +133,6 @@ const filterMusic = () => {
     (bgm) =>
       (bgm.label.includes(query) || bgm.artist.includes(query)) && bgm.genres.includes(genres)
   )
-}
-
-const adjustVolume = (value) => {
-  if (videoStore.currentAudio) {
-    videoStore.currentAudio.volume = value
-  }
 }
 
 const selectTab = (tab) => {
@@ -206,7 +192,7 @@ const currentComponent = computed(() => {
   }
 })
 onBeforeUnmount(() => {
-  closeAudio()
+  videoStore.closeAudio()
 })
 </script>
 

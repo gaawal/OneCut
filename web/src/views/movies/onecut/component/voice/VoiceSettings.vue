@@ -70,10 +70,10 @@
         <NSlider
           v-model:value="videoStore.voiceVolume"
           :min="0.0"
-          :max="3.0"
+          :max="1.0"
           step="0.1"
           style="width: 100px; margin-left: 8px"
-          @update:value="adjustVolume"
+          @update:value="videoStore.adjustVolume"
         />
       </div>
     </div>
@@ -101,12 +101,6 @@ import CloneVoices from './pages/CloneVoices.vue'
 const videoStore = useVideoStore()
 
 const selectedTab = ref(VoiceNavBarType.ONLINE)
-
-const adjustVolume = (value) => {
-  if (videoStore.currentAudio) {
-    videoStore.currentAudio.volume = value
-  }
-}
 
 const selectTab = (tab) => {
   console.log(tab)

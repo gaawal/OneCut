@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import api from '@/api'
-
+import axios from 'axios'
+import { MusicType } from '@/config/videoOptions'
 export const useVideoStore = defineStore('video', {
   state: () => ({
     videoTheme: '自媒体文案如何生成爆款',
@@ -129,6 +130,72 @@ export const useVideoStore = defineStore('video', {
       this.videoTheme = ''
       this.videoScript = ''
       this.videoKeywords = []
+    },
+    async togglePlayAudio(index, playOptions, musicType) {
+      try {
+        if (!playOptions || !playOptions[index]) {
+          console.error('播放音频时出错: 无效的音频选项')
+          return
+        }
+        if (this.isPlayingArray[index]) {
+          this.closeAudio()
+          this.isPlayingArray[index] = false
+        } else {
+          this.closeAudio()
+          let requestUrl
+          if (musicType === MusicType.BGM) {
+            const musicName = playOptions[index].name
+            let genre = playOptions[index].genres
+            requestUrl = `/api/v1/audio/stream-audio/${encodeURIComponent(
+              musicName
+            )}?genre=${encodeURIComponent(genre)}`
+          } else {
+            const voiceName = playOptions[index].name
+            requestUrl = `/api/v1/audio/stream-voice/${encodeURIComponent(voiceName)}`
+          }
+          const response = await axios.get(requestUrl, {
+            responseType: 'blob',
+          })
+          if (response.status === 200) {
+            const blob = response.data
+            const audioUrl = URL.createObjectURL(blob)
+            await this.playAudio(audioUrl)
+          } else {
+            console.error('V2版本暂不支持播放')
+          }
+          this.isPlayingArray.fill(false)
+          this.isPlayingArray[index] = true
+        }
+
+        this.currentAudio.onended = () => {
+          this.isPlayingArray[index] = false
+        }
+      } catch (error) {
+        console.error('播放音频时出错:', error)
+      }
+    },
+    async playAudio(audioUrl) {
+      try {
+        this.currentAudio.pause()
+        this.currentAudio.currentTime = 0
+        this.currentAudio.src = audioUrl
+        await this.currentAudio.play()
+        this.currentAudio.volume = this.bgmVolume
+      } catch (error) {
+        console.error('Error playing audio:', error)
+      }
+    },
+    adjustVolume(value) {
+      if (this.currentAudio) {
+        this.currentAudio.volume = value
+      }
+    },
+    closeAudio() {
+      this.isPlayingArray = new Array(this.bgmOptions.length).fill(false)
+      if (this.currentAudio) {
+        this.currentAudio.pause()
+        this.currentAudio.currentTime = 0
+      }
     },
   },
 })

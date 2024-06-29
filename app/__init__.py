@@ -1,5 +1,3 @@
-
-
 from fastapi import FastAPI
 from loguru import logger
 
@@ -42,7 +40,7 @@ app = create_app()
 @app.on_event("startup")
 async def startup_event():
     # 在应用启动时执行的初始化任务 固定写法
-    logger.warning("应用启动-startup")
+    logger.info("app启动初始化任务")
     await init_superuser()
     await init_menus()
     await init_scheduler(app)

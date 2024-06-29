@@ -30,6 +30,24 @@
           <template #trigger>
             <NButton strong secondary type="primary" class="tool-button">
               <div class="tool-button-container">
+                <img :src="InspirationIcon" alt="icon" class="tool-button-icon" />
+                <div class="tool-button-label">灵感</div>
+              </div>
+            </NButton>
+          </template>
+          <div class="video-setting-container">
+            <HotScripts />
+          </div>
+        </NPopover>
+        <NPopover
+          style="width: 800px; max-height: 80vh"
+          :overlap="overlap"
+          placement="bottom-start"
+          trigger="click"
+        >
+          <template #trigger>
+            <NButton strong secondary type="primary" class="tool-button">
+              <div class="tool-button-container">
                 <img :src="LinkExtractIcon" alt="icon" class="tool-button-icon" />
                 <div class="tool-button-label">链接</div>
               </div>
@@ -197,6 +215,7 @@ import {
   SystemSettingsIcon,
   LinkExtractIcon,
   ImportDocumentIcon,
+  InspirationIcon,
 } from '@/config/videoIcons' //导入视频图标
 import HotScripts from './hotspot/HotScripts.vue'
 import MaterialSettings from './material/MaterialSettings.vue'
@@ -236,12 +255,12 @@ const videoTaskId = ref('')
 
 const handleGenerateVideo = async () => {
   videoStore.showTaskProgressModal = true
-  if (videoTaskId.value) {
-    // 已有任务正在执行，不重复创建
-    $message.info('当前已有视频生成任务正在执行，请稍候再执行...')
-    pollTaskProgress(videoTaskId.value)
-    return
-  }
+  // if (videoTaskId.value) {
+  //   // 已有任务正在执行，不重复创建
+  //   $message.info('当前已有视频生成任务正在执行，请稍候再执行...')
+  //   pollTaskProgress(videoTaskId.value)
+  //   return
+  // }
 
   videoStore.progressPercentage = 1
   videoStore.currentStep = 1

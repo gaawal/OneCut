@@ -139,6 +139,7 @@ class TaskProgress(BaseModel):
     video_title: Optional[str] = None
     search_terms: Optional[List[str]] = None
     audio_file: Optional[str] = None
+    audio_duration: Optional[int] = 0
     subtitle_file: Optional[str] = None
     downloaded_videos: Optional[List[str]] = None
     combined_videos: Optional[List[str]] = []

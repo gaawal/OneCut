@@ -1,6 +1,8 @@
 import os
 import random
 import traceback
+import aiohttp
+import asyncio
 from urllib.parse import urlencode
 
 import requests
@@ -13,7 +15,108 @@ from app.settings import movies_config
 from app.schemas.movies import VideoAspect, VideoConcatMode, MaterialInfo, TaskProgress
 from app.utils import utils
 
+# 确保 proxy 参数是字符串类型
+proxy_config = movies_config.proxy
+proxy = proxy_config.get("http") if isinstance(proxy_config, dict) else None
+
 requested_count = 0
+
+
+async def fetch_video_details(item, video_aspect, max_clip_duration):
+    # 模拟调用接口获取视频时长
+    video_details = {
+        "url": item.url,
+        "duration": min(max_clip_duration, item.duration),
+        "aspect": video_aspect
+    }
+    return video_details
+
+
+async def download_video(item, material_directory, video_paths):
+    try:
+        url_without_query = item['url']
+        url_hash = utils.md5(url_without_query)
+        video_id = f"vid-{url_hash}"
+        logger.info(f"downloading video: {item['url']}, video_id: {video_id}")
+        video_path = os.path.join(material_directory, f"{video_id}.mp4")
+
+        # 如果视频已经存在，直接返回路径
+        if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
+            logger.info(f"video already exists: {video_path}")
+            video_paths.append(video_path)
+            return item['duration']
+
+        # 确保 proxy 参数是字符串类型
+        proxy_config = movies_config.proxy
+        proxy = proxy_config.get("http") if isinstance(proxy_config, dict) else None
+
+        # 下载视频
+        async with aiohttp.ClientSession() as session:
+            async with session.get(item['url'], proxy=proxy, ssl=False, timeout=240) as resp:
+                with open(video_path, 'wb') as f:
+                    while True:
+                        chunk = await resp.content.read(1024)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+
+        if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
+            video_paths.append(video_path)
+            return item['duration']
+    except Exception as e:
+        logger.error(traceback.format_exc())
+        logger.error(f"failed to download video: {item['url']} => {str(e)}")
+    return 0
+
+
+async def download_videos(task_id: str,
+                          search_terms: List[str],
+                          source: str = "pexels",
+                          video_aspect: VideoAspect = VideoAspect.portrait,
+                          video_contact_mode: VideoConcatMode = VideoConcatMode.random,
+                          audio_duration: float = 0.0,
+                          max_clip_duration: int = 5,
+                          redis_state: RedisState = None) -> List[str]:
+    search_videos = search_videos_pexels if source == "pexels" else search_videos_pixabay
+
+    valid_video_items: List[MaterialInfo] = []
+    found_duration = 0.0
+
+    for search_term in search_terms:
+        video_items = search_videos(search_term=search_term, minimum_duration=max_clip_duration,
+                                    video_aspect=video_aspect)
+        valid_video_items.extend(video_items)
+        if found_duration >= audio_duration:
+            break
+
+    if video_contact_mode == VideoConcatMode.random:
+        random.shuffle(valid_video_items)
+
+    material_directory = movies_config.app.get("material_directory", "").strip()
+    if material_directory == "task":
+        material_directory = utils.task_dir(task_id)
+    else:
+        material_directory = utils.cache_videos_dir()
+
+    total_duration = 0.0
+    tasks = []
+    for item in valid_video_items:
+        task = fetch_video_details(item, video_aspect, max_clip_duration)
+        tasks.append(task)
+
+    video_details = await asyncio.gather(*tasks)
+
+    download_tasks = []
+    video_paths = []
+    for item in video_details:
+        total_duration += item['duration']
+        download_tasks.append(download_video(item, material_directory, video_paths))
+        if total_duration >= audio_duration:
+            break
+
+    await asyncio.gather(*download_tasks)
+    logger.success(f"downloaded videos counts is  {len(video_paths)} ")
+    return video_paths
 
 
 def get_api_key(cfg_key: str):
@@ -119,7 +222,7 @@ def search_videos_pixabay(search_term: str,
             if duration < minimum_duration:
                 continue
             video_files = v["videos"]
-            # loop through each url to determine the best quality
+            # 循环浏览每个url以确定最佳质量
             for video_type in video_files:
                 video = video_files[video_type]
                 w = int(video["width"])
@@ -128,6 +231,8 @@ def search_videos_pixabay(search_term: str,
                     item = MaterialInfo()
                     item.provider = "pixabay"
                     item.url = video["url"]
+                    item.thumbnail = video["thumbnail"]
+                    item.size = video["size"]
                     item.duration = duration
                     video_items.append(item)
                     break
@@ -136,124 +241,3 @@ def search_videos_pixabay(search_term: str,
         logger.error(f"search videos failed: {str(e)}")
 
     return []
-
-
-def save_video(video_id: str, video_url: str, save_dir: str = "") -> str:
-    if not save_dir:
-        save_dir = utils.storage_dir("cache_videos")
-
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    video_path = f"{save_dir}/{video_id}.mp4"
-
-    # if video already exists, return the path
-    if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
-        logger.info(f"video already exists: {video_path}")
-        return video_path
-
-    # if video does not exist, download it
-    with open(video_path, "wb") as f:
-        f.write(requests.get(video_url, proxies=movies_config.proxy, verify=False, timeout=(60, 240)).content)
-
-    if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
-        try:
-            clip = VideoFileClip(video_path)
-            duration = clip.duration
-            fps = clip.fps
-            clip.close()
-            if duration > 0 and fps > 0:
-                return video_path
-        except Exception as e:
-            try:
-                os.remove(video_path)
-            except Exception as e:
-                pass
-            logger.warning(f"invalid video file: {video_path} => {str(e)}")
-    return "", ""
-
-
-def download_videos(task_id: str,
-    search_terms: List[str],
-    source: str = "pexels",
-    video_aspect: VideoAspect = VideoAspect.portrait,
-    video_contact_mode: VideoConcatMode = VideoConcatMode.random,
-    audio_duration: float = 0.0,
-    max_clip_duration: int = 5,
-    redis_state: RedisState = None) -> Dict[str, List[str]]:
-    valid_video_items = []
-    valid_video_urls = []
-    found_duration = 0.0
-    search_videos = search_videos_pexels
-    _process = 40
-
-    if source == "pixabay":
-        search_videos = search_videos_pixabay
-
-    keyword_video_map = {}
-
-    for search_term in search_terms:
-        video_items = search_videos(search_term=search_term,
-                                    minimum_duration=max_clip_duration,
-                                    video_aspect=video_aspect)
-        logger.info(f"found {len(video_items)} videos for '{search_term}'")
-
-        keyword_video_map[search_term] = []
-
-        for item in video_items:
-            if item.url not in valid_video_urls:
-                valid_video_items.append(item)
-                valid_video_urls.append(item.url)
-                keyword_video_map[search_term].append(item)
-                found_duration += item.duration
-
-    logger.info(
-        f"found total videos: {len(valid_video_items)}, required duration: {audio_duration} seconds, found duration: {found_duration} seconds")
-    video_paths = []
-    material_directory = movies_config.app.get("material_directory", "").strip()
-    if material_directory == "task":
-        material_directory = utils.task_dir(task_id)
-    elif material_directory and not os.path.isdir(material_directory):
-        material_directory = ""
-
-    if video_contact_mode.value == VideoConcatMode.random.value:
-        random.shuffle(valid_video_items)
-
-    total_duration = 0.0
-    for count, item in enumerate(valid_video_items):
-        try:
-            logger.info(f"downloading video: {item.url}")
-            url_without_query = item.url.split("?")[0]
-            url_hash = utils.md5(url_without_query)
-            video_id = f"vid-{url_hash}"
-            saved_video_path = save_video(video_id=video_id, video_url=item.url, save_dir=material_directory)
-            _process += count
-            if saved_video_path:
-                logger.info(f"video saved: {saved_video_path}")
-                if video_id not in video_paths:
-                    video_paths.append(video_id)
-                seconds = min(max_clip_duration, item.duration)
-                total_duration += seconds
-                if total_duration > audio_duration:
-                    logger.info(f"total duration of downloaded videos: {total_duration} seconds, skip downloading more")
-                    break
-                # Update Redis state for each downloaded video
-                if redis_state:
-                    logger.info(f"{task_id} save downloaded video ok", saved_video_path)
-                    task_data = redis_state.get_task(task_id) or {}
-                    task_progress = TaskProgress(**task_data)
-                    task_progress.downloaded_videos = video_paths
-                    redis_state.update_task(task_id, progress=_process, **task_progress.model_dump())
-                else:
-                    logger.info(f"{task_id} not to save downloaded video")
-        except Exception as e:
-            logger.error(traceback.format_exc())
-            logger.error(f"failed to download video: {utils.to_json(item)} => {str(e)}")
-    logger.success(f"downloaded {len(video_paths)} videos")
-    return video_paths
-
-
-
-
-if __name__ == "__main__":
-    download_videos("test123", ["Money Exchange Medium"], audio_duration=100, source="pixabay")
