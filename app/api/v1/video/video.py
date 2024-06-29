@@ -10,7 +10,6 @@ from moviepy.video.io.VideoFileClip import VideoFileClip
 from app.schemas import Success, Fail
 from app.settings import movies_config
 from app.utils import request_base
-from app.manager.memory_manager import InMemoryTaskManager
 from app.manager.redis_manager import RedisTaskManager
 
 from app.models.exception import HttpException
@@ -27,6 +26,7 @@ task_manager = RedisTaskManager()
 
 @router.post("/createVideos", response_model=TaskResponse, summary="生成短视频")
 async def create_video(background_tasks: BackgroundTasks, request: Request, params: TaskVideoRequest):
+
     task_id = utils.get_uuid()
     redis_state = sm.state
     request_id = request_base.get_task_id(request)
@@ -47,8 +47,9 @@ async def create_video(background_tasks: BackgroundTasks, request: Request, para
         if not params.voice_name:
             raise ValueError(tr("Please select a Valid Voice Source"))
         redis_state.update_task(task_id)
-        task_manager.add_task(tm.start, task_id=task_id, redis_state=redis_state, params=params)
+        task_manager.add_task(tm.start, task_id=task_id, redis_state=redis_state, params=params,request=request)
         logger.success(f"video created: {utils.to_json(task)}\ntask_id is {task_id} ")
+
         return Success(data=task)
     except ValueError as e:
         return Fail(data=task, code=400, msg=f"{str(e)}")

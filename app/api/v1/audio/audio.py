@@ -49,6 +49,7 @@ def get_voices_list(request: Request):
 async def get_bgm_list(request: Request):
     redis_service = RedisService(request.app.state.redis)
     cache_key = "bgm_list_cache"
+    bgm_file_key = 'bgm_file_cache:{}'
     cached_data = await redis_service.get(cache_key)
     if cached_data:
         response = json.loads(cached_data)
@@ -66,7 +67,7 @@ async def get_bgm_list(request: Request):
                     audio_metadata = await get_audio_metadata(file)
                     title, artist = audio_metadata
                     name = os.path.basename(file)
-                    bgm_list.append({
+                    bgm_info = {
                         "name": name,
                         "title": title if title else name,
                         "artist": artist if artist else '未知',
@@ -75,11 +76,13 @@ async def get_bgm_list(request: Request):
                         "genres": genre,
                         "image": image_data if image_data else None,
                         "waveform": await get_waveform_data(redis_service, file)  # 获取波形数据
-                    })
-
+                    }
+                    bgm_list.append(bgm_info)
+                    await redis_service.set(bgm_file_key.format(name), json.dumps(bgm_info, ensure_ascii=False))
+                    logger.info(f"save bgm file index {name} success")
         bgm_list_sorted = sorted(bgm_list, key=lambda x: x["name"])
         response = {"files": bgm_list_sorted}
-        await redis_service.set(cache_key, json.dumps(response))
+        await redis_service.set(cache_key, json.dumps(response, ensure_ascii=False))
 
     return Success(data=response)
 
@@ -98,7 +101,6 @@ async def stream_audio(request: Request, file_path: str, params: StreamAudioRequ
 @router.get("/stream-voice/{file_path:path}", summary="流媒体播放人声文件")
 async def stream_voice(request: Request, file_path: str):
     try:
-
         suffix = ".mp3"
         voice_dir = utils.voice_dir()
         parts = file_path.split('-')
@@ -110,7 +112,7 @@ async def stream_voice(request: Request, file_path: str):
         logger.info(f"stream_voice audio_file is {audio_file}")
         # 如果文件存在，直接返回
         if os.path.exists(audio_file):
-            logger.info(f"stream_voice audio exists")
+            logger.success(f"stream voice audio_file is exists，return {audio_file}")
             return FileResponse(audio_file, media_type="audio/mpeg")
         # 如果文件不存在，进行生成
         voice_name = file_path

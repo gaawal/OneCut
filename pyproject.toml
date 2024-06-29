@@ -36,6 +36,7 @@ pillow = "^10.3.0"
 numpy = "<2.0.0"
 onnxruntime = "^1.18.0"
 opencv-python = ">=4.9.0.80,<4.10.0.0" # 添加这一行解决module 'PIL.Image' has no attribute 'ANTIALIAS'
+playwright = "^1.44.0"
 
 [tool.black]
 line-length = 120

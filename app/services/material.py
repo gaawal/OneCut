@@ -37,12 +37,12 @@ async def download_video(item, material_directory, video_paths):
         url_without_query = item['url']
         url_hash = utils.md5(url_without_query)
         video_id = f"vid-{url_hash}"
-        logger.info(f"downloading video: {item['url']}, video_id: {video_id}")
+        logger.info(f"downloading video_id is: {video_id}")
         video_path = os.path.join(material_directory, f"{video_id}.mp4")
 
         # 如果视频已经存在，直接返回路径
         if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
-            logger.info(f"video already exists: {video_path}")
+            logger.info(f"video_id {video_id} already exists to use it: {video_path}")
             video_paths.append(video_path)
             return item['duration']
 
@@ -153,7 +153,7 @@ def search_videos_pexels(search_term: str,
         "orientation": video_orientation
     }
     query_url = f"https://api.pexels.com/videos/search?{urlencode(params)}"
-    logger.info(f"searching videos: {query_url}, with proxies: {movies_config.proxy}")
+    logger.info(f"searching videos by search_term: {search_term}")
 
     try:
         r = requests.get(query_url, headers=headers, proxies=movies_config.proxy, verify=False, timeout=(30, 60))
@@ -205,7 +205,7 @@ def search_videos_pixabay(search_term: str,
         "key": api_key
     }
     query_url = f"https://pixabay.com/api/videos/?{urlencode(params)}"
-    logger.info(f"searching videos: {query_url}, with proxies: {movies_config.proxy}")
+    logger.info(f"searching videos by search terms: {search_term}")
 
     try:
         r = requests.get(query_url, proxies=movies_config.proxy, verify=False, timeout=(30, 60))

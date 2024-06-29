@@ -3,25 +3,28 @@ import json
 import math
 import os.path
 import os.path
+import time
 import traceback
 from os import path
 
 from loguru import logger
-
+from fastapi import Request
 from app.models.constant import TaskState, SubtitleProvider, TaskDetailState, TaskFailureReason
 from app.schemas.movies import VideoParams, VideoConcatMode, TaskProgress
 from app.services import llm, material, voice, video, subtitle
+from app.services.video import get_bgm_file
 from app.settings import movies_config
 from app.utils import utils
+from app.utils.utils import calculate_duration
 
 
-async def start(task_id, redis_state, params: VideoParams):
+async def start(task_id, redis_state, params: VideoParams, request: Request):
+    start_time = time.time()
     logger.info(f"start task: {task_id}")
     task_progress = TaskProgress()
     try:
         redis_state.update_task(task_id, state=TaskState.PROCESSING, progress=5,
                                 detail_state=TaskDetailState.GENERATING_SCRIPT)
-
         # 生成视频文案信息
         video_script, video_terms, video_title = generate_video_script_and_terms(params)
         if not all([video_script, video_terms, video_title]):
@@ -49,15 +52,19 @@ async def start(task_id, redis_state, params: VideoParams):
         task_progress.audio_duration = audio_duration
         redis_state.update_task(task_id, state=TaskState.PROCESSING, progress=30,
                                 detail_state=TaskDetailState.AUDIO_GENERATION_COMPLETE, **task_progress.dict())
-
-        # 并行执行生成字幕和下载视频
+        # 并行执行加入背景音乐、生成字幕和下载视频
         redis_state.update_task(task_id, state=TaskState.PROCESSING, progress=40,
                                 detail_state=TaskDetailState.GENERATING_SUBTITLE)
         subtitle_future = asyncio.create_task(generate_subtitle(task_id, params, audio_file, video_script, sub_maker))
-
+        bgmfile_future = asyncio.create_task(
+            get_bgm_file(request=request, bgm_type=params.bgm_type, bgm_file=params.bgm_file))
+        bgm_path = await bgmfile_future
         redis_state.update_task(task_id, state=TaskState.PROCESSING, progress=50,
                                 detail_state=TaskDetailState.DOWNLOADING_VIDEOS)
-        download_videos_future = asyncio.create_task(material.download_videos(task_id, video_terms, params.video_source, params.video_aspect, params.video_concat_mode, audio_duration, params.video_clip_duration, redis_state))
+
+        download_videos_future = asyncio.create_task(
+            material.download_videos(task_id, video_terms, params.video_source, params.video_aspect,
+                                     params.video_concat_mode, audio_duration, params.video_clip_duration, redis_state))
 
         subtitle_path = await subtitle_future
         if not subtitle_path:
@@ -79,7 +86,8 @@ async def start(task_id, redis_state, params: VideoParams):
         # 合并视频
         redis_state.update_task(task_id, state=TaskState.PROCESSING, progress=80,
                                 detail_state=TaskDetailState.COMBINING_VIDEOS)
-        combined_video_path = await combine_videos(task_id, params, downloaded_videos, audio_file, task_progress, redis_state)
+        combined_video_path = await combine_videos(task_id, params, downloaded_videos, audio_file, task_progress,
+                                                   redis_state)
         if not combined_video_path:
             redis_state.update_task(task_id, state=TaskState.FAILED,
                                     failure_reason=TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
@@ -92,7 +100,9 @@ async def start(task_id, redis_state, params: VideoParams):
         # 生成最终视频
         redis_state.update_task(task_id, state=TaskState.PROCESSING, progress=95,
                                 detail_state=TaskDetailState.GENERATING_FINAL_VIDEO)
-        final_video_path = await generate_final_video(task_id, params, combined_video_path, audio_file, subtitle_path, task_progress, redis_state)
+
+        final_video_path = await generate_final_video(task_id, params, combined_video_path, audio_file, bgm_path,
+                                                      subtitle_path, task_progress, redis_state)
         if not final_video_path:
             redis_state.update_task(task_id, state=TaskState.FAILED,
                                     failure_reason=TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
@@ -110,8 +120,13 @@ async def start(task_id, redis_state, params: VideoParams):
     except Exception as e:
         logger.error(f"task failed: {task_id} cause by {traceback.format_exc()}")
         redis_state.update_task(task_id, state=TaskState.FAILED, progress=100,
-                                failure_reason=TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO, error=str(e), **task_progress.dict())
+                                failure_reason=TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO, error=str(e),
+                                **task_progress.dict())
+    end_time = time.time()
+    minutes, seconds = calculate_duration(start_time, end_time)
+    logger.info(f"使用时长为：{minutes} 分钟 {seconds} 秒")
     return task_progress.dict()
+
 
 async def combine_videos(task_id, params, downloaded_videos, audio_file, task_progress, redis_state):
     combined_video_path = []
@@ -141,16 +156,19 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, task_pr
 
     return combined_video_path
 
-async def generate_final_video(task_id, params, combined_video_path, audio_file, subtitle_path, task_progress, redis_state):
+
+async def generate_final_video(task_id, params, combined_video_path, audio_file, bgm_file, subtitle_path, task_progress,
+                               redis_state):
     final_video_paths = []
     _progress = 90
 
     for i, combined_video in enumerate(combined_video_path):
-        final_video = path.join(utils.task_dir(task_id), f"final-{i+1}.mp4")
+        final_video = path.join(utils.task_dir(task_id), f"final-{i + 1}.mp4")
 
-        logger.info(f"\n\n## generating final video: {i+1} => {final_video}")
+        logger.info(f"\n\n## generating final video: {i + 1} => {final_video}")
         video.generate_video(video_path=combined_video,
                              audio_path=audio_file,
+                             bgm_path=bgm_file,
                              subtitle_path=subtitle_path,
                              output_file=final_video,
                              params=params)
@@ -163,6 +181,7 @@ async def generate_final_video(task_id, params, combined_video_path, audio_file,
 
     return final_video_paths
 
+
 def generate_video_script_and_terms(params):
     logger.info("\n\n## generating video script")
     video_script = params.video_script.strip()
@@ -173,10 +192,12 @@ def generate_video_script_and_terms(params):
                                                                                language=params.video_language,
                                                                                paragraph_number=params.paragraph_number,
                                                                                video_category=params.video_category,
-                                                                               amount=params.amount, word_count=params.word_count)
+                                                                               amount=params.amount,
+                                                                               word_count=params.word_count)
     else:
         logger.info("no need to generate video script.")
     return video_script, video_terms, video_title
+
 
 def save_script(task_id, video_script, video_terms, params):
     script_file = path.join(utils.task_dir(task_id), f"script.json")
@@ -190,6 +211,7 @@ def save_script(task_id, video_script, video_terms, params):
         f.write(utils.to_json(kwargs))
 
     return script_file
+
 
 async def generate_audio(task_id, params, video_script, voice_name):
     logger.info("\n\n## generating audio")
@@ -208,6 +230,7 @@ async def generate_audio(task_id, params, video_script, voice_name):
     audio_duration = math.ceil(audio_duration)
 
     return audio_file, audio_duration, sub_maker
+
 
 async def generate_subtitle(task_id, params, audio_file, video_script, sub_maker):
     subtitle_path = ""
@@ -233,6 +256,7 @@ async def generate_subtitle(task_id, params, audio_file, video_script, sub_maker
             subtitle_path = ""
 
     return subtitle_path
+
 
 def generate_draft(task_id, task_progress, params):
     draft = {
@@ -321,4 +345,3 @@ def generate_draft(task_id, task_progress, params):
     }
     with open(f"{utils.task_dir(task_id)}/draft.json", "w", encoding="utf-8") as f:
         json.dump(draft, f, ensure_ascii=False, indent=4)
-

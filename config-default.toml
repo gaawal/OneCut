@@ -35,7 +35,7 @@ redis_host = "localhost"
 redis_port = 6379
 redis_db = 0
 redis_password = ""
-max_concurrent_tasks = 5
+max_concurrent_tasks = 5 # 执行任务同时最大数
 hide_config = false
 
 [whisper]

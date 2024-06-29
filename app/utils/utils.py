@@ -257,7 +257,11 @@ def tr(key: str, language: str = 'zh') -> str:
     loc = locales.get(language, {})
     return loc.get("Translation", {}).get(key, key)
 
-
+def calculate_duration(start_time, end_time):
+    duration = end_time - start_time
+    minutes = int(duration // 60)
+    seconds = int(duration % 60)
+    return minutes, seconds
 if __name__ == '__main__':
     result = split_string_by_punctuations('千万不要再相信那些博主说自媒体文案随随便便就能生成爆款！今天，我要揭露一个真相：爆款文案背后隐藏的秘密。你可能不知道，每一篇爆款文案都是经过精心策划和数据分析的结果。首先，你需要了解你的目标受众，他们的痛点、需求和兴趣点。接着，运用心理学原理，比如稀缺性、紧迫感，来激发他们的购买欲望。然后，巧妙地使用故事叙述技巧，让读者产生共鸣，增强文案的吸引力。最后，别忘了测试和优化，通过数据反馈不断调整文案策略。掌握了这些技巧，你也能写出让人眼前一亮的爆款文案。别再盲目跟风，学会这些，让你的自媒体文案独树一帜！')
     print(result)
