@@ -1,31 +1,17 @@
 import asyncio
+import json
 import math
+import os.path
 import os.path
 import traceback
 from os import path
-import json
 
 from loguru import logger
 
 from app.models.constant import TaskState, SubtitleProvider, TaskDetailState, TaskFailureReason
-from app.settings import movies_config
 from app.schemas.movies import VideoParams, VideoConcatMode, TaskProgress
 from app.services import llm, material, voice, video, subtitle
-from app.utils import utils
-
-
-import math
-import os.path
-import traceback
-from os import path
-import json
-
-from loguru import logger
-
-from app.models.constant import TaskState, SubtitleProvider, TaskDetailState, TaskFailureReason
 from app.settings import movies_config
-from app.schemas.movies import VideoParams, VideoConcatMode, TaskProgress
-from app.services import llm, material, voice, video, subtitle
 from app.utils import utils
 
 
@@ -93,7 +79,7 @@ async def start(task_id, redis_state, params: VideoParams):
         # 合并视频
         redis_state.update_task(task_id, state=TaskState.PROCESSING, progress=80,
                                 detail_state=TaskDetailState.COMBINING_VIDEOS)
-        combined_video_path = await combine_videos(task_id, params, downloaded_videos, audio_file, subtitle_path, task_progress, redis_state)
+        combined_video_path = await combine_videos(task_id, params, downloaded_videos, audio_file, task_progress, redis_state)
         if not combined_video_path:
             redis_state.update_task(task_id, state=TaskState.FAILED,
                                     failure_reason=TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
@@ -127,13 +113,14 @@ async def start(task_id, redis_state, params: VideoParams):
                                 failure_reason=TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO, error=str(e), **task_progress.dict())
     return task_progress.dict()
 
-async def combine_videos(task_id, params, downloaded_videos, audio_file, subtitle_path, task_progress, redis_state):
+async def combine_videos(task_id, params, downloaded_videos, audio_file, task_progress, redis_state):
     combined_video_path = []
     video_concat_mode = params.video_concat_mode
     if params.video_count > 1:
         video_concat_mode = VideoConcatMode.random
 
     _progress = 80
+    progress_increment = 10 / params.video_count  # Adjusting progress increment for 80 to 90 range
     for i in range(params.video_count):
         index = i + 1
         combined_video = path.join(utils.task_dir(task_id), f"combined-{index}.mp4")
@@ -146,7 +133,7 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, subtitl
                              max_clip_duration=params.video_clip_duration,
                              threads=params.n_threads)
 
-        _progress += 50 / params.video_count / 2
+        _progress += progress_increment
         task_progress.combined_videos.append(combined_video)
         redis_state.update_task(task_id, progress=_progress, **task_progress.dict())
 
