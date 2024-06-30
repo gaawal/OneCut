@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from loguru import logger
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
+from app.constant.redis_const import RedisKeyPrefix
 from app.schemas import Success, Fail
 from app.settings import movies_config
 from app.utils import request_base
@@ -27,7 +28,7 @@ task_manager = RedisTaskManager()
 @router.post("/createVideos", response_model=TaskResponse, summary="生成短视频")
 async def create_video(background_tasks: BackgroundTasks, request: Request, params: TaskVideoRequest):
 
-    task_id = utils.get_uuid()
+    task_id = RedisKeyPrefix.VIDEO_TASK.format(utils.get_uuid())
     redis_state = sm.state
     request_id = request_base.get_task_id(request)
     task = {

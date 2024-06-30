@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 import redis
 
-from app.models.constant import TaskState
+from app.constant.video_const import TaskState
 from app.settings.config import settings
 
 
@@ -17,32 +17,6 @@ class BaseState(ABC):
     @abstractmethod
     def get_task(self, task_id: str):
         pass
-
-
-# Memory state management
-class MemoryState(BaseState):
-
-    def __init__(self):
-        self._tasks = {}
-
-    def update_task(self, task_id: str, state: int = TaskState.PROCESSING, progress: int = 0, **kwargs):
-        progress = int(progress)
-        if progress > 100:
-            progress = 100
-
-        self._tasks[task_id] = {
-            "state": state,
-            "progress": progress,
-            **kwargs,
-        }
-
-    def get_task(self, task_id: str):
-        return self._tasks.get(task_id, None)
-
-    def delete_task(self, task_id: str):
-        if task_id in self._tasks:
-            del self._tasks[task_id]
-
 
 # Redis state management
 class RedisState(BaseState):
@@ -65,7 +39,9 @@ class RedisState(BaseState):
 
         for field, value in fields.items():
             self._redis.hset(task_id, field, str(value))
-
+        # Set the timeout for the task_id
+        expire_time = 3600
+        self._redis.expire(task_id,expire_time)
     def get_task(self, task_id: str):
         task_data = self._redis.hgetall(task_id)
         if not task_data:

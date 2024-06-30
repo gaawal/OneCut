@@ -12,7 +12,7 @@ from openai import OpenAI
 from openai import AzureOpenAI
 from openai.types.chat import ChatCompletion
 
-from app.models.constant import VIDEO_STYLE_MAP
+from app.constant.video_const import VIDEO_STYLE_MAP
 from app.settings import movies_config
 
 _max_retries = 5

@@ -9,7 +9,7 @@ from os import path
 
 from loguru import logger
 from fastapi import Request
-from app.models.constant import TaskState, SubtitleProvider, TaskDetailState, TaskFailureReason
+from app.constant.video_const import TaskState, SubtitleProvider, TaskDetailState, TaskFailureReason
 from app.schemas.movies import VideoParams, VideoConcatMode, TaskProgress
 from app.services import llm, material, voice, video, subtitle
 from app.services.video import get_bgm_file

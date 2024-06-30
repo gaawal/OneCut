@@ -66,7 +66,7 @@ async def fetch_article_content_and_record(url, video_path):
 
 async def fetch_hot_article(hot_url):
     # 定位至实际的热门
-    target_url = f'{hot_url}&xsort=hot&suball=1&tw=hotweibo&Refer=weibo_hot'
+    target_url = f'{hot_url}'
     video_dir = './videos'
     introduction, articles = await fetch_article_content_and_record(target_url, video_dir)
 
@@ -75,9 +75,6 @@ async def fetch_hot_article(hot_url):
         "introduction": introduction,
         "articles": articles
     }
-
-    with open('weibo_article_details.json', 'w', encoding='utf-8') as f:
-        json.dump(weibo_article_data, f, ensure_ascii=False, indent=4)
     return weibo_article_data
 
 def generate_weibo_summary(data, num_comments):

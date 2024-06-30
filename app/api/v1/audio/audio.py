@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from loguru import logger
 from mutagen.mp3 import MP3
 
-from app.manager.memory_manager import InMemoryTaskManager
+from app.constant.redis_const import RedisKeyPrefix
 from app.manager.redis_manager import RedisTaskManager
 from app.models.exception import HttpException
 from app.schemas import Success, Fail
@@ -27,12 +27,8 @@ from app.utils.audio import get_album_art, format_duration, get_audio_metadata, 
 
 router = APIRouter()
 
-_enable_redis = movies_config.app.get("enable_redis", False)
 # 根据配置选择合适的任务管理器
-if _enable_redis:
-    task_manager = RedisTaskManager()
-else:
-    task_manager = InMemoryTaskManager()
+task_manager = RedisTaskManager()
 REDIS_WAVEFORM_KEY = "audio_waveform_{}"
 
 
@@ -48,8 +44,8 @@ def get_voices_list(request: Request):
 @router.get("/bgms", response_model=BgmRetrieveResponse, summary="检索本地BGM文件")
 async def get_bgm_list(request: Request):
     redis_service = RedisService(request.app.state.redis)
-    cache_key = "bgm_list_cache"
-    bgm_file_key = 'bgm_file_cache:{}'
+    cache_key = RedisKeyPrefix.BGMS_LIST
+    bgm_file_key = RedisKeyPrefix.BGM_FILE
     cached_data = await redis_service.get(cache_key)
     if cached_data:
         response = json.loads(cached_data)

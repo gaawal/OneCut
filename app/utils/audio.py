@@ -13,6 +13,8 @@ from loguru import logger
 from pydub import AudioSegment
 from mutagen.id3 import ID3
 import base64
+
+from app.constant.redis_const import RedisExpireTime
 from app.services.redis_service import RedisService
 REDIS_WAVEFORM_KEY = "audio_waveform_{}"
 
@@ -58,7 +60,7 @@ async def get_waveform_data(redis_service: RedisService, file_path: str):
         return json.loads(cached_data)
     else:
         waveform_data = generate_waveform_data(file_path)
-        await redis_service.set(cache_key, json.dumps(waveform_data), expire=3600)
+        await redis_service.set(cache_key, json.dumps(waveform_data), expire=RedisExpireTime.ONE_WEEK)
         logger.info(f"波形数据缓存: {file_name}")
         return waveform_data
 

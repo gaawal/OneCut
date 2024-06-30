@@ -7,7 +7,7 @@ import json
 from uuid import uuid4
 import urllib3
 
-from app.models import constant
+from app.constant import video_const
 
 urllib3.disable_warnings()
 
@@ -181,7 +181,7 @@ def text_to_srt(idx: int, msg: str, start_time: float, end_time: float) -> str:
 
 
 def str_contains_punctuation(word):
-    for p in constant.PUNCTUATIONS:
+    for p in video_const.PUNCTUATIONS:
         if p in word:
             return True
     return False
@@ -210,7 +210,7 @@ def split_string_by_punctuations(s):
             txt += char
             continue
 
-        if char not in constant.PUNCTUATIONS:
+        if char not in video_const.PUNCTUATIONS:
             txt += char
         else:
             result.append(txt.strip())

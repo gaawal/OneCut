@@ -8,10 +8,13 @@ import json
 
 from fastapi import FastAPI
 
+from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
 from app.services.hotspot.weibo_hotsearch import get_weibo_hotsearch
 from app.services.redis_service import RedisService
 
-REDIS_HOTSEARCH_KEY = "weibo_hotsearch"
+REDIS_HOTSEARCH_KEY = RedisKeyPrefix.WEIBO_HOT_SEARCH
+
+
 class SchedulerTasks:
 
     @staticmethod
@@ -20,4 +23,5 @@ class SchedulerTasks:
         hotsearch_data = await get_weibo_hotsearch()
         # 将数据缓存到 Redis
         if hotsearch_data:
-            await redis_service.set(REDIS_HOTSEARCH_KEY, json.dumps(hotsearch_data, ensure_ascii=False), expire=1800)
+            await redis_service.set(REDIS_HOTSEARCH_KEY, json.dumps(hotsearch_data, ensure_ascii=False),
+                                    expire=RedisExpireTime.THIRTY_MINUTES)
