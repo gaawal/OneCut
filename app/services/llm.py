@@ -211,8 +211,8 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
 
     ## 视频脚本结构的约束：
         - 视频文案风格结构: {VIDEO_STYLE_MAP.get(video_category).get("structure")}
-        - 结构举例拆解: {VIDEO_STYLE_MAP.get(video_category).get("example")}
-        - 请根据该文案风格生成视频脚本
+        - 比如这个例子: "{VIDEO_STYLE_MAP.get(video_category).get("example")}"
+        - 请根参考我的例子生成类似文案风格生成视频脚本
 
     ## 视频脚本的约束:
         1. 脚本应为{paragraph_number}段，每段用换行隔开，字数在{word_count - 10}至{word_count + 100}字，每段不少于200字

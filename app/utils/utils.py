@@ -81,7 +81,11 @@ def cache_videos_dir(sub_dir: str = ""):
     if sub_dir:
         d = os.path.join(d, sub_dir)
     return d
-
+def cache_browser_info_dir(sub_dir: str = ""):
+    d = os.path.join(root_dir(), storage_dir(), "cache_browser_material")
+    if sub_dir:
+        d = os.path.join(d, sub_dir)
+    return d
 
 def resource_dir(sub_dir: str = ""):
     d = os.path.join(root_dir(), "resource")

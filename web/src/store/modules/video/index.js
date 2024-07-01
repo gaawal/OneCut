@@ -21,6 +21,7 @@ export const useVideoStore = defineStore('video', {
     videoRatio: '16:9',
     videoMaxLength: 10,
     videoCount: 1,
+    paragraphNumber: 4,
     enableSubtitles: true,
     enablePlayVoices: true,
     subtitleFont: 'MicrosoftYaHeiBold.ttc',
@@ -80,7 +81,7 @@ export const useVideoStore = defineStore('video', {
           video_language: this.scriptLanguage,
           video_category: this.videoCategory,
           word_count: this.wordCount,
-          paragraph_number: 3,
+          paragraph_number: this.paragraphNumber,
           amount: 5,
         }
 

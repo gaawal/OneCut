@@ -73,4 +73,4 @@ class RedisState(BaseState):
         return value_str
 
 
-state = RedisState() if settings._enable_redis else MemoryState()
+state = RedisState()

@@ -5,7 +5,7 @@
 # @File : llm.py
 # @Software: PyCharm
 from enum import Enum
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Dict
 
 import pydantic
 from pydantic import BaseModel
@@ -99,6 +99,8 @@ class VideoParams(BaseModel):
     n_threads: Optional[int] = 2
     paragraph_number: Optional[int] = 1
     amount: Optional[int] = 5
+    fps: Optional[int] = 30
+    weibo_mid: Optional[str] = ""
 
 
 class VideoScriptParams:
@@ -118,7 +120,7 @@ class VideoScriptParams:
     amount: Optional[int] = 5
     weibo_mid: Optional[str] = ""
     weibo_url: Optional[str] = ""
-    weibo_title:Optional[str] = ""
+    weibo_title: Optional[str] = ""
 
 
 class VideoTermsParams:
@@ -142,13 +144,14 @@ class TaskProgress(BaseModel):
     video_title: Optional[str] = None
     search_terms: Optional[List[str]] = None
     audio_file: Optional[str] = None
+    bgm_file: Optional[str] = None
+    images_files: Optional[List[str]] = None
     audio_duration: Optional[int] = 0
     subtitle_file: Optional[str] = None
     downloaded_videos: Optional[List[str]] = None
     combined_videos: Optional[List[str]] = []
     final_videos: Optional[List[str]] = []
-    other_details: Optional[dict] = None
-
+    other_details: Optional[Dict[str, Any]] = None
 
 class BaseResponse(BaseModel):
     status: int = 200
@@ -174,6 +177,7 @@ class VideoScriptRequest(VideoScriptParams, BaseModel):
 
 class VideoTermsRequest(VideoTermsParams, BaseModel):
     pass
+
 
 class TaskResponse(BaseResponse):
     class TaskResponseData(BaseModel):

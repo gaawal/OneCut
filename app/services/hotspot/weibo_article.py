@@ -1,12 +1,14 @@
 import asyncio
-import json
+import os.path
 import traceback
 
 from loguru import logger
 from playwright.async_api import async_playwright
 import random
 
-async def fetch_article_content_and_record(url, video_path):
+from app.utils import utils
+
+async def fetch_article_content_and_record(weibo_mid, url, video_path):
     logger.info(f"Fetching article content url is {url}")
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False)  # 无头浏览器
@@ -19,18 +21,21 @@ async def fetch_article_content_and_record(url, video_path):
 
         page = await context.new_page()
         await page.goto(url)
+        introduction = ""
+        articles = []
         try:
-            # 等待内容加载
-            await page.wait_for_selector('//*[@id="pl_feedlist_index"]/div[2]/div[1]/p')
-
-            # 提取导语
-            introduction = await page.locator('//*[@id="pl_feedlist_index"]/div[2]/div[1]/p').inner_text()
+            # 尝试提取导语
+            try:
+                introduction_element = page.locator('//*[@id="pl_feedlist_index"]/div[2]/div[1]/p')
+                if await introduction_element.count() > 0:
+                    introduction = await introduction_element.inner_text()
+            except Exception as e:
+                logger.warning(f"Introduction not found: {e}")
 
             # 提取热门评论
+            await page.wait_for_selector('//div[@action-type="feed_list_item"]', timeout=15000)
             comment_elements = page.locator('//div[@action-type="feed_list_item"]')
             count = await comment_elements.count()
-
-            articles = []
 
             for i in range(count):
                 card_wrap = comment_elements.nth(i)
@@ -45,17 +50,19 @@ async def fetch_article_content_and_record(url, video_path):
                     # 截图当前卡片区域
                     bounding_box = await card_wrap.bounding_box()
                     if bounding_box:
-                        screenshot_path = f"{video_path}/card_screenshot_{i}.png"
+                        screenshot_path = os.path.join(video_path, f"{weibo_mid}-card_screenshot_{i}.png")
                         await page.screenshot(path=screenshot_path, clip=bounding_box)
 
                         # 添加到文章列表
                         articles.append({
                             "nickname": nickname,
-                            "comment": comment,
+                            "comment": comment.replace("展开c", ""),
                             "screenshot": screenshot_path
                         })
-        except:
-            logger.info(traceback.format_exc())
+                        logger.success(f"Success fetch weibo comment:{comment};screenshot:{screenshot_path}")
+        except Exception as e:
+            logger.error(f"Error fetching article content: {e}")
+            logger.debug(traceback.format_exc())
 
         # 关闭页面和浏览器
         await page.close()
@@ -64,13 +71,14 @@ async def fetch_article_content_and_record(url, video_path):
 
         return introduction, articles
 
-async def fetch_hot_article(hot_url):
+async def fetch_hot_article(weibo_mid, hot_url):
     # 定位至实际的热门
     target_url = f'{hot_url}'
-    video_dir = './videos'
-    introduction, articles = await fetch_article_content_and_record(target_url, video_dir)
+    video_dir = utils.cache_browser_info_dir()
+    introduction, articles = await fetch_article_content_and_record(weibo_mid, target_url, video_dir)
 
     weibo_article_data = {
+        "weibo_mid": weibo_mid,
         "url": target_url,
         "introduction": introduction,
         "articles": articles
@@ -80,13 +88,19 @@ async def fetch_hot_article(hot_url):
 def generate_weibo_summary(data, num_comments):
     introduction = data["introduction"]
     articles = data["articles"]
-    summary = introduction + "\n\n"
+    summary = ""
+    if introduction:
+        summary += introduction + "\n\n"
     summary += "主题相关信息：\n"
     for i, article in enumerate(articles[:num_comments]):
-        summary += f"{i+1}.{article['comment']}\n"
+        summary += f"{i + 1}.{article['comment']}\n"
     return summary
 
-if __name__ == '__main__':
-    hot_url = 'https://s.weibo.com/weibo?q=%23%E5%88%98%E4%BA%A6%E8%8F%B2%E8%AF%B4%E4%B8%80%E4%BA%9B%E6%BC%94%E5%91%98%E7%88%86%E7%81%AB%E5%B0%B1%E9%A3%98%E4%BA%86%23'
-    weibo_article_data = fetch_hot_article(hot_url)
+async def main():
+    weibo_mid = "example_mid"  # Replace with the actual weibo_mid
+    hot_url = 'https://s.weibo.com/weibo?q=%23吴昕 陈昊宇依然需要自我介绍%23'
+    weibo_article_data = await fetch_hot_article(weibo_mid, hot_url)
     print(generate_weibo_summary(weibo_article_data, 10))
+
+if __name__ == '__main__':
+    asyncio.run(main())

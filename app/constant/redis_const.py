@@ -13,12 +13,13 @@ class RedisExpireTime:
     TWO_HOURS = 7200
     ONE_DAY = 86400
     ONE_WEEK = 604800
+    ONE_MONTH = 2592000
 
 
 class RedisKeyPrefix:
     WEIBO_HOT_SEARCH = 'weibo_hotsearch'
     WEIBO_HOT_ARTICLE = 'weibo_hot_article:{}'
-    VIDEO_TASK = 'video_task:{}'
+    VIDEO_TASK = 'video-{}'
     BGM_FILE = 'bgm_file_cache:{}'
     BGMS_LIST= 'bgm_list_cache'
 

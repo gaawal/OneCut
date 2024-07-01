@@ -56,7 +56,6 @@
 import { useVideoStore } from '@/store'
 import { watch, ref, onMounted, onBeforeUnmount } from 'vue'
 import api from '@/api'
-import axios from 'axios'
 import { Icon } from '@vicons/utils'
 import { PlayCircleSharp, PauseCircle, HeartOutline } from '@vicons/ionicons5'
 import { MusicType } from '@/config/videoOptions'
