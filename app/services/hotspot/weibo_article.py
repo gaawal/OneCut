@@ -11,7 +11,7 @@ from app.utils import utils
 async def fetch_article_content_and_record(weibo_mid, url, video_path):
     logger.info(f"Fetching article content url is {url}")
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)  # 无头浏览器
+        browser = await p.chromium.launch(headless=True)  # 无头浏览器
         context = await browser.new_context(
             viewport={"width": 1920, "height": 1080},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -40,7 +40,7 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
             for i in range(count):
                 card_wrap = comment_elements.nth(i)
                 nickname = (await card_wrap.locator('.name').inner_text()).strip()
-                comment = (await card_wrap.locator('p[node-type="feed_list_content"]').inner_text()).strip()
+                comment = (await card_wrap.locator('p[node-type="feed_list_content"]').inner_text()).strip().replace("展开c", "")
 
                 await card_wrap.scroll_into_view_if_needed()
                 await asyncio.sleep(random.uniform(1, 3))  # 确保页面加载完全
@@ -56,10 +56,10 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
                         # 添加到文章列表
                         articles.append({
                             "nickname": nickname,
-                            "comment": comment.replace("展开c", ""),
+                            "comment": comment,
                             "screenshot": screenshot_path
                         })
-                        logger.success(f"Success fetch weibo comment:{comment};screenshot:{screenshot_path}")
+                        logger.success(f"Success fetch weibo comment:{comment}\nscreenshot:{screenshot_path}")
         except Exception as e:
             logger.error(f"Error fetching article content: {e}")
             logger.debug(traceback.format_exc())

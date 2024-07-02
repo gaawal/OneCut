@@ -13,6 +13,13 @@ from app.schemas.movies import VideoAspect, VideoConcatMode
 from app.services.redis_service import RedisService
 from app.utils import utils
 
+def get_duration(video_path):
+    try:
+        with VideoFileClip(video_path) as video:
+            return video.duration
+    except Exception as e:
+        logger.error(f"Failed to get duration for video {video_path}: {str(e)}")
+        return 0
 
 async def get_bgm_file(request, bgm_type="random", bgm_file=""):
     logger.info(f"get bgm file, bgm_type is {bgm_type}, bgm_file is {bgm_file}")
@@ -20,7 +27,7 @@ async def get_bgm_file(request, bgm_type="random", bgm_file=""):
     choose_bgm_file = ""
     song_dir = utils.song_dir()
     redis_service = RedisService(request.app.state.redis)
-    if bgm_type == "random":
+    if not bgm_file and bgm_type == "random":
         cache_key = "bgm_list_cache"
         cached_data = await redis_service.get(cache_key)
         if cached_data:
@@ -272,9 +279,9 @@ def add_image_clips(image_paths, video_width, video_height, clip_duration):
     for image_path in image_paths:
         img_clip = ImageClip(image_path)
 
-        img_clip = img_clip.resize(height=video_height * 0.5)
+        img_clip = img_clip.resize(height=video_height * 0.8)
         img_clip = img_clip.set_position(("center", "center"))
-        img_clip = img_clip.set_duration(clip_duration).fadein(1).fadeout(1).resize(lambda t: 1 + 0.03 * t)
+        img_clip = img_clip.set_duration(clip_duration).fadeout(1).resize(lambda t: 1 + 0.03 * t)
         image_clips.append(img_clip)
 
     return image_clips

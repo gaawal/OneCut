@@ -32,7 +32,7 @@ export const useVideoStore = defineStore('video', {
     subtitleBorderThickness: 1.5,
     selectedVoiceLabel: 'zh-CN-YunxiNeural',
     voiceVolume: 1.0,
-    bgmVolume: 0.2,
+    bgmVolume: 0.1,
     bgmType: 'random',
     voiceOptions: [],
     bgmOptions: [],

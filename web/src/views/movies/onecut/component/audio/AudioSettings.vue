@@ -51,7 +51,7 @@
             </Icon>
             <span>已选：</span>
             <span class="selected-music-title">
-              {{ videoStore.selectedBgmLabel || '当前无选中音乐' }}</span
+              {{ videoStore.selectedBgmLabel || '当前为随机选取音乐' }}</span
             >
           </NButton>
         </div>

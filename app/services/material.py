@@ -10,6 +10,7 @@ from typing import List, Dict
 from loguru import logger
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
+from app.schemas.drafts import Draft
 from app.services.state import RedisState
 from app.settings import movies_config
 from app.schemas.movies import VideoAspect, VideoConcatMode, MaterialInfo, TaskProgress
@@ -32,7 +33,7 @@ async def fetch_video_details(item, video_aspect, max_clip_duration):
     return video_details
 
 
-async def download_video(item, material_directory, video_paths):
+async def download_video(item, material_directory, video_paths, draft, draft_dir, start_time):
     try:
         url_without_query = item['url']
         url_hash = utils.md5(url_without_query)
@@ -44,6 +45,10 @@ async def download_video(item, material_directory, video_paths):
         if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
             logger.info(f"video_id {video_id} already exists to use it: {video_path}")
             video_paths.append(video_path)
+            draft.add_material("videos", {"path": video_path, "duration": item['duration'], "aspect": item['aspect']})
+            draft.add_playback_info("videos",
+                                    {"path": video_path, "start_time": start_time, "duration": item['duration']})
+            draft.save_to_file(draft_dir)
             return item['duration']
 
         # 确保 proxy 参数是字符串类型
@@ -62,6 +67,10 @@ async def download_video(item, material_directory, video_paths):
 
         if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
             video_paths.append(video_path)
+            draft.add_material("videos", {"path": video_path, "duration": item['duration'], "aspect": item['aspect']})
+            draft.add_playback_info("videos",
+                                    {"path": video_path, "start_time": start_time, "duration": item['duration']})
+            draft.save_to_file(draft_dir)
             return item['duration']
     except Exception as e:
         logger.error(traceback.format_exc())
@@ -76,7 +85,9 @@ async def download_videos(task_id: str,
                           video_contact_mode: VideoConcatMode = VideoConcatMode.random,
                           audio_duration: float = 0.0,
                           max_clip_duration: int = 5,
-                          redis_state: RedisState = None) -> List[str]:
+                          redis_state: RedisState = None,
+                          draft: Draft = None,
+                          draft_dir: str = "") -> List[str]:
     search_videos = search_videos_pexels if source == "pexels" else search_videos_pixabay
 
     valid_video_items: List[MaterialInfo] = []
@@ -100,6 +111,7 @@ async def download_videos(task_id: str,
 
     total_duration = 0.0
     tasks = []
+    start_time = 0
     for item in valid_video_items:
         task = fetch_video_details(item, video_aspect, max_clip_duration)
         tasks.append(task)
@@ -110,7 +122,8 @@ async def download_videos(task_id: str,
     video_paths = []
     for item in video_details:
         total_duration += item['duration']
-        download_tasks.append(download_video(item, material_directory, video_paths))
+        download_tasks.append(download_video(item, material_directory, video_paths, draft, draft_dir, start_time))
+        start_time += item['duration']
         if total_duration >= audio_duration:
             break
 
@@ -221,7 +234,7 @@ def search_videos_pixabay(search_term: str,
                 video = video_files[video_type]
                 w = int(video["width"])
                 h = int(video["height"])
-                if w >= video_width:
+                if w == video_width and h == video_height:
                     item = MaterialInfo()
                     item.provider = "pixabay"
                     item.url = video["url"]

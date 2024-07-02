@@ -100,6 +100,7 @@ class VideoParams(BaseModel):
     paragraph_number: Optional[int] = 1
     amount: Optional[int] = 5
     fps: Optional[int] = 30
+    video_durations: List[int] = []
     weibo_mid: Optional[str] = ""
 
 
@@ -152,6 +153,8 @@ class TaskProgress(BaseModel):
     combined_videos: Optional[List[str]] = []
     final_videos: Optional[List[str]] = []
     other_details: Optional[Dict[str, Any]] = None
+    total_duration: Optional[float] = 0
+
 
 class BaseResponse(BaseModel):
     status: int = 200

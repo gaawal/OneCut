@@ -1,5 +1,4 @@
 import asyncio
-import json
 import math
 import os
 import time
@@ -18,7 +17,6 @@ from app.services.video import get_bgm_file
 from app.settings import movies_config
 from app.utils import utils
 from app.utils.utils import calculate_duration
-
 
 async def start(task_id, redis_state, params: VideoParams, request: Request):
     start_time = time.time()
@@ -57,6 +55,7 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
 
             # 更新草稿
             draft.add_script_info(video_script, video_terms, video_title)
+            draft.save_to_file(utils.task_dir(task_id))
 
             await update_task_state(redis_state, task_id, TaskState.PROCESSING, 20, TaskDetailState.GENERATING_AUDIO)
             audio_file, audio_duration, sub_maker = await generate_audio(task_id, params, video_script,
@@ -76,6 +75,7 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
                                {"path": audio_file, "duration": audio_duration, "voice_name": params.voice_name})
             draft.add_playback_info("audios", {"path": audio_file, "duration": audio_duration,
                                                "effects": {"volume": params.voice_volume}})
+            draft.save_to_file(utils.task_dir(task_id))
 
             subtitle_future = asyncio.create_task(
                 generate_subtitle(task_id, params, audio_file, video_script, sub_maker))
@@ -83,12 +83,11 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
             images_files = await get_images_files(request=request, params=params)
             await update_task_state(redis_state, task_id, TaskState.PROCESSING, 50, TaskDetailState.DOWNLOADING_VIDEOS)
 
-            download_videos_future = asyncio.create_task(
-                material.download_videos(task_id, video_terms, params.video_source, params.video_aspect,
-                                         params.video_concat_mode, audio_duration, params.video_clip_duration,
-                                         redis_state))
+            downloaded_videos = await material.download_videos(task_id, video_terms, params.video_source, params.video_aspect,
+                                                      params.video_concat_mode, audio_duration, params.video_clip_duration,
+                                                      redis_state, draft, utils.task_dir(task_id))
             subtitle_path = await subtitle_future
-            downloaded_videos = await download_videos_future
+
             if not subtitle_path:
                 await update_task_state(redis_state, task_id, TaskState.FAILED, 100,
                                         TaskFailureReason.FAILED_GENERATING_SUBTITLE)
@@ -107,13 +106,12 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
 
             # 更新草稿
             draft.add_material("subtitles", {"path": subtitle_path})
-            draft.add_material("images", [{"path": img} for img in images_files])
-            for video, duration in zip(downloaded_videos, params.video_durations):
-                draft.add_material("videos", {"path": video, "duration": duration, "aspect": params.video_aspect})
+            draft.add_material("images", [{"path": img, "start_time": 0, "duration": 5} for img in images_files])
+            draft.save_to_file(utils.task_dir(task_id))
 
         await update_task_state(redis_state, task_id, TaskState.PROCESSING, 80, TaskDetailState.COMBINING_VIDEOS)
-        combined_video_path = await combine_videos(task_id, params, downloaded_videos, audio_file, images_files,
-                                                   task_progress, redis_state)
+        combined_video_path = await combine_videos(task_id, params, task_progress.downloaded_videos, task_progress.audio_file, task_progress.images_files,
+                                                   task_progress, redis_state, draft)
         if not combined_video_path:
             await update_task_state(redis_state, task_id, TaskState.FAILED, 100,
                                     TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
@@ -123,12 +121,8 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
         await update_task_state(redis_state, task_id, TaskState.PROCESSING, 90,
                                 TaskDetailState.COMBINED_VIDEOS_COMPLETE, task_progress.dict())
 
-        # 更新草稿
-        draft.add_playback_info("videos", [{"path": video, "duration": duration} for video, duration in
-                                           zip(combined_video_path, params.video_durations)])
-
         await update_task_state(redis_state, task_id, TaskState.PROCESSING, 95, TaskDetailState.GENERATING_FINAL_VIDEO)
-        final_video_path = await generate_final_video(task_id, params, combined_video_path, audio_file, bgm_path,
+        final_video_path = await generate_final_video(task_id, params, combined_video_path, task_progress.audio_file, bgm_path,
                                                       subtitle_path, task_progress, redis_state)
         if not final_video_path:
             await update_task_state(redis_state, task_id, TaskState.FAILED, 100,
@@ -140,20 +134,22 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
                                 TaskDetailState.FINAL_VIDEO_GENERATION_COMPLETE, task_progress.dict())
 
         # 更新草稿
-        draft.update_duration(task_progress.total_duration)
+        draft.update_duration(task_progress.audio_duration)
         draft.save_to_file(utils.task_dir(task_id))
 
         logger.success(f"task {task_id} finished, generated final video: {final_video_path}.")
     except ValueError as e:
-        await handle_task_failure(redis_state, task_id, TaskFailureReason.VALUE_ERROR, str(e), task_progress)
+        handle_task_failure(redis_state, task_id, TaskFailureReason.VALUE_ERROR, str(e), task_progress, draft)
     except Exception as e:
-        await handle_task_failure(redis_state, task_id, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO, str(e),
-                                  task_progress)
+        handle_task_failure(redis_state, task_id, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO, str(e),
+                                  task_progress, draft)
 
     end_time = time.time()
     minutes, seconds = calculate_duration(start_time, end_time)
     logger.info(f"使用时长为：{minutes} 分钟 {seconds} 秒")
     return task_progress.dict()
+
+
 
 
 def restore_task_progress_from_draft(draft: Draft) -> TaskProgress:
@@ -173,7 +169,7 @@ def restore_task_progress_from_draft(draft: Draft) -> TaskProgress:
     return task_progress
 
 
-async def combine_videos(task_id, params, downloaded_videos, audio_file, images_files, task_progress, redis_state):
+async def combine_videos(task_id, params, downloaded_videos, audio_file, images_files, task_progress, redis_state, draft):
     combined_video_path = []
     video_concat_mode = params.video_concat_mode
     if params.video_count > 1:
@@ -181,6 +177,7 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
 
     _progress = 80
     progress_increment = 10 / params.video_count  # Adjusting progress increment for 80 to 90 range
+    start_time = 0
     for i in range(params.video_count):
         index = i + 1
         combined_video = path.join(utils.task_dir(task_id), f"combined-{index}.mp4")
@@ -197,7 +194,15 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
 
         combined_video_path.append(combined_video)
 
+        # 更新草稿
+        duration = video.get_duration(combined_video)
+        draft.add_playback_info("videos", {"path": combined_video, "start_time": start_time, "duration": duration})
+        start_time += duration
+
+    draft.save_to_file(utils.task_dir(task_id))
+
     return combined_video_path
+
 
 
 async def generate_final_video(task_id, params, combined_video_path, audio_file, bgm_file, subtitle_path, task_progress,
@@ -302,15 +307,18 @@ async def update_task_state(redis_state, task_id, state, progress, detail_state=
     if extra:
         data.update(extra)
     if redis_state is not None:
-        await redis_state.update_task(task_id, **data)
+        redis_state.update_task(task_id, **data)
     else:
         logger.warning(f"redis_state is None, unable to update task {task_id} state")
 
 
-async def handle_task_failure(redis_state, task_id, failure_reason, error, task_progress):
+def handle_task_failure(redis_state, task_id, failure_reason, error, task_progress, draft):
     logger.error(f"task failed: {task_id} cause by {traceback.format_exc()}")
     if redis_state is not None:
-        await redis_state.update_task(task_id, state=TaskState.FAILED, progress=100, failure_reason=failure_reason,
+        redis_state.update_task(task_id, state=TaskState.FAILED, progress=100, failure_reason=failure_reason,
                                       error=error, **task_progress.dict())
     else:
         logger.warning(f"redis_state is None, unable to update task {task_id} state to failed")
+    # 保存草稿
+    draft.save_to_file(utils.task_dir(task_id))
+
