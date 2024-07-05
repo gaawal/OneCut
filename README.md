@@ -4,7 +4,7 @@
   </a>
 </p>
 
-<h1 align="center">vue-fastapi-admin</h1>
+<h1 align="center">OneCut</h1>
 
 [English](./README-en.md) | 简体中文
 
@@ -16,71 +16,6 @@
 - **动态路由**：后端动态路由，结合 RBAC（Role-Based Access Control）权限模型，提供精细的菜单路由控制。
 - **JWT鉴权**：使用 JSON Web Token（JWT）进行身份验证和授权，增强应用的安全性。
 - **细粒度权限控制**：实现按钮和接口级别的权限控制，确保不同用户或角色在界面操作和接口访问时具有不同的权限限制。
-
-### 在线预览
-- http://139.9.100.77:9999
-- username: admin
-- password: 123456
-
-### 登录页
-
-![image](https://github.com/mizhexiaoxiao/vue-fastapi-admin/blob/main/deploy/sample-picture/login.jpg)
-### 工作台
-
-![image](https://github.com/mizhexiaoxiao/vue-fastapi-admin/blob/main/deploy/sample-picture/workbench.jpg)
-
-### 用户管理
-
-![image](https://github.com/mizhexiaoxiao/vue-fastapi-admin/blob/main/deploy/sample-picture/user.jpg)
-### 角色管理
-
-![image](https://github.com/mizhexiaoxiao/vue-fastapi-admin/blob/main/deploy/sample-picture/role.jpg)
-
-### 菜单管理
-
-![image](https://github.com/mizhexiaoxiao/vue-fastapi-admin/blob/main/deploy/sample-picture/menu.jpg)
-
-### API管理
-
-![image](https://github.com/mizhexiaoxiao/vue-fastapi-admin/blob/main/deploy/sample-picture/api.jpg)
-
-### 快速开始
-#### 方法一：dockerhub拉取镜像
-
-```sh
-docker pull mizhexiaoxiao/vue-fastapi-admin:latest 
-docker run -d --restart=always --name=vue-fastapi-admin -p 9999:80 mizhexiaoxiao/vue-fastapi-admin
-```
-
-#### 方法二：dockerfile构建镜像
-##### docker安装(版本17.05+)
-
-```sh
-yum install -y docker-ce
-systemctl start docker
-```
-
-##### 构建镜像
-
-```sh
-git clone https://github.com/mizhexiaoxiao/vue-fastapi-admin.git
-cd vue-fastapi-admin
-docker build --no-cache . -t vue-fastapi-admin
-```
-
-##### 启动容器
-
-```sh
-docker run -d --restart=always --name=vue-fastapi-admin -p 9999:80 vue-fastapi-admin
-```
-
-##### 访问
-
-http://localhost:9999
-
-username：admin
-
-password：123456
 
 ### 本地启动
 #### 后端
@@ -185,20 +120,10 @@ pnpm dev
             └── workbench  // 工作台页面
 ```
 
-### 进群交流
-进群的条件是给项目一个star，小小的star是作者维护下去的动力。
-
-你可以在群里提出任何疑问，我会尽快回复答疑。
-
-<img alt="Vue FastAPI Admin Logo" width="400" src="https://github.com/mizhexiaoxiao/vue-fastapi-admin/blob/main/deploy/sample-picture/group.jpg">
-
-### Visitors Count
-
-<img align="left" src = "https://profile-counter.glitch.me/vue-fastapi-admin/count.svg" alt="Loading">
 
 
 <div align="center">
-<h1 align="center">MoneyPrinterTurbo 💸</h1>
+<h1 align="center">OneCut 咔咔剪辑助手💸</h1>
 
 <p align="center">
   <a href="https://github.com/harry0703/MoneyPrinterTurbo/stargazers"><img src="https://img.shields.io/github/stars/harry0703/MoneyPrinterTurbo.svg?style=for-the-badge" alt="Stargazers"></a>
@@ -214,15 +139,6 @@ pnpm dev
 <br>
 只需提供一个视频 <b>主题</b> 或 <b>关键词</b> ，就可以全自动生成视频文案、视频素材、视频字幕、视频背景音乐，然后合成一个高清的短视频。
 <br>
-
-<h4>Web界面</h4>
-
-![](docs/webui.jpg)
-
-<h4>API界面</h4>
-
-![](docs/api.jpg)
-
 </div>
 
 ## 特别感谢 🙏
@@ -233,7 +149,7 @@ pnpm dev
 - 中文版：https://reccloud.cn
 - 英文版：https://reccloud.com
 
-![](docs/reccloud.cn.jpg)
+
 
 ## 感谢赞助 🙏
 
@@ -241,7 +157,6 @@ pnpm dev
 
 佐糖专注于**图像处理领域**，提供丰富的**图像处理工具**，将复杂操作极致简化，真正实现让图像处理更简单。
 
-![picwish.jpg](docs/picwish.jpg)
 
 ## 功能特性 🎯
 
@@ -271,64 +186,10 @@ pnpm dev
 - [ ] 支持更多的语音合成服务商，比如 OpenAI TTS
 - [ ] 自动上传到YouTube平台
 
-## 交流讨论 💬
-
-<img src="docs/wechat-group.jpg" width="250">
-
-## 视频演示 📺
-
-### 竖屏 9:16
-
-<table>
-<thead>
-<tr>
-<th align="center"><g-emoji class="g-emoji" alias="arrow_forward">▶️</g-emoji> 《如何增加生活的乐趣》</th>
-<th align="center"><g-emoji class="g-emoji" alias="arrow_forward">▶️</g-emoji> 《金钱的作用》<br>更真实的合成声音</th>
-<th align="center"><g-emoji class="g-emoji" alias="arrow_forward">▶️</g-emoji> 《生命的意义是什么》</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="center"><video src="https://github.com/harry0703/MoneyPrinterTurbo/assets/4928832/a84d33d5-27a2-4aba-8fd0-9fb2bd91c6a6"></video></td>
-<td align="center"><video src="https://github.com/harry0703/MoneyPrinterTurbo/assets/4928832/af2f3b0b-002e-49fe-b161-18ba91c055e8"></video></td>
-<td align="center"><video src="https://github.com/harry0703/MoneyPrinterTurbo/assets/4928832/112c9564-d52b-4472-99ad-970b75f66476"></video></td>
-</tr>
-</tbody>
-</table>
-
-### 横屏 16:9
-
-<table>
-<thead>
-<tr>
-<th align="center"><g-emoji class="g-emoji" alias="arrow_forward">▶️</g-emoji>《生命的意义是什么》</th>
-<th align="center"><g-emoji class="g-emoji" alias="arrow_forward">▶️</g-emoji>《为什么要运动》</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="center"><video src="https://github.com/harry0703/MoneyPrinterTurbo/assets/4928832/346ebb15-c55f-47a9-a653-114f08bb8073"></video></td>
-<td align="center"><video src="https://github.com/harry0703/MoneyPrinterTurbo/assets/4928832/271f2fae-8283-44a0-8aa0-0ed8f9a6fa87"></video></td>
-</tr>
-</tbody>
-</table>
-
 ## 配置要求 📦
 
 - 建议最低 CPU 4核或以上，内存 8G 或以上，显卡非必须
 - Windows 10 或 MacOS 11.0 以上系统
-
-## 快速开始 🚀
-
-下载一键启动包，解压直接使用（路径不要有 **中文** 和 **空格**）
-
-### Windows
-
-- 百度网盘: https://pan.baidu.com/s/1MzBmcLTmVWohPEp9ohvvzA?pwd=pdcu 提取码: pdcu
-
-下载后，建议先**双击执行** `update.bat` 更新到**最新代码**，然后双击 `start.bat` 启动
-
-启动后，会自动打开浏览器（如果打开是空白，建议换成 **Chrome** 或者 **Edge** 打开）
 
 ### 其他系统
 
@@ -341,11 +202,6 @@ pnpm dev
 - 尽量不要使用 **中文路径**，避免出现一些无法预料的问题
 - 请确保你的 **网络** 是正常的，VPN需要打开`全局流量`模式
 
-#### ① 克隆代码
-
-```shell
-git clone https://github.com/harry0703/MoneyPrinterTurbo.git
-```
 
 #### ② 修改配置文件
 
@@ -419,7 +275,7 @@ pip install -r requirements.txt
 
 #### ③ 启动Web界面 🌐
 
-注意需要到 MoneyPrinterTurbo 项目 `根目录` 下执行以下命令
+注意需要到 web 项目 `根目录` 下执行以下命令，查看对应readme
 
 ###### Windows
 
@@ -469,28 +325,9 @@ python main.py
 
 > 由于国内无法访问 HuggingFace，可以使用以下方法下载 `whisper-large-v3` 的模型文件
 
-下载地址：
-
-- 百度网盘: https://pan.baidu.com/s/11h3Q6tsDtjQKTjUu3sc5cA?pwd=xjs9
-- 夸克网盘：https://pan.quark.cn/s/3ee3d991d64b
-
-模型下载后解压，整个目录放到 `.\MoneyPrinterTurbo\models` 里面，
-最终的文件路径应该是这样: `.\MoneyPrinterTurbo\models\whisper-large-v3`
-
-```
-MoneyPrinterTurbo  
-  ├─models
-  │   └─whisper-large-v3
-  │          config.json
-  │          model.bin
-  │          preprocessor_config.json
-  │          tokenizer.json
-  │          vocabulary.json
-```
-
 ## 背景音乐 🎵
 
-用于视频的背景音乐，位于项目的 `resource/songs` 目录下。
+用于视频的背景音乐，位于项目的 `resource/songs/xxx` 目录下，xxx代表风格，枚举已经固定，请看代码实现。
 > 当前项目里面放了一些默认的音乐，来自于 YouTube 视频，如有侵权，请删除。
 
 ## 字幕字体 🅰
@@ -581,11 +418,6 @@ Trying to load the model directly from the local cache, if it exists.
 
 解决方法：[点击查看如何从网盘手动下载模型](#%E5%AD%97%E5%B9%95%E7%94%9F%E6%88%90-)
 
-## 反馈建议 📢
-
-- 可以提交 [issue](https://github.com/harry0703/MoneyPrinterTurbo/issues)
-  或者 [pull request](https://github.com/harry0703/MoneyPrinterTurbo/pulls)。
-
 ## 参考项目 📚
 
 该项目基于 https://github.com/FujiwaraChoki/MoneyPrinter 重构而来，做了大量的优化，增加了更多的功能。
@@ -594,7 +426,3 @@ Trying to load the model directly from the local cache, if it exists.
 ## 许可证 📝
 
 点击查看 [`LICENSE`](LICENSE) 文件
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=harry0703/MoneyPrinterTurbo&type=Date)](https://star-history.com/#harry0703/MoneyPrinterTurbo&Date)
