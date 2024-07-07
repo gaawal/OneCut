@@ -3,7 +3,7 @@ import os.path
 import traceback
 
 from loguru import logger
-from playwright.async_api import async_playwright
+from playwright.async_api import BrowserContext,async_playwright
 import random
 
 from app.utils import utils
@@ -11,14 +11,15 @@ from app.utils import utils
 async def fetch_article_content_and_record(weibo_mid, url, video_path):
     logger.info(f"Fetching article content url is {url}")
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)  # 无头浏览器
+        browser = await p.chromium.launch(headless=False)  # 无头浏览器
         context = await browser.new_context(
             viewport={"width": 1920, "height": 1080},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
             record_video_dir=video_path,
             record_video_size={"width": 1920, "height": 1080}
         )
-
+        # stealth.min.js is a js script to prevent the website from detecting the crawler.
+        await context.add_init_script(path="libs/stealth.min.js")
         page = await context.new_page()
         await page.goto(url)
         introduction = ""
@@ -98,7 +99,7 @@ def generate_weibo_summary(data, num_comments):
 
 async def main():
     weibo_mid = "example_mid"  # Replace with the actual weibo_mid
-    hot_url = 'https://s.weibo.com/weibo?q=%23吴昕 陈昊宇依然需要自我介绍%23'
+    hot_url = 'https://s.weibo.com/weibo?q=%23%E9%B2%AB%E9%B1%BC%E6%B1%A4%E5%81%9A%E5%87%BA%E4%BA%86%E9%B1%BC%E6%BA%BA%E6%B0%B4%E7%9A%84%E6%84%9F%E8%A7%89%23'
     weibo_article_data = await fetch_hot_article(weibo_mid, hot_url)
     print(generate_weibo_summary(weibo_article_data, 10))
 

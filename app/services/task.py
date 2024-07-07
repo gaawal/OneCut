@@ -18,6 +18,7 @@ from app.settings import movies_config
 from app.utils import utils
 from app.utils.utils import calculate_duration
 
+
 async def start(task_id, redis_state, params: VideoParams, request: Request):
     start_time = time.time()
     logger.info(f"start task: {task_id}")
@@ -77,16 +78,16 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
                                                "effects": {"volume": params.voice_volume}})
             draft.save_to_file(utils.task_dir(task_id))
 
-            subtitle_future = asyncio.create_task(
-                generate_subtitle(task_id, params, audio_file, video_script, sub_maker))
+            subtitle_path = await generate_subtitle(task_id, params, audio_file, video_script, sub_maker)
             bgm_path = await get_bgm_file(request=request, bgm_type=params.bgm_type, bgm_file=params.bgm_file)
             images_files = await get_images_files(request=request, params=params)
             await update_task_state(redis_state, task_id, TaskState.PROCESSING, 50, TaskDetailState.DOWNLOADING_VIDEOS)
 
-            downloaded_videos = await material.download_videos(task_id, video_terms, params.video_source, params.video_aspect,
-                                                      params.video_concat_mode, audio_duration, params.video_clip_duration,
-                                                      redis_state, draft, utils.task_dir(task_id))
-            subtitle_path = await subtitle_future
+            downloaded_videos = await material.download_videos(task_id, video_terms, params.video_source,
+                                                               params.video_aspect,
+                                                               params.video_concat_mode, audio_duration,
+                                                               params.video_clip_duration,
+                                                               redis_state, draft, utils.task_dir(task_id))
 
             if not subtitle_path:
                 await update_task_state(redis_state, task_id, TaskState.FAILED, 100,
@@ -110,7 +111,8 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
             draft.save_to_file(utils.task_dir(task_id))
 
         await update_task_state(redis_state, task_id, TaskState.PROCESSING, 80, TaskDetailState.COMBINING_VIDEOS)
-        combined_video_path = await combine_videos(task_id, params, task_progress.downloaded_videos, task_progress.audio_file, task_progress.images_files,
+        combined_video_path = await combine_videos(task_id, params, task_progress.downloaded_videos,
+                                                   task_progress.audio_file, task_progress.images_files,
                                                    task_progress, redis_state, draft)
         if not combined_video_path:
             await update_task_state(redis_state, task_id, TaskState.FAILED, 100,
@@ -122,7 +124,8 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
                                 TaskDetailState.COMBINED_VIDEOS_COMPLETE, task_progress.dict())
 
         await update_task_state(redis_state, task_id, TaskState.PROCESSING, 95, TaskDetailState.GENERATING_FINAL_VIDEO)
-        final_video_path = await generate_final_video(task_id, params, combined_video_path, task_progress.audio_file, bgm_path,
+        final_video_path = await generate_final_video(task_id, params, combined_video_path, task_progress.audio_file,
+                                                      bgm_path,
                                                       subtitle_path, task_progress, redis_state)
         if not final_video_path:
             await update_task_state(redis_state, task_id, TaskState.FAILED, 100,
@@ -142,14 +145,12 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
         handle_task_failure(redis_state, task_id, TaskFailureReason.VALUE_ERROR, str(e), task_progress, draft)
     except Exception as e:
         handle_task_failure(redis_state, task_id, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO, str(e),
-                                  task_progress, draft)
+                            task_progress, draft)
 
     end_time = time.time()
     minutes, seconds = calculate_duration(start_time, end_time)
-    logger.info(f"使用时长为：{minutes} 分钟 {seconds} 秒")
+    logger.info(f"生成时长为：{minutes} 分钟 {seconds} 秒")
     return task_progress.dict()
-
-
 
 
 def restore_task_progress_from_draft(draft: Draft) -> TaskProgress:
@@ -169,7 +170,8 @@ def restore_task_progress_from_draft(draft: Draft) -> TaskProgress:
     return task_progress
 
 
-async def combine_videos(task_id, params, downloaded_videos, audio_file, images_files, task_progress, redis_state, draft):
+async def combine_videos(task_id, params, downloaded_videos, audio_file, images_files, task_progress, redis_state,
+                         draft):
     combined_video_path = []
     video_concat_mode = params.video_concat_mode
     if params.video_count > 1:
@@ -202,7 +204,6 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
     draft.save_to_file(utils.task_dir(task_id))
 
     return combined_video_path
-
 
 
 async def generate_final_video(task_id, params, combined_video_path, audio_file, bgm_file, subtitle_path, task_progress,
@@ -316,9 +317,8 @@ def handle_task_failure(redis_state, task_id, failure_reason, error, task_progre
     logger.error(f"task failed: {task_id} cause by {traceback.format_exc()}")
     if redis_state is not None:
         redis_state.update_task(task_id, state=TaskState.FAILED, progress=100, failure_reason=failure_reason,
-                                      error=error, **task_progress.dict())
+                                error=error, **task_progress.dict())
     else:
         logger.warning(f"redis_state is None, unable to update task {task_id} state to failed")
     # 保存草稿
     draft.save_to_file(utils.task_dir(task_id))
-

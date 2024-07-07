@@ -1,8 +1,6 @@
 import threading
 from typing import Callable, Any, Dict
-
 from loguru import logger
-
 from app.settings.config import settings
 import asyncio
 
@@ -33,14 +31,14 @@ class TaskManager:
         try:
             with self.lock:
                 self.current_tasks += 1
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             if asyncio.iscoroutinefunction(func):
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
                 loop.run_until_complete(func(*args, **kwargs))
-                loop.run_until_complete(loop.shutdown_asyncgens())
-                loop.close()
             else:
                 func(*args, **kwargs)
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.close()
         finally:
             self.task_done()
 

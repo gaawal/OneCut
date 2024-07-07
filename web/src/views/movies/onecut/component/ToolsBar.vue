@@ -108,7 +108,12 @@
           </div>
         </NPopover>
 
-        <NPopover :overlap="overlap" placement="bottom-start" trigger="click">
+        <NPopover
+          :overlap="overlap"
+          style="width: 800px; max-height: 100vh"
+          placement="bottom-start"
+          trigger="click"
+        >
           <template #trigger>
             <NButton strong secondary type="primary" class="tool-button">
               <div class="tool-button-container">

@@ -169,13 +169,16 @@ export const useVideoStore = defineStore('video', {
         } else {
           this.closeAudio()
           let requestUrl
+          let volume
           if (musicType === MusicType.BGM) {
+            volume = this.bgmVolume
             const musicName = playOptions[index].name
             let genre = playOptions[index].genres
             requestUrl = `/api/v1/audio/stream-audio/${encodeURIComponent(
               musicName
             )}?genre=${encodeURIComponent(genre)}`
           } else {
+            volume = this.voiceVolume
             const voiceName = playOptions[index].name
             requestUrl = `/api/v1/audio/stream-voice/${encodeURIComponent(voiceName)}`
           }
@@ -185,7 +188,7 @@ export const useVideoStore = defineStore('video', {
           if (response.status === 200) {
             const blob = response.data
             const audioUrl = URL.createObjectURL(blob)
-            await this.playAudio(audioUrl)
+            await this.playAudio(audioUrl, volume)
           } else {
             console.error('V2版本暂不支持播放')
           }
@@ -200,13 +203,13 @@ export const useVideoStore = defineStore('video', {
         console.error('播放音频时出错:', error)
       }
     },
-    async playAudio(audioUrl) {
+    async playAudio(audioUrl, volume) {
       try {
         this.currentAudio.pause()
         this.currentAudio.currentTime = 0
         this.currentAudio.src = audioUrl
         await this.currentAudio.play()
-        this.currentAudio.volume = this.bgmVolume
+        this.currentAudio.volume = volume
       } catch (error) {
         console.error('Error playing audio:', error)
       }
