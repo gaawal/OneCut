@@ -5,7 +5,7 @@
         <h3>实时热点新闻</h3>
       </div>
       <div class="header-right">
-        <NButton size="small" type="primary" @click="fetchHotSearches">
+        <NButton strong secondary size="small" type="success" @click="fetchHotSearches">
           <img :src="RefreshIcon" alt="热" class="hot-icon" />
           <span>点击刷新</span>
         </NButton>

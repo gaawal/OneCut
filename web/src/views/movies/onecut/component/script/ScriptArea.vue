@@ -152,10 +152,9 @@
 <script setup>
 import { ref } from 'vue'
 import { useVideoStore } from '@/store'
+const videoStore = useVideoStore()
 import { videoStyleOptions } from '@/config/videoOptions'
 import { GenerateTextIcon, CancelIcon, AIRefinementIcon, AIContinueIcon } from '@/config/videoIcons'
-
-const videoStore = useVideoStore()
 
 const tooltip = ref({
   visible: false,

@@ -25,7 +25,7 @@ router = APIRouter()
 task_manager = RedisTaskManager()
 
 
-router.post("/createVideos", response_model=TaskResponse, summary="生成短视频")
+@router.post("/createVideos", response_model=TaskResponse, summary="生成短视频")
 async def create_video(background_tasks: BackgroundTasks, request: Request, params: TaskVideoRequest):
 
     task_id = RedisKeyPrefix.VIDEO_TASK.format(utils.get_uuid())

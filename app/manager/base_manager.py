@@ -31,14 +31,25 @@ class TaskManager:
         try:
             with self.lock:
                 self.current_tasks += 1
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            if asyncio.iscoroutinefunction(func):
-                loop.run_until_complete(func(*args, **kwargs))
+            loop = None
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
+            if loop and not loop.is_running():
+                if asyncio.iscoroutinefunction(func):
+                    loop.run_until_complete(func(*args, **kwargs))
+                else:
+                    func(*args, **kwargs)
+                loop.run_until_complete(loop.shutdown_asyncgens())
+                loop.close()
             else:
-                func(*args, **kwargs)
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.close()
+                if asyncio.iscoroutinefunction(func):
+                    asyncio.run(func(*args, **kwargs))
+                else:
+                    func(*args, **kwargs)
         finally:
             self.task_done()
 

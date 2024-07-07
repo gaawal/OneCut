@@ -2,7 +2,6 @@ import json
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-
 from PIL import ImageFont
 from loguru import logger
 from moviepy.editor import *
@@ -13,6 +12,7 @@ from app.schemas.movies import VideoAspect, VideoConcatMode
 from app.services.redis_service import RedisService
 from app.utils import utils
 
+
 def get_duration(video_path):
     try:
         with VideoFileClip(video_path) as video:
@@ -20,6 +20,7 @@ def get_duration(video_path):
     except Exception as e:
         logger.error(f"Failed to get duration for video {video_path}: {str(e)}")
         return 0
+
 
 async def get_bgm_file(request, bgm_type="random", bgm_file=""):
     logger.info(f"get bgm file, bgm_type is {bgm_type}, bgm_file is {bgm_file}")
@@ -84,7 +85,8 @@ def resize_clip(clip, video_width, video_height):
     return clip
 
 
-def combine_videos(combined_video_path, video_paths, audio_file, video_aspect=VideoAspect.portrait, video_concat_mode=VideoConcatMode.random, max_clip_duration=5, images_files=[], threads=5):
+def combine_videos(combined_video_path, video_paths, audio_file, video_aspect=VideoAspect.portrait,
+                   video_concat_mode=VideoConcatMode.random, max_clip_duration=5, images_files=[], threads=5):
     audio_clip = AudioFileClip(audio_file)
     audio_duration = audio_clip.duration
     logger.info(f"max duration of audio: {audio_duration} seconds")
@@ -145,7 +147,8 @@ def combine_videos(combined_video_path, video_paths, audio_file, video_aspect=Vi
     video_clip = concatenate_videoclips(clips)
     video_clip = video_clip.set_fps(30)
     logger.info(f"combined video clip")
-    video_clip.write_videofile(filename=combined_video_path, threads=threads, logger=None, temp_audiofile_path=output_dir, audio_codec="aac", fps=30)
+    video_clip.write_videofile(filename=combined_video_path,
+                               threads=threads, logger=None, temp_audiofile_path=output_dir, audio_codec="aac", fps=30)
     video_clip.close()
     logger.success(f"combined video completed")
     return combined_video_path
@@ -268,7 +271,8 @@ def generate_video(video_path, audio_path, bgm_path, subtitle_path, output_file,
             logger.error(f"failed to add bgm: {str(e)}")
 
     video_clip = video_clip.set_audio(audio_clip)
-    video_clip.write_videofile(output_file, audio_codec="aac", temp_audiofile_path=output_dir, threads=params.n_threads or 2, logger=None, fps=30)
+    video_clip.write_videofile(output_file, audio_codec="aac",
+                               temp_audiofile_path=output_dir, threads=params.n_threads or 2, logger=None, fps=30)
     video_clip.close()
     logger.success("task completed")
 
@@ -285,4 +289,3 @@ def add_image_clips(image_paths, video_width, video_height, clip_duration):
         image_clips.append(img_clip)
 
     return image_clips
-

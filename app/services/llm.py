@@ -12,7 +12,7 @@ from openai import OpenAI
 from openai import AzureOpenAI
 from openai.types.chat import ChatCompletion
 
-from app.constant.video_const import VIDEO_STYLE_MAP
+from app.constant.video_const import VIDEO_STYLE_MAP, VIDEO_INSPIRED
 from app.settings import movies_config
 
 _max_retries = 5
@@ -257,6 +257,124 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - Language: {language}
     - Number of paragraphs: {paragraph_number}
     - Video category: {video_category}
+    """.strip()
+    logger.info(prompt)
+
+    def format_response(response):
+        # Clean the script
+        response = response.replace("*", "")
+        response = response.replace("#", "")
+
+        # Remove markdown syntax
+        response = re.sub(r"\[.*\]", "", response)
+        response = re.sub(r"\(.*\)", "", response)
+
+        # Split the script into paragraphs
+        paragraphs = response.split("\n\n")
+
+        # Select the specified number of paragraphs
+        selected_paragraphs = paragraphs[:paragraph_number]
+
+        # Join the selected paragraphs into a single string
+        return "\n\n".join(selected_paragraphs)
+
+    final_response = None
+    for i in range(_max_retries):
+        try:
+            response = _generate_response(prompt=prompt)
+            if response:
+                final_response = response
+            else:
+                logger.error("GPT returned an empty response")
+
+            # Check for error messages in the response
+            if final_response and "当日额度已消耗完" in final_response:
+                raise ValueError(final_response)
+
+            if final_response:
+                break
+        except Exception as e:
+            logger.error(f"Failed to generate script and terms: {e}")
+
+        if i < _max_retries:
+            logger.warning(f"Failed to generate video script and terms, trying again... {i + 1}")
+
+    if not final_response:
+        raise RuntimeError("Failed to generate video script and terms after maximum retries.")
+
+    try:
+        response_json = json.loads(final_response)
+        logger.info(f"Got final response,{response_json}")
+        video_script = format_response(response_json["video_script"])
+        video_terms = response_json["video_terms"]
+        video_title = response_json["title"]
+    except Exception as e:
+        raise RuntimeError(f"Failed to parse response JSON: {e}")
+
+    return video_script, video_terms, video_title
+
+
+def generate_script_and_terms_by_inpire(video_inspire: str, video_inspire_keyword: str,
+                                        language: str = "", paragraph_number: int = 1,
+                                        amount: int = 5, word_count: int = 300):
+    prompt = f"""
+    ## 目标:
+        1. 根据视频的灵感类型和灵感关键词生成一个短视频主题脚本
+        2. 生成{amount}个用于搜索素材视频的搜索术语
+        3. 为视频脚本生成一个标题
+        4.仅生成单个主题的视频文案脚本，不可多个主题
+
+    ## 视频脚本结构的约束：
+        - 视频灵感风格结构: {VIDEO_INSPIRED.get(video_inspire).get("structure")}
+        - 比如这个例子: "{VIDEO_INSPIRED.get(video_inspire).get("example")}"
+        - 围绕提供的灵感关键词来生成文案，如果没有提供关键词，则由AI随机关键词来生成文案
+        - 请根参考我的例子生成类似文案风格生成视频脚本
+        
+
+    ## 视频脚本的约束:
+        1. 脚本应为{paragraph_number}段，每段用换行隔开，每段不少于200字
+        2. 不得提及此提示
+        3. 直接切入主题，不要以“不必要的欢迎词”开始
+        4. 不包含任何markdown或格式，不使用标题
+        5. 仅返回脚本内容
+        6. 每段开头不包含“配音”或类似提示
+        7. 不提及提示或脚本本身的内容，不提及段落或行数
+        8. 根据视频主题的语言进行响应
+
+
+    ## 视频搜索术语的约束:
+        - 你是一名搜索优化助手
+        - 分析给定的视频灵感风格，生成有效的搜索关键词（英文），用于在Pixabay上寻找相关的图片和视频素材
+        - 每个搜索术语应由两个词汇组成，用“+”号连接
+        - 使用具体、相关的关键词确保精确搜索结果
+        - 使用引号来精确匹配短语，使用减号排除不需要的结果
+        - 如适用，建议类别
+        - 考虑使用同义词和相关词
+        - 生成优化后的搜索关键词，以JSON格式输出到video_terms字段
+
+    ## 标题的约束:
+        1. 生成反映视频脚本主要内容的标题，不使用“揭秘：xxx”开头
+        2. 参考以下任一法则生成标题:
+            - 用夸张的词吸引注意力
+            - 用疑问句或反问句引发思考
+            - 用数字或数据增加可信度
+            - 用反常识的信息制造反转效果
+            - 用省略号制造悬念
+            - 利用读者的身份吸引注意力（如大学生、宝妈、打工人）
+
+    ## Output Example:
+    {{
+        "video_script": "Generated video script here...",
+        "video_terms": ["term1+term2+term3", "term4+term5+term6", "term7+term8+term9"],
+        "title": "Generated title here"
+    }}
+
+    # Initialization:
+    - Video Inpiration: '{video_inspire}'
+    - Video Inpiration Keyword: '{video_inspire_keyword}'
+    - Language: {language}
+    - Number of paragraphs: {paragraph_number}
+    - Word limit:{word_count - 10}-{word_count + 100}，
     """.strip()
     logger.info(prompt)
 

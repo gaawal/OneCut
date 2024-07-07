@@ -34,6 +34,7 @@ export default {
   // llm
   getScripts: (data = {}) => request.post('/llm/scripts', data),
   getScriptsTerms: (data = {}) => request.post('/llm/scripts_terms', data),
+  getScriptsTermsByInspire: (data = {}) => request.post('/llm/inspire_scripts_terms', data),
   refineScripts: (data = {}) => request.post('/llm/refine-scripts', data),
   continueScripts: (data = {}) => request.post('/llm/continue-scripts', data),
   getHotSpot: (params = {}) => request.get('/llm/hot-spot', { params }),

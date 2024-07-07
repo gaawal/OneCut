@@ -122,6 +122,8 @@ class VideoScriptParams:
     weibo_mid: Optional[str] = ""
     weibo_url: Optional[str] = ""
     weibo_title: Optional[str] = ""
+    video_inspire: Optional[str] = ""
+    video_inspire_keyword: Optional[str] = ""
 
 
 class VideoTermsParams:

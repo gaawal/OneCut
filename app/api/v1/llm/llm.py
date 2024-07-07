@@ -33,7 +33,7 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
             logger.success(f"获取微博热搜话题【{body.weibo_title}】缓存成功")
             weibo_article_data = json.loads(cached_data)
         else:
-            weibo_article_data = await fetch_hot_article(body.weibo_mid,body.weibo_url)
+            weibo_article_data = await fetch_hot_article(body.weibo_mid, body.weibo_url)
             logger.success(f"实时获取微博热搜话题:{body.weibo_title} 成功")
             # 将数据缓存到 Redis 1天更新一次
             await redis_service.set(REDIS_HOT_ARTICLE_KEY.format(body.weibo_mid),
@@ -51,6 +51,22 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
                                                                            video_category=body.video_category,
                                                                            amount=body.amount,
                                                                            word_count=body.word_count)
+    response = {
+        "video_title": video_title,
+        "video_script": video_script,
+        "video_terms": video_terms
+    }
+    return Success(data=response)
+
+
+@router.post("/inspire_scripts_terms", response_model=VideoScriptResponse, summary="通过文案灵感类别为视频创建脚本以及获取对应的关键词")
+async def generate_video_script_and_terms_by_inspire(request: Request, body: VideoScriptRequest):
+    logger.info("Generating video by inspire，body is {}".format(body))
+    video_script, video_terms, video_title = llm.generate_script_and_terms_by_inpire(video_inspire=body.video_inspire,
+                                                                                     video_inspire_keyword=body.video_inspire_keyword,
+                                                                                     paragraph_number=body.paragraph_number,
+                                                                                     amount=body.amount,
+                                                                                     word_count=body.word_count)
     response = {
         "video_title": video_title,
         "video_script": video_script,

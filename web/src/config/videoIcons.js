@@ -19,6 +19,21 @@ import AIRefinementIcon from '@/assets/icon/tools/AIRefinementIcon.png'
 import AIContinueIcon from '@/assets/icon/tools/AIContinueIcon.png'
 import InspirationIcon from '@/assets/icon/tools/InspirationIcon.png'
 
+import XiaohongshuIcon from '@/assets/icon/inspire/XiaohongshuIcon.png'
+import ShafaIcon from '@/assets/icon/inspire/ShafaIcon.png'
+import BoyIcon from '@/assets/icon/inspire/BoyIcon.png'
+import PetIcon from '@/assets/icon/inspire/PetIcon.png'
+import BaoxianIcon from '@/assets/icon/inspire/baoxianIcon.png'
+import House from '@/assets/icon/inspire/House.png'
+import Kouhong from '@/assets/icon/inspire/Kouhong.png'
+import Tandian from '@/assets/icon/inspire/Tandian.png'
+import Taobao from '@/assets/icon/inspire/Taobao.png'
+import Health from '@/assets/icon/inspire/Health.png'
+import History from '@/assets/icon/inspire/History.png'
+import Heal from '@/assets/icon/inspire/Heal.png'
+import Maikease from '@/assets/icon/inspire/Maikease.png'
+import Book from '@/assets/icon/inspire/Book.png'
+
 export {
   MaterialSettingsIcon,
   AudioSettingsIcon,
@@ -39,4 +54,18 @@ export {
   AIRefinementIcon,
   AIContinueIcon,
   InspirationIcon,
+  XiaohongshuIcon,
+  ShafaIcon,
+  BoyIcon,
+  PetIcon,
+  BaoxianIcon,
+  House,
+  Kouhong,
+  Tandian,
+  Taobao,
+  Health,
+  History,
+  Heal,
+  Maikease,
+  Book,
 }

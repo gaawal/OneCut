@@ -36,7 +36,7 @@
             </NButton>
           </template>
           <div class="video-setting-container">
-            <HotScripts />
+            <Inspires />
           </div>
         </NPopover>
         <NPopover
@@ -223,6 +223,7 @@ import {
   InspirationIcon,
 } from '@/config/videoIcons' //导入视频图标
 import HotScripts from './hotspot/HotScripts.vue'
+import Inspires from './inspiration/Inspires.vue'
 import MaterialSettings from './material/MaterialSettings.vue'
 import AudioSettings from './audio/AudioSettings.vue'
 import VoiceSettings from './voice/VoiceSettings.vue'

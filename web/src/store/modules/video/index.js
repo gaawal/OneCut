@@ -15,6 +15,8 @@ export const useVideoStore = defineStore('video', {
     videoKeywords: [],
     videoTitle: '',
     videoCategory: 'generic',
+    inspirationKeyword: '', //视频灵感关键词语句
+    selectedInspiration: {}, //当前选中视频灵感类型
     scriptLanguage: 'auto-detect',
     videoSource: 'pixabay',
     videoLayout: 'random',
@@ -86,7 +88,6 @@ export const useVideoStore = defineStore('video', {
         }
 
         // 如果有微博参数，加入请求体
-        // 如果有微博参数，加入请求体
         if (this.weiboUrl && this.weiboUrl.trim() !== '') {
           requestBody.weibo_mid = this.weiboMid
           requestBody.weibo_url = this.weiboUrl
@@ -98,7 +99,7 @@ export const useVideoStore = defineStore('video', {
         const scriptResponse = await api.getScriptsTerms(requestBody)
         this.videoScript = scriptResponse.data.video_script
         this.videoKeywords = scriptResponse.data.video_terms
-        this.videoTitle = scriptResponse.data.video_title
+        this.videoTheme = scriptResponse.data.video_title
       } catch (error) {
         console.error('生成失败', error)
         $message?.error('生成失败，请重试')
@@ -107,7 +108,35 @@ export const useVideoStore = defineStore('video', {
         this.loadingScript = false
       }
     },
-
+    async handleGenerateScriptByInspire() {
+      //
+      if (!this.selectedInspiration.value || this.selectedInspiration.value.trim() === '') {
+        $message?.error('请先选中灵感才能生成文案哦')
+        return
+      }
+      try {
+        // 构建请求体
+        this.loadingScript = true
+        const requestBody = {
+          video_inspire: this.selectedInspiration.value,
+          video_inspire_keyword: this.inspirationKeyword,
+          word_count: this.wordCount,
+          paragraph_number: this.paragraphNumber,
+          amount: 5,
+        }
+        // 发起请求
+        const scriptResponse = await api.getScriptsTermsByInspire(requestBody)
+        this.videoScript = scriptResponse.data.video_script
+        this.videoKeywords = scriptResponse.data.video_terms
+        this.videoTheme = scriptResponse.data.video_title
+      } catch (error) {
+        console.error('生成失败', error)
+        $message?.error('生成失败，请重试')
+        this.loadingScript = false
+      } finally {
+        this.loadingScript = false
+      }
+    },
     async handleAIRefinementSciprt() {
       if (!this.videoScript || this.videoScript.trim() === '') {
         $message?.error('请先生成文案再进行润色哦')
