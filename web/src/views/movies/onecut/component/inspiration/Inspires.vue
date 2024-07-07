@@ -14,7 +14,7 @@
       </div>
       <div>
         <NButton strong secondary type="success" @click="generateRandomInspiration">
-          生成灵感
+          生成文案
         </NButton>
       </div>
     </div>
@@ -49,6 +49,7 @@ import {
   Maikease,
   MaterialSettingsIcon,
   Book,
+  ET,
 } from '@/config/videoIcons' //导入视频图标
 import { useVideoStore } from '@/store'
 const videoStore = useVideoStore()
@@ -71,6 +72,15 @@ const cards = ref([
     icon: History,
     role: 1,
     value: 'historical_knowledge',
+  },
+  {
+    name: '未解之谜',
+    subhead: '讲述一个历史上的未解之谜事件，满足你的好奇心',
+    category: '短视频',
+    weights: 11,
+    icon: ET,
+    role: 1,
+    value: 'unsolved_mystery',
   },
   {
     name: '情感语录',

@@ -33,6 +33,7 @@ import History from '@/assets/icon/inspire/History.png'
 import Heal from '@/assets/icon/inspire/Heal.png'
 import Maikease from '@/assets/icon/inspire/Maikease.png'
 import Book from '@/assets/icon/inspire/Book.png'
+import ET from '@/assets/icon/inspire/ET.png'
 
 export {
   MaterialSettingsIcon,
@@ -68,4 +69,5 @@ export {
   Heal,
   Maikease,
   Book,
+  ET,
 }

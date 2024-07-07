@@ -100,6 +100,7 @@ export const useVideoStore = defineStore('video', {
         this.videoScript = scriptResponse.data.video_script
         this.videoKeywords = scriptResponse.data.video_terms
         this.videoTheme = scriptResponse.data.video_title
+        this.videoTitle = scriptResponse.data.video_title
       } catch (error) {
         console.error('生成失败', error)
         $message?.error('生成失败，请重试')
@@ -129,6 +130,7 @@ export const useVideoStore = defineStore('video', {
         this.videoScript = scriptResponse.data.video_script
         this.videoKeywords = scriptResponse.data.video_terms
         this.videoTheme = scriptResponse.data.video_title
+        this.videoTitle = scriptResponse.data.video_title
       } catch (error) {
         console.error('生成失败', error)
         $message?.error('生成失败，请重试')
