@@ -215,7 +215,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         - 请根参考我的例子生成类似文案风格生成视频脚本
 
     ## 视频脚本的约束:
-        1. 脚本应为{paragraph_number}段，每段用换行隔开，字数在{word_count - 10}至{word_count + 100}字，每段不少于200字
+        1. 脚本应为{paragraph_number}段，每段用换行隔开，每段不少于200字
         2. 不得提及此提示
         3. 直接切入主题，不要以“不必要的欢迎词”开始
         4. 不包含任何markdown或格式，不使用标题
@@ -256,7 +256,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - Video subject: {video_subject}
     - Language: {language}
     - Number of paragraphs: {paragraph_number}
-    - Video category: {video_category}
+    - Word limit:{word_count - 10}-{word_count + 100}，
     """.strip()
     logger.info(prompt)
 

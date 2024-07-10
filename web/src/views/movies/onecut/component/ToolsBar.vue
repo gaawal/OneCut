@@ -261,13 +261,6 @@ const videoTaskId = ref('')
 
 const handleGenerateVideo = async () => {
   videoStore.showTaskProgressModal = true
-  // if (videoTaskId.value) {
-  //   // 已有任务正在执行，不重复创建
-  //   $message.info('当前已有视频生成任务正在执行，请稍候再执行...')
-  //   pollTaskProgress(videoTaskId.value)
-  //   return
-  // }
-
   videoStore.progressPercentage = 1
   videoStore.currentStep = 1
   const params = {
@@ -298,11 +291,11 @@ const handleGenerateVideo = async () => {
     subtitle_position: videoStore.subtitlePosition,
     font_name: videoStore.subtitleFont,
     text_fore_color: videoStore.subtitleColor,
-    text_background_color: 'transparent',
+    text_background_color: videoStore.subtitleBackgroundColor,
     font_size: videoStore.subtitleSize,
     stroke_color: videoStore.subtitleBorderColor,
     stroke_width: videoStore.subtitleBorderThickness,
-    n_threads: 2,
+    n_threads: 8,
     paragraph_number: 1,
     amount: 5,
     weibo_mid: videoStore.weiboMid,
