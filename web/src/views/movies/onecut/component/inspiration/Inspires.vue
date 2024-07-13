@@ -226,7 +226,6 @@ const generateContent = async () => {
   }
 }
 </script>
-
 <style scoped>
 .inspiration-page {
   padding: 20px;
@@ -273,6 +272,11 @@ const generateContent = async () => {
 
 .card:hover {
   transform: scale(1.05);
+}
+
+.card.selected {
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.6); /* 半透明悬浮阴影 */
+  background-color: #3b3b3b; /* 选中时稍微加深背景色 */
 }
 
 .card-icon {
