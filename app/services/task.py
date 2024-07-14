@@ -77,9 +77,9 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
             draft.add_playback_info("audios", {"path": audio_file, "duration": audio_duration,
                                                "effects": {"volume": params.voice_volume}})
             draft.save_to_file(utils.task_dir(task_id))
-
-            subtitle_path = await generate_subtitle(task_id, params, audio_file, video_script, sub_maker)
             bgm_path = await get_bgm_file(request=request, bgm_type=params.bgm_type, bgm_file=params.bgm_file)
+            subtitle_path = await generate_subtitle(task_id, params, audio_file, video_script, sub_maker)
+
             images_files = await get_images_files(request=request, params=params)
             await update_task_state(redis_state, task_id, TaskState.PROCESSING, 50, TaskDetailState.DOWNLOADING_VIDEOS)
 
@@ -142,6 +142,7 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
 
         logger.success(f"task {task_id} finished, generated final video: {final_video_path}.")
     except ValueError as e:
+
         handle_task_failure(redis_state, task_id, TaskFailureReason.VALUE_ERROR, str(e), task_progress, draft)
     except Exception as e:
         handle_task_failure(redis_state, task_id, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO, str(e),

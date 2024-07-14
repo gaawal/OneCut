@@ -93,7 +93,7 @@ const subtitlePreviewStyle = computed(() => {
       break
   }
 
-  const fontSizeRatio = 0.3
+  const fontSizeRatio = 0.2
   const strokeWidthRatio = 0.1
 
   return {

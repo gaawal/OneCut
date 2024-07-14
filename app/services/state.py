@@ -18,6 +18,7 @@ class BaseState(ABC):
     def get_task(self, task_id: str):
         pass
 
+
 # Redis state management
 class RedisState(BaseState):
 
@@ -41,7 +42,8 @@ class RedisState(BaseState):
             self._redis.hset(task_id, field, str(value))
         # Set the timeout for the task_id
         expire_time = 3600
-        self._redis.expire(task_id,expire_time)
+        self._redis.expire(task_id, expire_time)
+
     def get_task(self, task_id: str):
         task_data = self._redis.hgetall(task_id)
         if not task_data:

@@ -31,25 +31,16 @@ class TaskManager:
         try:
             with self.lock:
                 self.current_tasks += 1
-            loop = None
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
+
+            if asyncio.iscoroutinefunction(func):
+                # 为每个线程创建一个新的事件循环
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-
-            if loop and not loop.is_running():
-                if asyncio.iscoroutinefunction(func):
-                    loop.run_until_complete(func(*args, **kwargs))
-                else:
-                    func(*args, **kwargs)
+                loop.run_until_complete(func(*args, **kwargs))
                 loop.run_until_complete(loop.shutdown_asyncgens())
                 loop.close()
             else:
-                if asyncio.iscoroutinefunction(func):
-                    asyncio.run(func(*args, **kwargs))
-                else:
-                    func(*args, **kwargs)
+                func(*args, **kwargs)
         finally:
             self.task_done()
 
