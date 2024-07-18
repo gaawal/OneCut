@@ -91,9 +91,13 @@ async def start(task_id, redis_state, params: VideoParams, request: Request):
 
             images_files = await get_images_files(request=request, params=params)
             await save_task_state(redis_state, task_id, TaskState.PROCESSING, 50, TaskDetailState.DOWNLOADING_VIDEOS, draft)
-
-            downloaded_videos = await material.download_videos(task_id, video_terms, params.video_source, params.video_aspect, params.video_concat_mode, audio_duration, params.video_clip_duration, redis_state, draft, utils.task_dir(task_id))
-
+            downloaded_videos = []
+            if params.weibo_mid:
+                logger.info("微博话题模式，视频素材从本地获取")
+                downloaded_videos = material.get_local_videos(audio_duration, params.video_clip_duration)
+            if not downloaded_videos:
+                downloaded_videos = await material.download_videos(task_id, video_terms, params.video_source, params.video_aspect, params.video_concat_mode, audio_duration, params.video_clip_duration, redis_state, draft, utils.task_dir(task_id))
+            logger.success("获取视频素材文件为：", downloaded_videos)
             if not subtitle_path:
                 await save_task_state(redis_state, task_id, TaskState.FAILED, 50, TaskFailureReason.FAILED_GENERATING_SUBTITLE, draft, TaskFailureReason.FAILED_GENERATING_SUBTITLE)
                 return
