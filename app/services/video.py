@@ -283,7 +283,7 @@ def add_image_clips(image_paths, video_width, video_height, clip_duration):
     for image_path in image_paths:
         img_clip = ImageClip(image_path)
 
-        img_clip = img_clip.resize(height=video_height*0.6)
+        img_clip = img_clip.resize(height=video_height*0.9)
         img_clip = img_clip.set_position(("center", "center"))
         img_clip = img_clip.set_duration(clip_duration).fadeout(1).resize(lambda t: 1 + 0.03 * t)
         image_clips.append(img_clip)

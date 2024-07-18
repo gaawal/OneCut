@@ -12,6 +12,8 @@ class TaskState:
 
 
 class TaskDetailState:
+    FAILED ='failed'
+    SUCCESS = 'success'
     GENERATING_SCRIPT = "generating_script"
     SCRIPT_GENERATION_COMPLETE = "script_generation_complete"
     GENERATING_AUDIO = "generating_audio"

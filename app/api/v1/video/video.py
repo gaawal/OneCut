@@ -47,6 +47,7 @@ async def create_video(background_tasks: BackgroundTasks, request: Request, para
             raise ValueError(tr("Please Enter the Pixabay API Key"))
         if not params.voice_name:
             raise ValueError(tr("Please select a Valid Voice Source"))
+
         redis_state.update_task(task_id)
         task_manager.add_task(tm.start, task_id=task_id, redis_state=redis_state, params=params, request=request)
         logger.success(f"video created: {utils.to_json(task)}\ntask_id is {task_id} ")

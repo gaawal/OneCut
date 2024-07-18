@@ -77,3 +77,6 @@ class Draft:
         with open(draft_file, "r", encoding="utf-8") as f:
             self.draft = json.load(f)
         return self
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.draft

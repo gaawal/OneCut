@@ -37,6 +37,7 @@ numpy = "<2.0.0"
 onnxruntime = "^1.18.0"
 opencv-python = ">=4.9.0.80,<4.10.0.0" # 添加这一行解决module 'PIL.Image' has no attribute 'ANTIALIAS'
 playwright = "^1.44.0"  # 安装次模块后需要执行playwright install 安装浏览器内核
+aerich = "^0.7.2"
 
 [tool.black]
 line-length = 120
@@ -62,3 +63,7 @@ ignore = [
     "F403",
     "F405",
 ]
+[tool.aerich]
+tortoise_orm = "app.settings.config.TORTOISE_ORM"
+location = "./migrations"
+src_folder = "./."

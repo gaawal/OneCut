@@ -50,6 +50,12 @@ const scriptLanguageOptions = [
 // 新的文案风格选项
 const videoStyleOptions = [
   {
+    label: '观点分享',
+    value: 'opinion_sharing',
+    description: '事实+个人感受+问题+观点+故事+总结',
+    img: opinionSharingImg,
+  },
+  {
     label: '爆款开头',
     value: 'generic',
     description: '爆款+万能开头',
@@ -97,12 +103,7 @@ const videoStyleOptions = [
     description: '利益传递+强化期待+解决办法+结尾',
     img: benefitTransferImg,
   },
-  {
-    label: '观点分享',
-    value: 'opinion_sharing',
-    description: '事实+个人感受+问题+观点+故事+总结',
-    img: opinionSharingImg,
-  },
+
   {
     label: '知识分享',
     value: 'knowledge_sharing',

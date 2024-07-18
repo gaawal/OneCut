@@ -48,7 +48,7 @@ class Settings(BaseSettings):
         },
         "apps": {
             "models": {
-                "models": ["app.models"],
+                "models": ["app.models","aerich.models"],# aerich.models是必须写的，写了之后会去找到对应的模型类然后创建一个迁移记录表。
                 "default_connection": "sqlite",
             },
         },
@@ -68,3 +68,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+TORTOISE_ORM = settings.TORTOISE_ORM
