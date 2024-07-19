@@ -39,6 +39,15 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
             await redis_service.set(REDIS_HOT_ARTICLE_KEY.format(body.weibo_mid),
                                     json.dumps(weibo_article_data, ensure_ascii=False),
                                     expire=RedisExpireTime.ONE_DAY)
+            hot_data = await redis_service.get(REDIS_HOTSEARCH_KEY)
+            if hot_data:
+                hot_data = json.loads(hot_data)
+                for i, item in enumerate(hot_data):
+                    if body.weibo_mid == item.get('mid'):
+                        hot_data[i]["collect_status"] = True
+            await redis_service.set(REDIS_HOTSEARCH_KEY, json.dumps(hot_data, ensure_ascii=False),
+                                    expire=RedisExpireTime.THIRTY_MINUTES)
+
             logger.success(f"{body.weibo_mid} 微博热搜话题 {body.weibo_title} 保存redis成功.")
         # 获取微博数据内容条数 影响ai分析微博内容
         get_content_counts = 5

@@ -59,6 +59,14 @@ class SchedulerTasks:
                                 await redis_service.set(REDIS_HOT_ARTICLE_KEY.format(weibo_mid),
                                                         json.dumps(weibo_article_cache, ensure_ascii=False),
                                                         expire=RedisExpireTime.ONE_DAY)
+                                hot_data = await redis_service.get(REDIS_HOTSEARCH_KEY)
+                                if hot_data:
+                                    hot_data = json.loads(hot_data)
+                                    for i, item in enumerate(hot_data):
+                                        if weibo_mid == item.get('mid'):
+                                            hot_data[i]["collect_status"] = True
+                                await redis_service.set(REDIS_HOTSEARCH_KEY, json.dumps(hot_data, ensure_ascii=False),
+                                                        expire=RedisExpireTime.THIRTY_MINUTES)
                             break
                         else:
                             raise Exception(f"定时采集---{weibo_mid}-{weibo_title} 失败")
