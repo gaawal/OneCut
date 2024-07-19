@@ -299,6 +299,7 @@ const handleGenerateVideo = async () => {
     paragraph_number: 1,
     amount: 5,
     weibo_mid: videoStore.weiboMid,
+    weibo_title: videoStore.weiboTitle,
   }
   console.log(JSON.stringify(params))
   try {

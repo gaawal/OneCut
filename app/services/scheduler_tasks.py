@@ -28,7 +28,7 @@ class SchedulerTasks:
         if hotsearch_data:
             for i, hotsearch in enumerate(hotsearch_data):
                 # 如果已经采集过了，更新采集状态
-                if await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(hotsearch.get('mid'))):
+                if await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(hotsearch.get('title'))):
                     hotsearch_data[i]['status'] = True
                 else:
                     hotsearch_data[i]['status'] = False
@@ -47,28 +47,28 @@ class SchedulerTasks:
                     weibo_mid = item.get('mid')
                     weibo_url = item.get('url')
                     weibo_title = item.get('title')
-                    weibo_article_cache = await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(weibo_mid))
+                    weibo_article_cache = await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(weibo_title))
                     if weibo_article_cache:
-                        logger.warning(f"{weibo_mid}-{weibo_title} 已采集成功，无需重复采集")
+                        logger.warning(f"{weibo_title} 已采集成功，无需重复采集")
                         continue
                     else:
                         if weibo_article_cache := await fetch_hot_article(weibo_mid, weibo_url):
-                            logger.success(f"定时采集---{weibo_mid}-{weibo_title} 成功")
+                            logger.success(f"定时采集-{weibo_title} 成功")
                             # 将数据缓存到 Redis
                             if weibo_article_cache:
-                                await redis_service.set(REDIS_HOT_ARTICLE_KEY.format(weibo_mid),
+                                await redis_service.set(REDIS_HOT_ARTICLE_KEY.format(weibo_title),
                                                         json.dumps(weibo_article_cache, ensure_ascii=False),
                                                         expire=RedisExpireTime.ONE_DAY)
                                 hot_data = await redis_service.get(REDIS_HOTSEARCH_KEY)
                                 if hot_data:
                                     hot_data = json.loads(hot_data)
                                     for i, item in enumerate(hot_data):
-                                        if weibo_mid == item.get('mid'):
+                                        if weibo_title == item.get('weibo_title'):
                                             hot_data[i]["collect_status"] = True
                                 await redis_service.set(REDIS_HOTSEARCH_KEY, json.dumps(hot_data, ensure_ascii=False),
                                                         expire=RedisExpireTime.THIRTY_MINUTES)
                             break
                         else:
-                            raise Exception(f"定时采集---{weibo_mid}-{weibo_title} 失败")
+                            raise Exception(f"定时采集-{weibo_title} 失败")
         except Exception as e:
             logger.error(f"{str(e)}")

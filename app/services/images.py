@@ -15,13 +15,13 @@ from app.services.redis_service import RedisService
 
 
 async def get_images_files(request: Request, params: VideoParams):
-    logger.info(f"get images file begin,weibo mid is {params.weibo_mid}")
+    logger.info(f"get images file begin,weibo title is {params.weibo_title}")
     images_path = []
-    if params.weibo_mid:
+    if params.weibo_title:
         logger.info(f"从微博热搜获取图片素材")
         # 从微博热搜获取图片素材
         redis_service = RedisService(request.app.state.redis)
-        cache_weibo_article_key = RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(params.weibo_mid)
+        cache_weibo_article_key = RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(params.weibo_title)
         cached_data = await redis_service.get(cache_weibo_article_key)
         images_path = []
         if cached_data:

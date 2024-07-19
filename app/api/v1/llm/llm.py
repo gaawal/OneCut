@@ -24,7 +24,7 @@ REDIS_HOT_ARTICLE_KEY = RedisKeyPrefix.WEIBO_HOT_ARTICLE
 
 @router.post("/scripts_terms", response_model=VideoScriptResponse, summary="为视频创建脚本以及获取对应的关键词")
 async def generate_video_script_and_terms(request: Request, body: VideoScriptRequest):
-    if (body.weibo_url and body.weibo_mid):
+    if (body.weibo_url and body.weibo_title):
         # 如果要从微博热搜获取微博信息
         logger.info(f"开始获取实时微博热搜话题 {body.weibo_url} 【{body.weibo_title}】")
         redis_service = get_redis_service(request)
@@ -48,7 +48,7 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
             await redis_service.set(REDIS_HOTSEARCH_KEY, json.dumps(hot_data, ensure_ascii=False),
                                     expire=RedisExpireTime.THIRTY_MINUTES)
 
-            logger.success(f"{body.weibo_mid} 微博热搜话题 {body.weibo_title} 保存redis成功.")
+            logger.success(f"微博热搜话题 {body.weibo_title} 保存redis成功.")
         # 获取微博数据内容条数 影响ai分析微博内容
         get_content_counts = 5
         weibo_summary = generate_weibo_summary(weibo_article_data, get_content_counts)  # 假设需要获取5条评论
@@ -172,7 +172,7 @@ async def get_hot_spot(request: Request):
             # 将数据缓存到 Redis
             for i, hotsearch in enumerate(hotsearch_data):
                 # 如果已经采集过了，更新采集状态
-                if await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(hotsearch.get('mid'))):
+                if await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(hotsearch.get('title'))):
                     hotsearch_data[i]['collect_status'] = True
                 else:
                     hotsearch_data[i]['collect_status'] = False
