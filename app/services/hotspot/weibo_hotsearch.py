@@ -24,13 +24,13 @@ async def get_weibo_hotsearch():
             raw_data = response.json().get('data', {})
             hotsearch_data = []
             for item in raw_data.get('realtime', {}):
-                if item.get('mid') !=0:
+                if item.get("mid") != 0:
                     hotsearch_data.append({
                         "mid": item.get("mid"),  # 热搜id
                         "category": item.get("category"),
                         "title": item.get("note"),
                         "hot": item.get("num"),
-                        "url": f"https://s.weibo.com/weibo?q=%23{item.get('note')}%23"
+                        "url": f"https://s.weibo.com/weibo?q=%23{item.get('note')}%23",
                     })
 
             logger.success("Weibo data saved redis successfully.")

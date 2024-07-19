@@ -35,6 +35,8 @@ import Maikease from '@/assets/icon/inspire/Maikease.png'
 import Book from '@/assets/icon/inspire/Book.png'
 import ET from '@/assets/icon/inspire/ET.png'
 
+import CollectIcon from '@/assets/icon/tools/CollectIcon.png'
+
 export {
   MaterialSettingsIcon,
   AudioSettingsIcon,
@@ -70,4 +72,5 @@ export {
   Maikease,
   Book,
   ET,
+  CollectIcon,
 }

@@ -26,9 +26,14 @@ class SchedulerTasks:
         hotsearch_data = await get_weibo_hotsearch()
         # 将数据缓存到 Redis
         if hotsearch_data:
+            for i, hotsearch in enumerate(hotsearch_data):
+                # 如果已经采集过了，更新采集状态
+                if await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(hotsearch.get('mid'))):
+                    hotsearch_data[i]['status'] = True
+                else:
+                    hotsearch_data[i]['status'] = False
             await redis_service.set(REDIS_HOTSEARCH_KEY, json.dumps(hotsearch_data, ensure_ascii=False),
                                     expire=RedisExpireTime.THIRTY_MINUTES)
-
 
     @staticmethod
     async def get_weibo_articles_to_cache(app: FastAPI):
@@ -44,14 +49,18 @@ class SchedulerTasks:
                     weibo_title = item.get('title')
                     weibo_article_cache = await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(weibo_mid))
                     if weibo_article_cache:
-                        logger.warning(f"{weibo_mid}:{weibo_title}已采集成功，无需重复采集")
+                        logger.warning(f"{weibo_mid}-{weibo_title} 已采集成功，无需重复采集")
                         continue
                     else:
-                        if await fetch_hot_article(weibo_mid, weibo_url):
-                            logger.success(f"定时采集---{weibo_mid} {weibo_title} 成功")
+                        if weibo_article_cache := await fetch_hot_article(weibo_mid, weibo_url):
+                            logger.success(f"定时采集---{weibo_mid}-{weibo_title} 成功")
+                            # 将数据缓存到 Redis
+                            if weibo_article_cache:
+                                await redis_service.set(REDIS_HOT_ARTICLE_KEY.format(weibo_mid),
+                                                        json.dumps(weibo_article_cache, ensure_ascii=False),
+                                                        expire=RedisExpireTime.ONE_DAY)
                             break
                         else:
-                            raise Exception(f"定时采集---{weibo_mid} {weibo_title} 失败")
+                            raise Exception(f"定时采集---{weibo_mid}-{weibo_title} 失败")
         except Exception as e:
             logger.error(f"{str(e)}")
-

@@ -41,6 +41,7 @@
           <div class="hot-search-category"></div>
         </div>
         <div class="buttons">
+          <img v-if="item.collect_status" :src="CollectIcon" alt="已采集" class="hot-icon" />
           <NButton strong secondary size="small" type="primary" @click.stop="generateText(item)">
             <img :src="GenerateTextIcon" alt="热" class="hot-icon" />
             <span style="margin-left: 5px">生成文案</span>
@@ -58,7 +59,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api'
-import { HotMidIcon, GenerateTextIcon, OpenBrowserIcon, RefreshIcon } from '@/config/videoIcons'
+import {
+  HotMidIcon,
+  GenerateTextIcon,
+  OpenBrowserIcon,
+  RefreshIcon,
+  CollectIcon,
+} from '@/config/videoIcons'
 import { useVideoStore } from '@/store'
 
 const videoStore = useVideoStore()
@@ -203,8 +210,8 @@ onMounted(() => {
 .hot-icon {
   margin-left: 2px;
   margin-right: 2px;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 .hot-search-category {

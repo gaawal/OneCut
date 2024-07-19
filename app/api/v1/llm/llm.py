@@ -109,12 +109,18 @@ async def get_hot_spot(request: Request):
     redis_service = get_redis_service(request)
     cached_data = await redis_service.get(REDIS_HOTSEARCH_KEY)  # 使用 await 关键字调用异步方法
     if cached_data:
-        logger.info("获取微博热搜数据redis缓存")
+        logger.info("获取微博热搜redis缓存")
         hotsearch_data = json.loads(cached_data)
     else:
         hotsearch_data = await get_weibo_hotsearch()
         if hotsearch_data:
             # 将数据缓存到 Redis
+            for i, hotsearch in enumerate(hotsearch_data):
+                # 如果已经采集过了，更新采集状态
+                if await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(hotsearch.get('mid'))):
+                    hotsearch_data[i]['collect_status'] = True
+                else:
+                    hotsearch_data[i]['collect_status'] = False
             await redis_service.set(REDIS_HOTSEARCH_KEY, json.dumps(hotsearch_data, ensure_ascii=False),
                                     expire=RedisExpireTime.THIRTY_MINUTES)
     return Success(data=hotsearch_data)

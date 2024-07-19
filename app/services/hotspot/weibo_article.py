@@ -11,6 +11,7 @@ from app.utils import utils
 
 async def fetch_article_content_and_record(weibo_mid, url, video_path):
     logger.info(f"Fetching article content url is {url}")
+    article_max = 20
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
@@ -53,7 +54,6 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
                     # 检查是否存在视频不支持播放的提示框
                     if await card_wrap.locator(
                             '[node-type="feed_list_media_prev"] .wbpv-error-display.wbpv-modal-dialog').count() > 0:
-                        logger.info(f"Skipping comment with unsupported video in {nickname}'s comment.")
                         continue
 
                     # 截图当前卡片区域
@@ -97,18 +97,20 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
                                                 big_image_path = os.path.join(video_path,
                                                                               f"{weibo_mid}-big_image_{i}_{j}_{k}.png")
                                                 await page.screenshot(path=big_image_path, clip=bounding_box)
+
                                                 article["images"].append(big_image_path)
-                                                logger.success(f"Big image captured: {big_image_path}")
+
                                         # 关闭大图
-                                        close_button = card_wrap.locator('[node-type="imagesBox"] [action-type="tosmall"]')
+                                        close_button = card_wrap.locator(
+                                            '[node-type="imagesBox"] [action-type="tosmall"]')
                                         if await close_button.is_visible():
                                             await close_button.click()
                                         await asyncio.sleep(1)
                         except Exception as e:
                             logger.warning(f"Image not found or clickable: {e}")
-
-                        articles.append(article)
-                        logger.success(f"Success fetch weibo comment: {comment}\nscreenshot: {screenshot_path}")
+                        if len(articles) < article_max:
+                            articles.append(article)
+            logger.info(f"successfully fetch articles count: {len(articles)}")
         except Exception as e:
             logger.error(f"Error fetching article content: {e}")
             logger.debug(traceback.format_exc())
