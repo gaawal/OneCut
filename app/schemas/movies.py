@@ -102,6 +102,7 @@ class VideoParams(BaseModel):
     fps: Optional[int] = 30
     video_durations: List[int] = []
     weibo_mid: Optional[str] = ""
+    weibo_title: Optional[str] = ""
 
 
 class VideoScriptParams:

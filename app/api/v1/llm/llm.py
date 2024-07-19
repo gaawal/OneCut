@@ -28,7 +28,7 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
         # 如果要从微博热搜获取微博信息
         logger.info(f"开始获取实时微博热搜话题 {body.weibo_url} 【{body.weibo_title}】")
         redis_service = get_redis_service(request)
-        cached_data = await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(body.weibo_mid))  # 使用 await 关键字调用异步方法
+        cached_data = await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(body.weibo_title))  # 使用 await 关键字调用异步方法
         if cached_data:
             logger.success(f"获取微博热搜话题【{body.weibo_title}】缓存成功")
             weibo_article_data = json.loads(cached_data)
@@ -36,7 +36,7 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
             weibo_article_data = await fetch_hot_article(body.weibo_mid, body.weibo_url)
             logger.success(f"实时获取微博热搜话题:{body.weibo_title} 成功")
             # 将数据缓存到 Redis 1天更新一次
-            await redis_service.set(REDIS_HOT_ARTICLE_KEY.format(body.weibo_mid),
+            await redis_service.set(REDIS_HOT_ARTICLE_KEY.format(body.weibo_title),
                                     json.dumps(weibo_article_data, ensure_ascii=False),
                                     expire=RedisExpireTime.ONE_DAY)
             hot_data = await redis_service.get(REDIS_HOTSEARCH_KEY)
@@ -74,7 +74,7 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
         # 如果要从微博热搜获取微博信息
         logger.info(f"开始获取实时微博热搜话题 {body.weibo_url} 【{body.weibo_title}】")
         redis_service = get_redis_service(request)
-        cached_data = await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(body.weibo_mid))  # 使用 await 关键字调用异步方法
+        cached_data = await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(body.weibo_title))  # 使用 await 关键字调用异步方法
         if cached_data:
             logger.success(f"获取微博热搜话题【{body.weibo_title}】缓存成功")
             weibo_article_data = json.loads(cached_data)
@@ -82,7 +82,7 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
             weibo_article_data = await fetch_hot_article(body.weibo_mid, body.weibo_url)
             logger.success(f"实时获取微博热搜话题:{body.weibo_title} 成功")
             # 将数据缓存到 Redis 1天更新一次
-            await redis_service.set(REDIS_HOT_ARTICLE_KEY.format(body.weibo_mid),
+            await redis_service.set(REDIS_HOT_ARTICLE_KEY.format(body.weibo_title),
                                     json.dumps(weibo_article_data, ensure_ascii=False),
                                     expire=RedisExpireTime.ONE_DAY)
             hot_data = await redis_service.get(REDIS_HOTSEARCH_KEY)
