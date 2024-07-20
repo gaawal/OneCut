@@ -215,7 +215,7 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
 
 def create_title_clip(params, title, video_width, video_height, font_path, duration=1):
     # 包装文本 字体显示的宽度和大小
-    wrapped_title, _ = wrap_text(title, video_width * 0.5, font=font_path, fontsize=params.font_size * 2)
+    wrapped_title, _ = wrap_text(title, video_width * 0.5, font=font_path, fontsize=params.font_size * 2.5)
 
     # 创建文字剪辑
     text_clip = TextClip(
@@ -312,7 +312,7 @@ def generate_video(task_id, title, video_path, audio_path, bgm_path, subtitle_pa
         cover_image_path = os.path.join(utils.task_dir(), task_id, "cover.png")
         image = Image.fromarray(frame)
         image.save(cover_image_path)
-    logger.success("cover image saved")
+    logger.success("cover image saved",cover_image_path)
 
 
 def add_image_clips(image_paths, video_width, video_height, clip_duration):
