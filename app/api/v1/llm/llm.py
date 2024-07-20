@@ -16,23 +16,25 @@ from app.services import llm
 from app.services.hotspot.weibo_article import fetch_hot_article, generate_weibo_summary
 from app.services.hotspot.weibo_hotsearch import get_weibo_hotsearch
 from app.services.redis_service import redis_service
-from app.utils.utils import save_weibo_data_to_redis
+from app.utils.utils import save_weibo_article_and_update_data
 
 router = APIRouter()
+
 
 @router.post("/scripts_terms", response_model=VideoScriptResponse, summary="为视频创建脚本以及获取对应的关键词")
 async def generate_video_script_and_terms(request: Request, body: VideoScriptRequest):
     if (body.weibo_url and body.weibo_mid):
         # 如果要从微博热搜获取微博信息
         logger.info(f"开始获取实时微博热搜话题 {body.weibo_url} 【{body.weibo_title}】")
-        cached_data = await redis_service.get(RedisKeyPrefix.WEIBO_HOT_SEARCH.format(body.weibo_title))  # 使用 await 关键字调用异步方法
+        cached_data = await redis_service.get(
+            RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(body.weibo_title))  # 使用 await 关键字调用异步方法
         if cached_data:
             logger.success(f"获取微博热搜话题【{body.weibo_title}】缓存成功")
             weibo_article_data = json.loads(cached_data)
         else:
             weibo_article_data = await fetch_hot_article(body.weibo_mid, body.weibo_url)
             logger.success(f"实时获取微博热搜话题:{body.weibo_title} 成功")
-            save_weibo_data_to_redis(body.weibo_title,weibo_article_data)
+            await save_weibo_article_and_update_data(body.weibo_title, weibo_article_data)
 
             logger.success(f"{body.weibo_mid} 微博热搜话题 {body.weibo_title} 保存redis成功.")
         # 获取微博数据内容条数 影响ai分析微博内容
@@ -111,7 +113,7 @@ async def get_hot_spot(request: Request):
             # 将数据缓存到 Redis
             for i, hotsearch in enumerate(hotsearch_data):
                 # 如果已经采集过了，更新采集状态
-                if await redis_service.get(RedisKeyPrefix.WEIBO_HOT_SEARCH.format(hotsearch.get('title'))):
+                if await redis_service.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.get('title'))):
                     hotsearch_data[i]['collect_status'] = True
                 else:
                     hotsearch_data[i]['collect_status'] = False

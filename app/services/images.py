@@ -35,7 +35,7 @@ async def get_images_files(request: Request, params: VideoParams):
                     images_path.append(screenshot_images_path)
                 if weibo_images_list:
                     images_path.extend(weibo_images_list)
-            logger.success(f'微博素材资源为:{images_path}')
+            logger.success(f'微博图片素材资源为:{images_path}')
     if not images_path:
         logger.warning(f'没有图片素材资源')
     return images_path

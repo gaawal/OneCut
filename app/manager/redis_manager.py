@@ -29,7 +29,7 @@ class RedisTaskManager:
                 await self.execute_task(func, *args, **kwargs)
             else:
                 logger.info(f"Enqueuing task: {func.__name__}, current tasks: {self.current_tasks}")
-                await self.enqueue({"func": func, "args": args, "kwargs": kwargs})
+                await self.enqueue({"func": func, "args": args, "kwargs": self.sanitize_kwargs(kwargs)})
 
     async def execute_task(self, func: Callable, *args: Any, **kwargs: Any):
         asyncio.create_task(self.run_task(func, *args, **kwargs))
@@ -60,11 +60,22 @@ class RedisTaskManager:
             self.current_tasks -= 1
         await self.check_queue()
 
+    def sanitize_kwargs(self, kwargs: Dict) -> Dict:
+        sanitized = {}
+        for key, value in kwargs.items():
+            if isinstance(value, VideoParams):
+                sanitized[key] = value.dict()
+            elif isinstance(value, dict):
+                sanitized[key] = self.sanitize_kwargs(value)
+            elif isinstance(value, (str, int, float, bool, type(None))):
+                sanitized[key] = value
+            else:
+                sanitized[key] = str(value)
+        return sanitized
+
     async def enqueue(self, task: Dict):
         try:
             task_with_serializable_params = task.copy()
-            if 'params' in task['kwargs'] and isinstance(task['kwargs']['params'], VideoParams):
-                task_with_serializable_params['kwargs']['params'] = task['kwargs']['params'].dict()
             task_with_serializable_params['func'] = task['func'].__name__
             await self.redis_client.rpush(self.queue, json.dumps(task_with_serializable_params))
             logger.info(f"Enqueued task: {task_with_serializable_params}")

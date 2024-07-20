@@ -17,7 +17,7 @@ from app.services.images import get_images_files
 from app.services.video import get_bgm_file
 from app.settings import movies_config
 from app.utils import utils
-from app.utils.utils import calculate_duration
+from app.utils.utils import calculate_duration, get_font_path
 from app.services.redis_service import redis_service
 from app.controllers.video_task import task_controller
 from app.schemas.video_task import TaskCreate, TaskUpdate
@@ -26,8 +26,8 @@ import warnings
 # 忽略 moviepy 模块中的 UserWarning 警告
 warnings.filterwarnings("ignore", category=UserWarning, module="moviepy")
 
+
 async def start(task_id, params: VideoParams, request: Request):
-    logger.info(f"Current event loop: {asyncio.get_event_loop()}")
     start_time = time.time()
     logger.info(f"start task: {task_id}")
     task_progress = TaskProgress()
@@ -60,13 +60,15 @@ async def start(task_id, params: VideoParams, request: Request):
             await save_task_state(task_id, TaskState.PROCESSING, 5, TaskDetailState.GENERATING_SCRIPT, draft)
             video_script, video_terms, video_title = generate_video_script_and_terms(params)
             if not all([video_script, video_terms, video_title]):
-                await save_task_state(task_id, TaskState.FAILED, 5, TaskDetailState.FAILED_GENERATING_SCRIPT, draft, TaskFailureReason.FAILED_GENERATING_SCRIPT)
+                await save_task_state(task_id, TaskState.FAILED, 5, TaskFailureReason.FAILED_GENERATING_SCRIPT, draft,
+                                      TaskFailureReason.FAILED_GENERATING_SCRIPT)
                 return
 
             task_progress.script = video_script
             task_progress.video_title = video_title
             task_progress.search_terms = video_terms
-            await save_task_state(task_id, TaskState.PROCESSING, 10, TaskDetailState.SCRIPT_GENERATION_COMPLETE, draft, task_progress.dict())
+            await save_task_state(task_id, TaskState.PROCESSING, 10, TaskDetailState.SCRIPT_GENERATION_COMPLETE, draft,
+                                  task_progress.dict())
 
             save_script(task_id, video_script, video_terms, params)
 
@@ -76,19 +78,23 @@ async def start(task_id, params: VideoParams, request: Request):
 
             await save_task_state(task_id, TaskState.PROCESSING, 15, TaskDetailState.GENERATING_AUDIO, draft)
             bgm_path = await get_bgm_file(request=request, bgm_type=params.bgm_type, bgm_file=params.bgm_file)
-            audio_file, audio_duration, sub_maker = await generate_audio(task_id, params, video_script, params.voice_name)
+            audio_file, audio_duration, sub_maker = await generate_audio(task_id, video_script,
+                                                                         params.voice_name)
             if not audio_file:
-                await save_task_state(task_id, TaskState.FAILED, 16, TaskDetailState.FAILED_GENERATING_AUDIO, draft, TaskFailureReason.FAILED_GENERATING_AUDIO)
+                await save_task_state(task_id, TaskState.FAILED, 16, TaskFailureReason.FAILED_GENERATING_AUDIO, draft,
+                                      TaskFailureReason.FAILED_GENERATING_AUDIO)
                 return
 
             task_progress.audio_file = audio_file
             task_progress.audio_duration = audio_duration
-            await save_task_state(task_id, TaskState.PROCESSING, 20, TaskDetailState.AUDIO_GENERATION_COMPLETE, draft, task_progress.dict())
+            await save_task_state(task_id, TaskState.PROCESSING, 20, TaskDetailState.AUDIO_GENERATION_COMPLETE, draft,
+                                  task_progress.dict())
 
-
-            draft.add_material("audios", {"path": audio_file, "duration": audio_duration, "voice_name": params.voice_name})
+            draft.add_material("audios",
+                               {"path": audio_file, "duration": audio_duration, "voice_name": params.voice_name})
             # 更新草稿
-            draft.add_playback_info("audios", {"path": audio_file, "duration": audio_duration, "effects": {"volume": params.voice_volume}})
+            draft.add_playback_info("audios", {"path": audio_file, "duration": audio_duration,
+                                               "effects": {"volume": params.voice_volume}})
             draft.save_to_file(utils.task_dir(task_id))
 
             subtitle_path = await generate_subtitle(task_id, params, audio_file, video_script, sub_maker)
@@ -100,41 +106,56 @@ async def start(task_id, params: VideoParams, request: Request):
                 logger.info("微博话题模式，视频素材从本地获取")
                 downloaded_videos = material.get_local_videos(audio_duration, params.video_clip_duration)
             if not downloaded_videos:
-                downloaded_videos = await material.download_videos(task_id, video_terms, params.video_source, params.video_aspect, params.video_concat_mode, audio_duration, params.video_clip_duration, draft, utils.task_dir(task_id))
-            logger.success(f"获取视频素材文件为：{downloaded_videos}")
+                downloaded_videos = await material.download_videos(task_id, video_terms, params.video_source,
+                                                                   params.video_aspect, params.video_concat_mode,
+                                                                   audio_duration, params.video_clip_duration, draft,
+                                                                   utils.task_dir(task_id))
+            logger.info(f"视频素材文件为：{downloaded_videos}")
             if not subtitle_path:
-                await save_task_state(task_id, TaskState.FAILED, 50, TaskFailureReason.FAILED_GENERATING_SUBTITLE, draft, TaskFailureReason.FAILED_GENERATING_SUBTITLE)
+                await save_task_state(task_id, TaskState.FAILED, 50, TaskFailureReason.FAILED_GENERATING_SUBTITLE,
+                                      draft, TaskFailureReason.FAILED_GENERATING_SUBTITLE)
                 return
             if not downloaded_videos:
-                await save_task_state(task_id, TaskState.FAILED, 51, TaskFailureReason.FAILED_DOWNLOADING_VIDEOS, draft, TaskFailureReason.FAILED_DOWNLOADING_VIDEOS)
+                await save_task_state(task_id, TaskState.FAILED, 51, TaskFailureReason.FAILED_DOWNLOADING_VIDEOS, draft,
+                                      TaskFailureReason.FAILED_DOWNLOADING_VIDEOS)
                 return
 
             task_progress.images_files = images_files
             task_progress.bgm_file = subtitle_path
             task_progress.subtitle_file = subtitle_path
             task_progress.downloaded_videos = downloaded_videos
-            await save_task_state(task_id, TaskState.PROCESSING, 60, TaskDetailState.VIDEO_DOWNLOAD_COMPLETE, draft, task_progress.dict())
+            await save_task_state(task_id, TaskState.PROCESSING, 60, TaskDetailState.VIDEO_DOWNLOAD_COMPLETE, draft,
+                                  task_progress.dict())
 
             # 更新草稿
             draft.add_material("subtitles", {"path": subtitle_path})
-            draft.add_material("images", [{"path": img, "start_time": i * 5, "duration": 5} for i, img in enumerate(images_files)])
+            draft.add_material("images", [{"path": img, "start_time": i * 5, "duration": 5} for i, img in
+                                          enumerate(images_files)])
             # 更新视频的保存
             draft.save_to_file(utils.task_dir(task_id))
         await save_task_state(task_id, TaskState.PROCESSING, 70, TaskDetailState.COMBINING_VIDEOS, draft)
-        combined_video_path = await combine_videos(task_id, params, task_progress.downloaded_videos, task_progress.audio_file, task_progress.images_files, task_progress, draft)
+        combined_video_path = await combine_videos(task_id, params, task_progress.downloaded_videos,
+                                                   task_progress.audio_file, task_progress.images_files, task_progress,
+                                                   draft)
         if not combined_video_path:
-            await save_task_state(task_id, TaskState.FAILED, 71, TaskDetailState.FAILED_GENERATING_FINAL_VIDEO, draft, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
+            await save_task_state(task_id, TaskState.FAILED, 71, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO, draft,
+                                  TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
             return
         task_progress.combined_videos = combined_video_path
-        await save_task_state(task_id, TaskState.PROCESSING, 80, TaskDetailState.COMBINED_VIDEOS_COMPLETE, draft, task_progress.dict())
-        final_video_path = await generate_final_video(task_id, params, combined_video_path, task_progress.audio_file, bgm_path, subtitle_path, task_progress,draft)
+        await save_task_state(task_id, TaskState.PROCESSING, 80, TaskDetailState.COMBINED_VIDEOS_COMPLETE, draft,
+                              task_progress.dict())
+        final_video_path = await generate_final_video(task_id, video_title, params, combined_video_path,
+                                                      task_progress.audio_file,
+                                                      bgm_path, subtitle_path, task_progress, draft)
         if not final_video_path:
-            await save_task_state(task_id, TaskState.FAILED, 81, TaskDetailState.FAILED_GENERATING_FINAL_VIDEO, draft, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
+            await save_task_state(task_id, TaskState.FAILED, 81, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO, draft,
+                                  TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
             return
         await save_task_state(task_id, TaskState.PROCESSING, 95,
                               TaskDetailState.GENERATING_FINAL_VIDEO, draft, task_progress.dict())
         task_progress.final_videos = final_video_path
-        await save_task_state(task_id, TaskState.COMPLETE, 100, TaskDetailState.FINAL_VIDEO_GENERATION_COMPLETE, draft, task_progress.dict())
+        await save_task_state(task_id, TaskState.COMPLETE, 100, TaskDetailState.FINAL_VIDEO_GENERATION_COMPLETE, draft,
+                              task_progress.dict())
 
         # 更新草稿
         draft.update_duration(task_progress.audio_duration)
@@ -143,10 +164,13 @@ async def start(task_id, params: VideoParams, request: Request):
         logger.success(f"task {task_id} finished, generated final video: {final_video_path}.")
     except ValueError as e:
         await handle_task_failure(task_id, TaskFailureReason.VALUE_ERROR, str(e), task_progress, draft)
-        await save_task_state(task_id, TaskState.FAILED, 100, TaskDetailState.FAILED, draft, TaskFailureReason.VALUE_ERROR)
+        await save_task_state(task_id, TaskState.FAILED, 100, TaskDetailState.FAILED, draft,
+                              TaskFailureReason.VALUE_ERROR)
     except Exception as e:
-        await handle_task_failure(task_id, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO, str(e), task_progress, draft)
-        await save_task_state(task_id, TaskState.FAILED, 100, TaskDetailState.FAILED, draft, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
+        await handle_task_failure(task_id, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO, str(e), task_progress,
+                                  draft)
+        await save_task_state(task_id, TaskState.FAILED, 100, TaskDetailState.FAILED, draft,
+                              TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
 
     end_time = time.time()
     minutes, seconds = calculate_duration(start_time, end_time)
@@ -193,27 +217,33 @@ def restore_task_progress_from_draft(draft: Draft) -> TaskProgress:
     return task_progress
 
 
-async def combine_videos(task_id, params, downloaded_videos, audio_file, images_files, task_progress, draft):
+async def combine_videos(task_id, params, downloaded_videos, audio_file, images_files, task_progress,
+                         draft):
     combined_video_path = []
     video_concat_mode = params.video_concat_mode
     if params.video_count > 1:
         video_concat_mode = VideoConcatMode.random
 
-    _progress = 80
+    _progress = 79
     progress_increment = 10 / params.video_count  # Adjusting progress increment for 80 to 90 range
     start_time = 0
+
     for i in range(params.video_count):
         index = i + 1
         combined_video = path.join(utils.task_dir(task_id), f"combined-{index}.mp4")
         logger.info(f"\n\n## combining video: {index} => {combined_video}")
-        video.combine_videos(combined_video_path=combined_video, video_paths=downloaded_videos, audio_file=audio_file,
-                             video_aspect=params.video_aspect, video_concat_mode=video_concat_mode,
-                             max_clip_duration=params.video_clip_duration, images_files=images_files,
-                             threads=params.n_threads)
+        video.combine_videos(
+            combined_video_path=combined_video,
+            video_paths=downloaded_videos,
+            audio_file=audio_file,
+            video_aspect=params.video_aspect, video_concat_mode=video_concat_mode,
+            max_clip_duration=params.video_clip_duration, images_files=images_files,
+            threads=params.n_threads)
 
         _progress += progress_increment
         task_progress.combined_videos.append(combined_video)
-        await save_task_state(task_id, TaskState.PROCESSING, _progress, TaskDetailState.COMBINING_VIDEOS, draft, task_progress.dict())
+        await save_task_state(task_id, TaskState.PROCESSING, _progress, TaskDetailState.COMBINING_VIDEOS, draft,
+                              task_progress.dict())
 
         combined_video_path.append(combined_video)
 
@@ -227,16 +257,18 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
     return combined_video_path
 
 
-async def generate_final_video(task_id, params, combined_video_path, audio_file, bgm_file, subtitle_path, task_progress,draft):
+async def generate_final_video(task_id, video_title, params, combined_video_path, audio_file, bgm_file, subtitle_path,
+                               task_progress,
+                               draft):
     final_video_paths = []
     _progress = 90
 
     for i, combined_video in enumerate(combined_video_path):
-
         final_video = path.join(utils.task_dir(task_id), f"final-{i + 1}.mp4")
         logger.info(f"\n\n## generating final video: {i + 1} => {final_video}")
 
-        video.generate_video(video_path=combined_video, audio_path=audio_file, bgm_path=bgm_file,
+        video.generate_video(task_id=task_id, title=video_title, video_path=combined_video, audio_path=audio_file,
+                             bgm_path=bgm_file,
                              subtitle_path=subtitle_path, output_file=final_video, params=params)
         _progress += 1
         await save_task_state(task_id, TaskState.PROCESSING, _progress, TaskDetailState.GENERATING_FINAL_VIDEO, draft)
@@ -277,7 +309,7 @@ def save_script(task_id, video_script, video_terms, params):
     return script_file
 
 
-async def generate_audio(task_id, params, video_script, voice_name):
+async def generate_audio(task_id, video_script, voice_name):
     logger.info("\n\n## generating audio")
     audio_file = path.join(utils.task_dir(task_id), f"audio.mp3")
     try:
@@ -323,7 +355,7 @@ async def handle_task_failure(task_id, failure_reason, error, task_progress, dra
     logger.error(f"task failed: {task_id} cause by {traceback.format_exc()}")
     if redis_service is not None:
         await redis_service.update_task(task_id, state=TaskState.FAILED, progress=100, failure_reason=failure_reason,
-                                error=error, **task_progress.dict())
+                                        error=error, **task_progress.dict())
     else:
         logger.warning(f"redis_service is None, unable to update task {task_id} state to failed")
     # 保存草稿

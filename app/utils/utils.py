@@ -117,6 +117,17 @@ def font_dir(sub_dir: str = ""):
         os.makedirs(d)
     return d
 
+def get_font_path(params):
+    font_path = ""
+    if params.subtitle_enabled:
+        if not params.font_name:
+            params.font_name = "STHeitiMedium.ttc"
+        font_path = os.path.join(font_dir(), params.font_name)
+        if os.name == "nt":
+            font_path = font_path.replace("\\", "/")
+
+        logger.info(f"using font: {font_path}")
+    return font_path
 
 def song_dir(sub_dir: str = ""):
     d = resource_dir(f"songs")
@@ -275,12 +286,12 @@ def calculate_duration(start_time, end_time):
     return minutes, seconds
 
 
-async def save_weibo_data_to_redis(weibo_title: str, weibo_article_cache: dict):
+async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cache: dict):
     """
     保存话题内容到缓存中，同时刷新微博已采集的话题数据
     """
     if weibo_article_cache:
-        await redis_service.set(RedisKeyPrefix.WEIBO_HOT_SEARCH.format(weibo_title),
+        await redis_service.set(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title),
                                 json.dumps(weibo_article_cache, ensure_ascii=False),
                                 expire=RedisExpireTime.ONE_DAY)
         # 更新微博话题是否采集信息到微博热搜榜单

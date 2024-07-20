@@ -1,9 +1,8 @@
-import asyncio
 import json
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from PIL import ImageFont
+from PIL import Image, ImageDraw, ImageFont
 from loguru import logger
 from moviepy.editor import *
 from moviepy.video.fx.resize import resize
@@ -12,6 +11,7 @@ from moviepy.editor import ImageClip
 from app.schemas.movies import VideoAspect, VideoConcatMode
 from app.services.redis_service import redis_service
 from app.utils import utils
+from app.utils.utils import get_font_path
 
 
 def get_duration(video_path):
@@ -24,7 +24,6 @@ def get_duration(video_path):
 
 
 async def get_bgm_file(request, bgm_type="random", bgm_file=""):
-    logger.info(f"Get_bgm_file Current event loop: {asyncio.get_event_loop()}")
     logger.info(f"get bgm file, bgm_type is {bgm_type}, bgm_file is {bgm_file}")
     suffix = ".mp3"
     choose_bgm_file = ""
@@ -87,16 +86,23 @@ def resize_clip(clip, video_width, video_height):
     return clip
 
 
-def combine_videos(combined_video_path, video_paths, audio_file, video_aspect=VideoAspect.portrait,
-                   video_concat_mode=VideoConcatMode.random, max_clip_duration=5, images_files=[], threads=5):
+def combine_videos(
+        combined_video_path,
+        video_paths,
+        audio_file,
+        video_aspect=VideoAspect.portrait,
+        video_concat_mode=VideoConcatMode.random,
+        max_clip_duration=5,
+        images_files=[],
+        threads=10
+):
     audio_clip = AudioFileClip(audio_file)
     audio_duration = audio_clip.duration
-    logger.info(f"max duration of audio: {audio_duration} seconds")
+    logger.info(f"预计视频总时长 {audio_duration}（秒）")
     req_dur = audio_duration / len(video_paths)
     req_dur = max_clip_duration
-    logger.info(f"each clip will be maximum {req_dur} seconds long")
+    logger.info(f"单个视频素材片段最大时长 {req_dur}（秒）")
     output_dir = os.path.dirname(combined_video_path)
-
     aspect = VideoAspect(video_aspect)
     video_width, video_height = aspect.to_resolution()
 
@@ -145,7 +151,6 @@ def combine_videos(combined_video_path, video_paths, audio_file, video_aspect=Vi
 
             clips.append(clip)
             video_duration += clip.duration
-
     video_clip = concatenate_videoclips(clips)
     video_clip = video_clip.set_fps(30)
     logger.info(f"combined video clip")
@@ -208,7 +213,27 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     return result, height
 
 
-def generate_video(video_path, audio_path, bgm_path, subtitle_path, output_file, params):
+def create_title_clip(params, title, video_width, video_height, font_path, duration=1):
+    # 包装文本
+    wrapped_title, _ = wrap_text(title, video_width * 0.5, font=font_path, fontsize=params.font_size * 1.5)
+
+    # 创建文字剪辑
+    text_clip = TextClip(
+        wrapped_title,
+        font=font_path,
+        fontsize=params.font_size,
+        color=params.text_fore_color,
+        bg_color=params.text_background_color,
+        stroke_color=params.stroke_color,
+        stroke_width=params.stroke_width,
+        size=(video_width, video_height),
+        method='label'
+    ).set_duration(duration).set_position(("center", "center"))
+
+    return text_clip
+
+
+def generate_video(task_id, title, video_path, audio_path, bgm_path, subtitle_path, output_file, params):
     aspect = VideoAspect(params.video_aspect)
     video_width, video_height = aspect.to_resolution()
 
@@ -220,20 +245,16 @@ def generate_video(video_path, audio_path, bgm_path, subtitle_path, output_file,
     logger.info(f"  ⑤ output: {output_file}")
     output_dir = os.path.dirname(output_file)
 
-    font_path = ""
-    if params.subtitle_enabled:
-        if not params.font_name:
-            params.font_name = "STHeitiMedium.ttc"
-        font_path = os.path.join(utils.font_dir(), params.font_name)
-        if os.name == "nt":
-            font_path = font_path.replace("\\", "/")
+    font_path = get_font_path(params)
 
-        logger.info(f"using font: {font_path}")
+    # 创建封面文字剪辑
+    title_clip = create_title_clip(params, title, video_width, video_height, font_path)
 
     def create_text_clip(subtitle_item):
         phrase = subtitle_item[1]
         max_width = video_width * 0.9
         wrapped_txt, txt_height = wrap_text(phrase, max_width=max_width, font=font_path, fontsize=params.font_size)
+
         _clip = TextClip(
             wrapped_txt,
             font=font_path,
@@ -244,16 +265,19 @@ def generate_video(video_path, audio_path, bgm_path, subtitle_path, output_file,
             stroke_width=params.stroke_width,
             print_cmd=False,
         )
+
         duration = subtitle_item[0][1] - subtitle_item[0][0]
         _clip = _clip.set_start(subtitle_item[0][0])
         _clip = _clip.set_end(subtitle_item[0][1])
         _clip = _clip.set_duration(duration)
+
         if params.subtitle_position == "bottom":
             _clip = _clip.set_position(("center", video_height * 0.95 - _clip.h))
         elif params.subtitle_position == "top":
             _clip = _clip.set_position(("center", video_height * 0.1))
         else:
             _clip = _clip.set_position(("center", "center"))
+
         return _clip
 
     video_clip = VideoFileClip(video_path)
@@ -273,10 +297,22 @@ def generate_video(video_path, audio_path, bgm_path, subtitle_path, output_file,
             logger.error(f"failed to add bgm: {str(e)}")
 
     video_clip = video_clip.set_audio(audio_clip)
-    video_clip.write_videofile(output_file, audio_codec="aac",
-                               temp_audiofile_path=output_dir, threads=params.n_threads or 2, logger=None, fps=30)
-    video_clip.close()
+
+    # 合并封面文字剪辑和视频剪辑
+    final_clip = concatenate_videoclips([title_clip, video_clip])
+
+    final_clip.write_videofile(output_file, audio_codec="aac", temp_audiofile_path=output_dir,
+                               threads=params.n_threads or 2, logger=None, fps=30)
+    final_clip.close()
     logger.success("task completed")
+
+    # 保存第一帧为封面图片
+    with VideoFileClip(output_file) as final_video:
+        frame = final_video.get_frame(0)
+        cover_image_path = os.path.join(utils.task_dir(), task_id, "cover.png")
+        image = Image.fromarray(frame)
+        image.save(cover_image_path)
+    logger.success("cover image saved")
 
 
 def add_image_clips(image_paths, video_width, video_height, clip_duration):
