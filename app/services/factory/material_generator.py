@@ -6,13 +6,12 @@ import asyncio
 from urllib.parse import urlencode
 
 import requests
-from typing import List, Dict
+from typing import List
 from loguru import logger
-from moviepy.video.io.VideoFileClip import VideoFileClip
 
 from app.schemas.drafts import Draft
 from app.settings import movies_config
-from app.schemas.movies import VideoAspect, VideoConcatMode, MaterialInfo, TaskProgress
+from app.schemas.movies import VideoAspect, VideoConcatMode, MaterialInfo
 from app.utils import utils
 
 # 确保 proxy 参数是字符串类型
