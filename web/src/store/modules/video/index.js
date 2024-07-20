@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import api from '@/api'
 import axios from 'axios'
 import { MusicType } from '@/config/videoOptions'
+import { getToken } from '@/utils'
 
 export const useVideoStore = defineStore('video', {
   state: () => ({
@@ -217,6 +218,7 @@ export const useVideoStore = defineStore('video', {
             requestUrl = `/api/v1/audio/stream-voice/${encodeURIComponent(voiceName)}`
           }
           const response = await axios.get(requestUrl, {
+            headers: { token: getToken() },
             responseType: 'blob',
           })
           if (response.status === 200) {
