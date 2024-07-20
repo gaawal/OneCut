@@ -34,7 +34,12 @@
             <NColorPicker v-model:value="videoStore.subtitleStrokeColor" />
           </NFormItem>
           <NFormItem label="描边粗细">
-            <NSlider v-model:value="videoStore.subtitleStrokeWidth" :min="3" :max="4" step="0.1" />
+            <NSlider
+              v-model:value="videoStore.subtitleStrokeWidth"
+              :min="1.5"
+              :max="4"
+              step="0.1"
+            />
           </NFormItem>
           <NFormItem label="字体透明度">
             <NSlider v-model:value="videoStore.subtitleOpacity" :min="0.1" :max="1" step="0.1" />

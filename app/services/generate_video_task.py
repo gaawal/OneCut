@@ -21,7 +21,10 @@ from app.utils.utils import calculate_duration
 from app.services.redis_service import redis_service
 from app.controllers.video_task import task_controller
 from app.schemas.video_task import TaskCreate, TaskUpdate
+import warnings
 
+# 忽略 moviepy 模块中的 UserWarning 警告
+warnings.filterwarnings("ignore", category=UserWarning, module="moviepy")
 
 async def start(task_id, params: VideoParams, request: Request):
     logger.info(f"Current event loop: {asyncio.get_event_loop()}")
@@ -103,36 +106,30 @@ async def start(task_id, params: VideoParams, request: Request):
                 await save_task_state(task_id, TaskState.FAILED, 50, TaskFailureReason.FAILED_GENERATING_SUBTITLE, draft, TaskFailureReason.FAILED_GENERATING_SUBTITLE)
                 return
             if not downloaded_videos:
-                await save_task_state(task_id, TaskState.FAILED, 50, TaskFailureReason.FAILED_DOWNLOADING_VIDEOS, draft, TaskFailureReason.FAILED_DOWNLOADING_VIDEOS)
+                await save_task_state(task_id, TaskState.FAILED, 51, TaskFailureReason.FAILED_DOWNLOADING_VIDEOS, draft, TaskFailureReason.FAILED_DOWNLOADING_VIDEOS)
                 return
 
             task_progress.images_files = images_files
             task_progress.bgm_file = subtitle_path
             task_progress.subtitle_file = subtitle_path
             task_progress.downloaded_videos = downloaded_videos
-            await save_task_state(task_id, TaskState.PROCESSING, 70, TaskDetailState.VIDEO_DOWNLOAD_COMPLETE, draft, task_progress.dict())
+            await save_task_state(task_id, TaskState.PROCESSING, 60, TaskDetailState.VIDEO_DOWNLOAD_COMPLETE, draft, task_progress.dict())
 
             # 更新草稿
             draft.add_material("subtitles", {"path": subtitle_path})
             draft.add_material("images", [{"path": img, "start_time": i * 5, "duration": 5} for i, img in enumerate(images_files)])
             # 更新视频的保存
             draft.save_to_file(utils.task_dir(task_id))
-
-        await save_task_state(task_id, TaskState.PROCESSING, 80, TaskDetailState.COMBINING_VIDEOS, draft)
-
+        await save_task_state(task_id, TaskState.PROCESSING, 70, TaskDetailState.COMBINING_VIDEOS, draft)
         combined_video_path = await combine_videos(task_id, params, task_progress.downloaded_videos, task_progress.audio_file, task_progress.images_files, task_progress, draft)
         if not combined_video_path:
-            await save_task_state(task_id, TaskState.FAILED, 80, TaskDetailState.FAILED_GENERATING_FINAL_VIDEO, draft, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
+            await save_task_state(task_id, TaskState.FAILED, 71, TaskDetailState.FAILED_GENERATING_FINAL_VIDEO, draft, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
             return
-
         task_progress.combined_videos = combined_video_path
-        await save_task_state(task_id, TaskState.PROCESSING, 90, TaskDetailState.COMBINED_VIDEOS_COMPLETE, draft, task_progress.dict())
-
-
-
+        await save_task_state(task_id, TaskState.PROCESSING, 80, TaskDetailState.COMBINED_VIDEOS_COMPLETE, draft, task_progress.dict())
         final_video_path = await generate_final_video(task_id, params, combined_video_path, task_progress.audio_file, bgm_path, subtitle_path, task_progress,draft)
         if not final_video_path:
-            await save_task_state(task_id, TaskState.FAILED, 95, TaskDetailState.FAILED_GENERATING_FINAL_VIDEO, draft, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
+            await save_task_state(task_id, TaskState.FAILED, 81, TaskDetailState.FAILED_GENERATING_FINAL_VIDEO, draft, TaskFailureReason.FAILED_GENERATING_FINAL_VIDEO)
             return
         await save_task_state(task_id, TaskState.PROCESSING, 95,
                               TaskDetailState.GENERATING_FINAL_VIDEO, draft, task_progress.dict())

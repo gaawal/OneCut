@@ -34,7 +34,7 @@ export const useVideoStore = defineStore('video', {
     subtitleBorderColor: '#1e1e1b',
     subtitleBackgroundColor: '#39C186FF',
     subtitleOpacity: 1,
-    subtitleStrokeWidth: 3,
+    subtitleStrokeWidth: 1.5,
     selectedVoiceLabel: 'zh-CN-YunxiNeural',
     voiceVolume: 1.0,
     bgmVolume: 0.1,

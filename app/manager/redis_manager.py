@@ -13,7 +13,7 @@ FUNC_MAP = {
 
 class RedisTaskManager:
     def __init__(self):
-        self.max_concurrent_tasks = 5  # 示例最大并发任务数
+        self.max_concurrent_tasks = 1  # 示例最大并发任务数
         self.current_tasks = 0
         self.lock = asyncio.Lock()
         self.queue = "task_queue"

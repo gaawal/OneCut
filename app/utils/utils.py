@@ -8,6 +8,9 @@ from uuid import uuid4
 import urllib3
 
 from app.constant import video_const
+from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
+from app.services.redis_service import redis_service
+
 
 urllib3.disable_warnings()
 
@@ -81,11 +84,14 @@ def cache_videos_dir(sub_dir: str = ""):
     if sub_dir:
         d = os.path.join(d, sub_dir)
     return d
+
+
 def cache_browser_info_dir(sub_dir: str = ""):
     d = os.path.join(root_dir(), storage_dir(), "cache_browser_material")
     if sub_dir:
         d = os.path.join(d, sub_dir)
     return d
+
 
 def resource_dir(sub_dir: str = ""):
     d = os.path.join(root_dir(), "resource")
@@ -261,11 +267,34 @@ def tr(key: str, language: str = 'zh') -> str:
     loc = locales.get(language, {})
     return loc.get("Translation", {}).get(key, key)
 
+
 def calculate_duration(start_time, end_time):
     duration = end_time - start_time
     minutes = int(duration // 60)
     seconds = int(duration % 60)
     return minutes, seconds
+
+
+async def save_weibo_data_to_redis(weibo_title: str, weibo_article_cache: dict):
+    """
+    保存话题内容到缓存中，同时刷新微博已采集的话题数据
+    """
+    if weibo_article_cache:
+        await redis_service.set(RedisKeyPrefix.WEIBO_HOT_SEARCH.format(weibo_title),
+                                json.dumps(weibo_article_cache, ensure_ascii=False),
+                                expire=RedisExpireTime.ONE_DAY)
+        # 更新微博话题是否采集信息到微博热搜榜单
+        hot_data = await redis_service.get(RedisKeyPrefix.WEIBO_HOT_SEARCH)
+        if hot_data:
+            hot_data = json.loads(hot_data)
+            for i, item in enumerate(hot_data):
+                if weibo_title == item.get('weibo_title'):
+                    hot_data[i]["collect_status"] = True
+        await redis_service.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps(hot_data, ensure_ascii=False),
+                                expire=RedisExpireTime.THIRTY_MINUTES)
+
+
 if __name__ == '__main__':
-    result = split_string_by_punctuations('千万不要再相信那些博主说自媒体文案随随便便就能生成爆款！今天，我要揭露一个真相：爆款文案背后隐藏的秘密。你可能不知道，每一篇爆款文案都是经过精心策划和数据分析的结果。首先，你需要了解你的目标受众，他们的痛点、需求和兴趣点。接着，运用心理学原理，比如稀缺性、紧迫感，来激发他们的购买欲望。然后，巧妙地使用故事叙述技巧，让读者产生共鸣，增强文案的吸引力。最后，别忘了测试和优化，通过数据反馈不断调整文案策略。掌握了这些技巧，你也能写出让人眼前一亮的爆款文案。别再盲目跟风，学会这些，让你的自媒体文案独树一帜！')
+    result = split_string_by_punctuations(
+        '千万不要再相信那些博主说自媒体文案随随便便就能生成爆款！今天，我要揭露一个真相：爆款文案背后隐藏的秘密。你可能不知道，每一篇爆款文案都是经过精心策划和数据分析的结果。首先，你需要了解你的目标受众，他们的痛点、需求和兴趣点。接着，运用心理学原理，比如稀缺性、紧迫感，来激发他们的购买欲望。然后，巧妙地使用故事叙述技巧，让读者产生共鸣，增强文案的吸引力。最后，别忘了测试和优化，通过数据反馈不断调整文案策略。掌握了这些技巧，你也能写出让人眼前一亮的爆款文案。别再盲目跟风，学会这些，让你的自媒体文案独树一帜！')
     print(result)
