@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 from app.settings import movies_config
 
 
-class Settings(BaseSettings):
+class BaseSettings(BaseSettings):
     VERSION: str = "0.1.0"
     APP_TITLE: str = "Vue FastAPI Admin"
     PROJECT_NAME: str = "Vue FastAPI Admin"
@@ -67,5 +67,5 @@ class Settings(BaseSettings):
     REDIS_URL: str = f"redis://:{_redis_password}@{_redis_host}:{_redis_port}/{_redis_db}"
 
 
-settings = Settings()
-TORTOISE_ORM = settings.TORTOISE_ORM
+base_settings = BaseSettings()
+TORTOISE_ORM = base_settings.TORTOISE_ORM

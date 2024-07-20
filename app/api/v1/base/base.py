@@ -9,7 +9,7 @@ from app.models.admin import Api, Menu, Role, User
 from app.schemas.base import Fail, Success
 from app.schemas.login import *
 from app.schemas.users import UpdatePassword
-from app.settings import settings
+from app.settings import base_settings
 from app.utils.jwt import create_access_token
 from app.utils.password import get_password_hash, verify_password
 
@@ -20,7 +20,7 @@ router = APIRouter()
 async def login_access_token(credentials: CredentialsSchema):
     user: User = await user_controller.authenticate(credentials)
     await user_controller.update_last_login(user.id)
-    access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=base_settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     expire = datetime.utcnow() + access_token_expires
 
     data = JWTOut(

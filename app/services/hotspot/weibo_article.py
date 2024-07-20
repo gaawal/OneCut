@@ -42,8 +42,8 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
 
             for i in range(count):
                 card_wrap = comment_elements.nth(i)
-                nickname = (await card_wrap.locator('.name').inner_text()).strip()
-                comment = (await card_wrap.locator('p[node-type="feed_list_content"]').inner_text()).strip().replace(
+                nickname = (await card_wrap.locator('.name').first.inner_text()).strip()
+                comment = (await card_wrap.locator('p[node-type="feed_list_content"]').first.inner_text()).strip().replace(
                     "展开c", "")
 
                 await card_wrap.scroll_into_view_if_needed()

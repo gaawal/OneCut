@@ -5,7 +5,7 @@ from fastapi import Depends, Header, HTTPException, Request
 
 from app.core.ctx import CTX_USER_ID
 from app.models import Role, User
-from app.settings import settings
+from app.settings import base_settings
 
 
 class AuthControl:
@@ -16,7 +16,7 @@ class AuthControl:
                 user = await User.filter().first()
                 user_id = user.id
             else:
-                decode_data = jwt.decode(token, settings.SECRET_KEY, algorithms=settings.JWT_ALGORITHM)
+                decode_data = jwt.decode(token, base_settings.SECRET_KEY, algorithms=base_settings.JWT_ALGORITHM)
                 user_id = decode_data.get("user_id")
             user = await User.filter(id=user_id).first()
             if not user:

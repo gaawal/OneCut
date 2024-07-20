@@ -1,12 +1,12 @@
 import threading
 from typing import Callable, Any, Dict
 from loguru import logger
-from app.settings.config import settings
+from app.settings.base_config import base_settings
 import asyncio
 
 class TaskManager:
     def __init__(self):
-        self.max_concurrent_tasks = settings._max_concurrent_tasks
+        self.max_concurrent_tasks = base_settings._max_concurrent_tasks
         self.current_tasks = 0
         self.lock = threading.Lock()
         self.queue = self.create_queue()

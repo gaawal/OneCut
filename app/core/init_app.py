@@ -20,7 +20,7 @@ from app.core.exceptions import (
 )
 from app.models.admin import Menu
 from app.schemas.menus import MenuType
-from app.settings.config import settings
+from app.settings.base_config import base_settings
 
 from .middlewares import BackGroundTaskMiddleware
 from .scheduler_job import register_scheduler_job
@@ -30,10 +30,10 @@ def make_middlewares():
     middleware = [
         Middleware(
             CORSMiddleware,
-            allow_origins=settings.CORS_ORIGINS,
-            allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
-            allow_methods=settings.CORS_ALLOW_METHODS,
-            allow_headers=settings.CORS_ALLOW_HEADERS,
+            allow_origins=base_settings.CORS_ORIGINS,
+            allow_credentials=base_settings.CORS_ALLOW_CREDENTIALS,
+            allow_methods=base_settings.CORS_ALLOW_METHODS,
+            allow_headers=base_settings.CORS_ALLOW_HEADERS,
         ),
         Middleware(BackGroundTaskMiddleware),
     ]
@@ -45,7 +45,7 @@ def register_db(app: FastAPI, db_url=None):
         app,
         # db_url='sqlite://db.sqlite3',
         # modules={'models':['app.models', "aerich.models"]},
-        config=settings.TORTOISE_ORM,
+        config=base_settings.TORTOISE_ORM,
         generate_schemas=True,
     )
     logger.success("注册数据库ORM-Tortoise成功")

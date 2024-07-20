@@ -2,7 +2,7 @@ from datetime import datetime
 
 from tortoise import fields, models
 
-from app.settings import settings
+from app.settings import base_settings
 
 
 class BaseModel(models.Model):
@@ -17,7 +17,7 @@ class BaseModel(models.Model):
             if field not in exclude_fields:
                 value = getattr(self, field)
                 if isinstance(value, datetime):
-                    value = value.strftime(settings.DATETIME_FORMAT)
+                    value = value.strftime(base_settings.DATETIME_FORMAT)
                 d[field] = value
         if m2m:
             for field in self._meta.m2m_fields:
@@ -25,7 +25,7 @@ class BaseModel(models.Model):
                     values = [value for value in await getattr(self, field).all().values()]
                     for value in values:
                         value.update(
-                            (k, v.strftime(settings.DATETIME_FORMAT))
+                            (k, v.strftime(base_settings.DATETIME_FORMAT))
                             for k, v in value.items()
                             if isinstance(v, datetime)
                         )

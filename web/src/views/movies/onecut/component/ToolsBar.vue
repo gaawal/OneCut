@@ -294,7 +294,7 @@ const handleGenerateVideo = async () => {
     text_background_color: videoStore.subtitleBackgroundColor,
     font_size: videoStore.subtitleSize,
     stroke_color: videoStore.subtitleBorderColor,
-    stroke_width: videoStore.subtitleBorderThickness,
+    stroke_width: videoStore.subtitleStrokeWidth,
     n_threads: 8,
     paragraph_number: 1,
     amount: 5,

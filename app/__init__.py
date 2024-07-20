@@ -15,7 +15,7 @@ from app.manager.redis_manager import redis_taskmanager
 from app.services.redis_service import redis_service
 
 try:
-    from app.settings.config import settings
+    from app.settings.base_config import base_settings
 except ImportError:
     raise SettingNotFound("Can not import settings")
 
@@ -23,9 +23,9 @@ except ImportError:
 def create_app() -> FastAPI:
     logger.warning("开始创建app")
     app = FastAPI(
-        title=settings.APP_TITLE,
-        description=settings.APP_DESCRIPTION,
-        version=settings.VERSION,
+        title=base_settings.APP_TITLE,
+        description=base_settings.APP_DESCRIPTION,
+        version=base_settings.VERSION,
         openapi_url="/openapi.json",
         middleware=make_middlewares(),
     )

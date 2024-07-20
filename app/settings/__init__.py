@@ -1,3 +1,3 @@
-from .config import settings as settings
+from .base_config import base_settings
 
-TORTOISE_ORM = settings.TORTOISE_ORM
+TORTOISE_ORM = base_settings.TORTOISE_ORM
