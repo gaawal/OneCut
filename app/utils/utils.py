@@ -83,6 +83,8 @@ def cache_videos_dir(sub_dir: str = ""):
     d = os.path.join(root_dir(), storage_dir(), "cache_videos")
     if sub_dir:
         d = os.path.join(d, sub_dir)
+    if not os.path.exists(d):
+        os.makedirs(d)
     return d
 
 
