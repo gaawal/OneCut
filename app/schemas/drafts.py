@@ -3,7 +3,7 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : drafts.py
-# @Software: PyCharm
+
 import json
 import os
 import time
@@ -41,12 +41,7 @@ class Draft:
                 "subtitles": [],
                 "images": []
             },
-            "playback_info": {
-                "videos": [],
-                "audios": [],
-                "subtitles": [],
-                "images": []
-            }
+
         }
 
     def add_script_info(self, script: str, terms: List[str], title: str):
@@ -59,10 +54,6 @@ class Draft:
     def add_material(self, material_type: str, material_info: Dict[str, Any]):
         if material_type in self.draft["materials"]:
             self.draft["materials"][material_type].append(material_info)
-
-    def add_playback_info(self, material_type: str, playback_info: Dict[str, Any]):
-        if material_type in self.draft["playback_info"]:
-            self.draft["playback_info"][material_type].append(playback_info)
 
     def update_duration(self, duration: float):
         self.draft["duration"] = duration

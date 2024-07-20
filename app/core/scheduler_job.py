@@ -3,7 +3,7 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : scheduler_job.py
-# @Software: PyCharm
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.services.scheduler_tasks import SchedulerTasks

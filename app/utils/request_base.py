@@ -3,7 +3,7 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : request_base.py
-# @Software: PyCharm
+
 from uuid import uuid4
 
 from fastapi import Request

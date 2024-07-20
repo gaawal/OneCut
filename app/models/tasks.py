@@ -3,7 +3,7 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : tasks.py
-# @Software: PyCharm
+
 from tortoise import fields
 from .base import BaseModel, TimestampMixin
 

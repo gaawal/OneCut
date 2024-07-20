@@ -45,8 +45,7 @@ async def download_video(item, material_directory, video_paths, draft, draft_dir
             logger.info(f"video_id {video_id} already exists to use it: {video_path}")
             video_paths.append(video_path)
             draft.add_material("videos", {"path": video_path, "duration": item['duration'], "aspect": item['aspect']})
-            draft.add_playback_info("videos",
-                                    {"path": video_path, "start_time": start_time, "duration": item['duration']})
+
             draft.save_to_file(draft_dir)
             return item['duration']
 
@@ -67,8 +66,7 @@ async def download_video(item, material_directory, video_paths, draft, draft_dir
         if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
             video_paths.append(video_path)
             draft.add_material("videos", {"path": video_path, "duration": item['duration'], "aspect": item['aspect']})
-            draft.add_playback_info("videos",
-                                    {"path": video_path, "start_time": start_time, "duration": item['duration']})
+
             draft.save_to_file(draft_dir)
             return item['duration']
     except Exception as e:

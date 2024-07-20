@@ -3,7 +3,7 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : scheduler_tasks.py
-# @Software: PyCharm
+
 import json
 
 from fastapi import FastAPI

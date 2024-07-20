@@ -3,7 +3,7 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : voice_tts.py
-# @Software: PyCharm
+
 from pydantic import BaseModel
 
 

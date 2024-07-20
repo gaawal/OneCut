@@ -3,7 +3,7 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : redis_const.py
-# @Software: PyCharm
+
 class RedisExpireTime:
     ONE_MINUTE = 60
     FIVE_MINUTES = 300

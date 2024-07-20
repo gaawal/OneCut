@@ -3,7 +3,7 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : tasks.py
-# @Software: PyCharm
+
 from fastapi import APIRouter, Query, HTTPException
 from app.controllers.video_task import task_controller
 from sympy import Q

@@ -3,7 +3,7 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : tasks.py
-# @Software: PyCharm
+
 from typing import List, Optional
 
 from app.core.crud import CRUDBase

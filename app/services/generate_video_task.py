@@ -92,8 +92,7 @@ async def start(task_id, params: VideoParams, request: Request):
             draft.add_material("audios",
                                {"path": audio_file, "duration": audio_duration, "voice_name": params.voice_name})
             # 更新草稿
-            draft.add_playback_info("audios", {"path": audio_file, "duration": audio_duration,
-                                               "effects": {"volume": params.voice_volume}})
+
             draft.save_to_file(utils.task_dir(task_id))
 
             subtitle_path = await generate_subtitle(task_id, params, audio_file, video_script, sub_maker)
@@ -248,7 +247,7 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
 
         # 更新草稿
         duration = video_generator.get_duration(combined_video)
-        draft.add_playback_info("videos", {"path": combined_video, "start_time": start_time, "duration": duration})
+
         start_time += duration
 
     draft.save_to_file(utils.task_dir(task_id))

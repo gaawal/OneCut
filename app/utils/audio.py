@@ -3,7 +3,7 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : audio.py
-# @Software: PyCharm
+
 
 import json
 import os
