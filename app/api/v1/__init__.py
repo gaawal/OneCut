@@ -19,5 +19,5 @@ v1_router.include_router(roles_router, prefix="/role", dependencies=[DependPermi
 v1_router.include_router(menus_router, prefix="/menu", dependencies=[DependPermisson])
 v1_router.include_router(apis_router, prefix="/api", dependencies=[DependPermisson])
 v1_router.include_router(llm_router, prefix="/llm", dependencies=[DependPermisson])
-v1_router.include_router(video_router, prefix="/video")
-v1_router.include_router(audio_router, prefix="/audio")
+v1_router.include_router(video_router, prefix="/video", dependencies=[DependPermisson])
+v1_router.include_router(audio_router, prefix="/audio", dependencies=[DependPermisson])
