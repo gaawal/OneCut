@@ -32,7 +32,7 @@ class SchedulerTasks:
                 else:
                     hotsearch_data[i]['collect_status'] = False
             await redis_service.set(REDIS_HOTSEARCH_KEY, json.dumps(hotsearch_data, ensure_ascii=False),
-                                    expire=RedisExpireTime.THIRTY_MINUTES)
+                                    expire=RedisExpireTime.ONE_HOUR)
 
     @staticmethod
     async def get_weibo_articles_to_cache(app: FastAPI):
