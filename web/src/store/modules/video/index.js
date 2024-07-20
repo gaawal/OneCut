@@ -28,7 +28,7 @@ export const useVideoStore = defineStore('video', {
     enablePlayVoices: true,
     subtitleFont: 'MicrosoftYaHeiBold.ttc',
     subtitlePosition: 'bottom',
-    subtitleColor: '#F9F9F8FF',
+    subtitleColor: '#ffffff',
     subtitleStrokeColor: '#040a52',
     subtitleSize: 65,
     subtitleBorderColor: '#1e1e1b',
