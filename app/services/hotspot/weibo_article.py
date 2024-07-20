@@ -17,7 +17,6 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
         context = await browser.new_context(
             viewport={"width": 1920, "height": 1080},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            record_video_dir=video_path,
             record_video_size={"width": 1920, "height": 1080}
         )
         await context.add_init_script(path="libs/stealth.min.js")
@@ -43,7 +42,8 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
             for i in range(count):
                 card_wrap = comment_elements.nth(i)
                 nickname = (await card_wrap.locator('.name').first.inner_text()).strip()
-                comment = (await card_wrap.locator('p[node-type="feed_list_content"]').first.inner_text()).strip().replace(
+                comment = (
+                    await card_wrap.locator('p[node-type="feed_list_content"]').first.inner_text()).strip().replace(
                     "展开c", "")
 
                 await card_wrap.scroll_into_view_if_needed()

@@ -11,6 +11,7 @@ FUNC_MAP = {
     # 添加其他任务处理函数的映射
 }
 
+
 class RedisTaskManager:
     def __init__(self):
         self.max_concurrent_tasks = 1  # 示例最大并发任务数
@@ -108,6 +109,7 @@ class RedisTaskManager:
         except Exception as e:
             logger.error(f"Failed to check if queue is empty: {str(e)}")
             return True
+
 
 # 实例化 RedisTaskManager
 redis_taskmanager = RedisTaskManager()
