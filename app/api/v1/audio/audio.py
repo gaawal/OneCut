@@ -12,13 +12,13 @@ from loguru import logger
 from mutagen.mp3 import MP3
 
 from app.constant.redis_const import RedisKeyPrefix
-from app.manager.redis_manager import RedisTaskManager
+from app.manager.redis_manager import RedisTaskManager, redis_taskmanager
 from app.models.exception import HttpException
 from app.schemas import Success, Fail
 from app.schemas.movies import BgmUploadResponse, BgmRetrieveResponse, VoiceRetrieveResponse, StreamAudioRequest
 from app.schemas.voice_tts import TTSRequest
 from app.services import voice
-from app.services.redis_service import RedisService
+from app.services.redis_service import redis_service
 from app.services.voice import get_all_azure_voices
 from app.settings import movies_config
 from app.utils import request_base
@@ -28,7 +28,7 @@ from app.utils.audio import get_album_art, format_duration, get_audio_metadata, 
 router = APIRouter()
 
 # 根据配置选择合适的任务管理器
-task_manager = RedisTaskManager()
+task_manager = redis_taskmanager
 REDIS_WAVEFORM_KEY = "audio_waveform_{}"
 
 
@@ -43,7 +43,6 @@ def get_voices_list(request: Request):
 
 @router.get("/bgms", response_model=BgmRetrieveResponse, summary="检索本地BGM文件")
 async def get_bgm_list(request: Request):
-    redis_service = RedisService(request.app.state.redis)
     cache_key = RedisKeyPrefix.BGMS_LIST
     bgm_file_key = RedisKeyPrefix.BGM_FILE
     cached_data = await redis_service.get(cache_key)

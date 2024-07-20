@@ -1,3 +1,4 @@
+import asyncio
 import json
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -9,7 +10,7 @@ from moviepy.video.fx.resize import resize
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.editor import ImageClip
 from app.schemas.movies import VideoAspect, VideoConcatMode
-from app.services.redis_service import RedisService
+from app.services.redis_service import redis_service
 from app.utils import utils
 
 
@@ -23,11 +24,12 @@ def get_duration(video_path):
 
 
 async def get_bgm_file(request, bgm_type="random", bgm_file=""):
+    logger.info(f"Get_bgm_file Current event loop: {asyncio.get_event_loop()}")
     logger.info(f"get bgm file, bgm_type is {bgm_type}, bgm_file is {bgm_file}")
     suffix = ".mp3"
     choose_bgm_file = ""
     song_dir = utils.song_dir()
-    redis_service = RedisService(request.app.state.redis)
+
     if not bgm_file and bgm_type == "random":
         cache_key = "bgm_list_cache"
         cached_data = await redis_service.get(cache_key)
@@ -283,7 +285,7 @@ def add_image_clips(image_paths, video_width, video_height, clip_duration):
     for image_path in image_paths:
         img_clip = ImageClip(image_path)
 
-        img_clip = img_clip.resize(height=video_height*0.9)
+        img_clip = img_clip.resize(height=video_height * 0.9)
         img_clip = img_clip.set_position(("center", "center"))
         img_clip = img_clip.set_duration(clip_duration).fadeout(1).resize(lambda t: 1 + 0.03 * t)
         image_clips.append(img_clip)

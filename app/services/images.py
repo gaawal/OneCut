@@ -11,7 +11,7 @@ from loguru import logger
 
 from app.constant.redis_const import RedisKeyPrefix
 from app.schemas.movies import VideoParams
-from app.services.redis_service import RedisService
+from app.services.redis_service import redis_service
 
 
 async def get_images_files(request: Request, params: VideoParams):
@@ -20,7 +20,6 @@ async def get_images_files(request: Request, params: VideoParams):
     if params.weibo_title:
         logger.info(f"从微博热搜获取图片素材")
         # 从微博热搜获取图片素材
-        redis_service = RedisService(request.app.state.redis)
         cache_weibo_article_key = RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(params.weibo_title)
         cached_data = await redis_service.get(cache_weibo_article_key)
         images_path = []

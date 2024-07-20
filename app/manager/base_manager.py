@@ -36,11 +36,15 @@ class TaskManager:
                 # 为每个线程创建一个新的事件循环
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-                loop.run_until_complete(func(*args, **kwargs))
-                loop.run_until_complete(loop.shutdown_asyncgens())
-                loop.close()
+                try:
+                    loop.run_until_complete(func(*args, **kwargs))
+                    loop.run_until_complete(loop.shutdown_asyncgens())
+                finally:
+                    loop.close()
             else:
                 func(*args, **kwargs)
+        except Exception as e:
+            logger.error(f"Task {func.__name__} raised an exception: {e}")
         finally:
             self.task_done()
 

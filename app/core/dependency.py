@@ -5,7 +5,6 @@ from fastapi import Depends, Header, HTTPException, Request
 
 from app.core.ctx import CTX_USER_ID
 from app.models import Role, User
-from app.services.redis_service import RedisService
 from app.settings import settings
 
 

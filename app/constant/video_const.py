@@ -26,6 +26,7 @@ class TaskDetailState:
     COMBINED_VIDEOS_COMPLETE = "combined_videos_complete"
     GENERATING_FINAL_VIDEO = "generating_final_video"
     FINAL_VIDEO_GENERATION_COMPLETE = "final_video_generation_complete"
+    LOADING_DRAFT = "loading_draft"
 
 
 class TaskFailureReason:
@@ -102,7 +103,7 @@ VIDEO_STYLE_MAP = {
     },
     'opinion_sharing': {
         'structure': '事实+个人感受+发现问题+引出观点+故事+总结观点',
-        'example': """1、先摆出事实:最近发生了一个什么事 2、然后说出你自己的感受:让我产生了...3：描述你发现的问题:这背后存在一个……问题， 4：开始提出观点:我觉得问题的答案是....…  5：强化举例故事证明:一个能证明我观点的故事.... 最后总结:所以应该...… 再吸引人点赞关注"""
+        'example': """你是一个资深专业的媒体人，你要1、先摆出事实:近日发生了一个什么事 2、然后说出你自己的感受:让我产生了...3：描述你发现的问题:这背后存在一个……问题， 4：开始提出观点:我觉得问题的答案是....…  5：强化举例故事证明:一个能证明我观点的故事.... 最后总结:所以应该...… 再吸引人点赞关注"""
     },
     'knowledge_sharing': {
         'structure': '问题描述+问题的拆解+答案描述+答案拆解',

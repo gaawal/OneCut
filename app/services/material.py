@@ -11,7 +11,6 @@ from loguru import logger
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
 from app.schemas.drafts import Draft
-from app.services.state import RedisState
 from app.settings import movies_config
 from app.schemas.movies import VideoAspect, VideoConcatMode, MaterialInfo, TaskProgress
 from app.utils import utils
@@ -85,7 +84,6 @@ async def download_videos(task_id: str,
                           video_contact_mode: VideoConcatMode = VideoConcatMode.random,
                           audio_duration: float = 0.0,
                           max_clip_duration: int = 5,
-                          redis_state: RedisState = None,
                           draft: Draft = None,
                           draft_dir: str = "") -> List[str]:
     search_videos = search_videos_pexels if source == "pexels" else search_videos_pixabay

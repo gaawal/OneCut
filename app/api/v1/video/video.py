@@ -8,28 +8,24 @@ from loguru import logger
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
 from app.constant.redis_const import RedisKeyPrefix
-from app.schemas import Success, Fail
-from app.settings import movies_config
-from app.utils import request_base
-from app.manager.redis_manager import RedisTaskManager
-
+from app.manager.redis_manager import redis_taskmanager
 from app.models.exception import HttpException
+from app.schemas import Success, Fail
 from app.schemas.movies import TaskVideoRequest, TaskQueryResponse, TaskResponse, TaskQueryRequest, \
     TaskDeletionResponse, ThumbnailRequest
-from app.services import task as tm
-from app.services import state as sm
+from app.services import generate_video_task as generate_video_task
+from app.services.redis_service import redis_service
+from app.settings import movies_config
+from app.utils import request_base
 from app.utils import utils
 from app.utils.utils import tr
 
 router = APIRouter()
-task_manager = RedisTaskManager()
 
 
 @router.post("/createVideos", response_model=TaskResponse, summary="生成短视频")
 async def create_video(background_tasks: BackgroundTasks, request: Request, params: TaskVideoRequest):
-
     task_id = RedisKeyPrefix.VIDEO_TASK.format(utils.get_uuid())
-    redis_state = sm.state
     request_id = request_base.get_task_id(request)
     task = {
         "task_id": task_id,
@@ -48,8 +44,8 @@ async def create_video(background_tasks: BackgroundTasks, request: Request, para
         if not params.voice_name:
             raise ValueError(tr("Please select a Valid Voice Source"))
 
-        redis_state.update_task(task_id)
-        task_manager.add_task(tm.start, task_id=task_id, redis_state=redis_state, params=params, request=request)
+        await redis_service.update_task(task_id)
+        await redis_taskmanager.add_task(generate_video_task.start, task_id=task_id, params=params, request=request)
         logger.success(f"video created: {utils.to_json(task)}\ntask_id is {task_id} ")
 
         return Success(data=task)
@@ -58,15 +54,15 @@ async def create_video(background_tasks: BackgroundTasks, request: Request, para
 
 
 @router.get("/tasks/{task_id}", response_model=TaskQueryResponse, summary="查询任务状态")
-def get_task(request: Request, task_id: str = Path(..., description="Task ID"),
-             query: TaskQueryRequest = Depends()):
+async def get_task(request: Request, task_id: str = Path(..., description="Task ID"),
+                   query: TaskQueryRequest = Depends()):
     endpoint = movies_config.app.get("endpoint", "")
     if not endpoint:
         endpoint = str(request.base_url)
     endpoint = endpoint.rstrip("/")
 
     request_id = request_base.get_task_id(request)
-    task = sm.state.get_task(task_id)
+    task = await redis_service.get_task(task_id)
     if task:
         task_dir = utils.task_dir()
 
@@ -120,16 +116,16 @@ async def get_thumbnails(request: Request, params: ThumbnailRequest):
 
 
 @router.delete("/tasks/{task_id}", response_model=TaskDeletionResponse, summary="删除生成的短视频任务")
-def delete_video(request: Request, task_id: str = Path(..., description="Task ID")):
+async def delete_video(request: Request, task_id: str = Path(..., description="Task ID")):
     request_id = request_base.get_task_id(request)
-    task = sm.state.get_task(task_id)
+    task = redis_service.get_task(task_id)
     if task:
         tasks_dir = utils.task_dir()
         current_task_dir = os.path.join(tasks_dir, task_id)
         if os.path.exists(current_task_dir):
             shutil.rmtree(current_task_dir)
 
-        sm.state.delete_task(task_id)
+        await redis_service.delete_task(task_id)
         logger.success(f"video deleted: {utils.to_json(task)}")
         return utils.get_response(200)
 

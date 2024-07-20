@@ -12,7 +12,7 @@ from loguru import logger
 from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
 from app.services.hotspot.weibo_article import fetch_hot_article
 from app.services.hotspot.weibo_hotsearch import get_weibo_hotsearch
-from app.services.redis_service import RedisService
+from app.services.redis_service import redis_service
 
 REDIS_HOTSEARCH_KEY = RedisKeyPrefix.WEIBO_HOT_SEARCH
 REDIS_HOT_ARTICLE_KEY = RedisKeyPrefix.WEIBO_HOT_ARTICLE
@@ -22,23 +22,21 @@ class SchedulerTasks:
 
     @staticmethod
     async def get_weibo_hotsearch(app: FastAPI):
-        redis_service = RedisService(app.state.redis)
         hotsearch_data = await get_weibo_hotsearch()
         # 将数据缓存到 Redis
         if hotsearch_data:
             for i, hotsearch in enumerate(hotsearch_data):
                 # 如果已经采集过了，更新采集状态
                 if await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(hotsearch.get('title'))):
-                    hotsearch_data[i]['status'] = True
+                    hotsearch_data[i]['collect_status'] = True
                 else:
-                    hotsearch_data[i]['status'] = False
+                    hotsearch_data[i]['collect_status'] = False
             await redis_service.set(REDIS_HOTSEARCH_KEY, json.dumps(hotsearch_data, ensure_ascii=False),
                                     expire=RedisExpireTime.THIRTY_MINUTES)
 
     @staticmethod
     async def get_weibo_articles_to_cache(app: FastAPI):
         try:
-            redis_service = RedisService(app.state.redis)
             cached_data = await redis_service.get(REDIS_HOTSEARCH_KEY)  # 使用 await 关键字调用异步方法
             if cached_data:
                 logger.info("定时采集微博热搜话题详情")
@@ -49,7 +47,6 @@ class SchedulerTasks:
                     weibo_title = item.get('title')
                     weibo_article_cache = await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(weibo_title))
                     if weibo_article_cache:
-                        logger.warning(f"{weibo_title} 已采集成功，无需重复采集")
                         continue
                     else:
                         if weibo_article_cache := await fetch_hot_article(weibo_mid, weibo_url):

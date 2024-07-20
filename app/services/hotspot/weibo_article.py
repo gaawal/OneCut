@@ -112,7 +112,6 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
                             articles.append(article)
             logger.info(f"successfully fetch articles count: {len(articles)}")
         except Exception as e:
-            logger.error(f"Error fetching article content: {e}")
             logger.debug(traceback.format_exc())
 
         # 关闭页面和浏览器

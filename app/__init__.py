@@ -10,7 +10,9 @@ from app.core.init_app import (
     register_exceptions,
     register_routers, init_scheduler,
 )
-from app.db.redis import init_redis_pool, close_redis_pool, get_redis
+from app.db.redis_init import redis_client
+from app.manager.redis_manager import redis_taskmanager
+from app.services.redis_service import redis_service
 
 try:
     from app.settings.config import settings
@@ -44,14 +46,14 @@ async def startup_event():
     await init_superuser()
     await init_menus()
     await init_scheduler(app)
-    await init_redis_pool()  # 初始化 Redis 连接池
-    app.state.redis = await get_redis()
-    logger.success("Redis 连接已建立")
+    await redis_client.init_redis_pool()
+    app.state.redis = redis_client.redis
+    redis_service.initialize(app)
+    redis_taskmanager.initialize(app)
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     # 在应用关闭时执行的清理任务
     logger.warning("测试服务关闭-shutdown")
-    await close_redis_pool()  # 关闭 Redis 连接池
-    logger.warning("Redis 连接已关闭")
+    await redis_client.close_redis_pool()

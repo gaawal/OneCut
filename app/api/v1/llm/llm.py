@@ -15,7 +15,7 @@ from app.schemas.movies import VideoScriptResponse, VideoScriptRequest
 from app.services import llm
 from app.services.hotspot.weibo_article import fetch_hot_article, generate_weibo_summary
 from app.services.hotspot.weibo_hotsearch import get_weibo_hotsearch
-from app.utils.redis import get_redis_service
+from app.services.redis_service import redis_service
 
 router = APIRouter()
 REDIS_HOTSEARCH_KEY = RedisKeyPrefix.WEIBO_HOT_SEARCH
@@ -27,7 +27,7 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
     if (body.weibo_url and body.weibo_title):
         # 如果要从微博热搜获取微博信息
         logger.info(f"开始获取实时微博热搜话题 {body.weibo_url} 【{body.weibo_title}】")
-        redis_service = get_redis_service(request)
+
         cached_data = await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(body.weibo_title))  # 使用 await 关键字调用异步方法
         if cached_data:
             logger.success(f"获取微博热搜话题【{body.weibo_title}】缓存成功")
@@ -73,7 +73,6 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
     if (body.weibo_url and body.weibo_mid):
         # 如果要从微博热搜获取微博信息
         logger.info(f"开始获取实时微博热搜话题 {body.weibo_url} 【{body.weibo_title}】")
-        redis_service = get_redis_service(request)
         cached_data = await redis_service.get(REDIS_HOT_ARTICLE_KEY.format(body.weibo_title))  # 使用 await 关键字调用异步方法
         if cached_data:
             logger.success(f"获取微博热搜话题【{body.weibo_title}】缓存成功")
@@ -161,7 +160,6 @@ def generate_video_script_and_terms(request: Request, body: VideoScriptRequest):
 
 @router.get("/hot-spot", response_model=VideoScriptResponse, summary="搜索新闻热点")
 async def get_hot_spot(request: Request):
-    redis_service = get_redis_service(request)
     cached_data = await redis_service.get(REDIS_HOTSEARCH_KEY)  # 使用 await 关键字调用异步方法
     if cached_data:
         logger.info("获取微博热搜redis缓存")
