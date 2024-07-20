@@ -1,4 +1,4 @@
-import aioredis
+from redis import asyncio as aioredis
 
 from app.settings.base_config import base_settings
 
