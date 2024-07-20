@@ -214,8 +214,8 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
 
 
 def create_title_clip(params, title, video_width, video_height, font_path, duration=1):
-    # 包装文本
-    wrapped_title, _ = wrap_text(title, video_width * 0.5, font=font_path, fontsize=params.font_size * 1.5)
+    # 包装文本 字体显示的宽度和大小
+    wrapped_title, _ = wrap_text(title, video_width * 0.5, font=font_path, fontsize=params.font_size * 2)
 
     # 创建文字剪辑
     text_clip = TextClip(
