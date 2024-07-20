@@ -218,8 +218,8 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
 def create_title_clip(params, title, video_width, video_height, font_path):
     """生成视频封面"""
     # 包装文本 字体显示的宽度和大小
-    width_factor = 0.5  # 字幕显示的区域占比视频画面宽度的比例
-    font_size_factor = 2  # 封面标题字体大小与字幕字体大小倍率
+    width_factor = 0.4  # 字幕显示的区域占比视频画面宽度的比例
+    font_size_factor = 1.5  # 封面标题字体大小与字幕字体大小倍率
     duration = 0.5  # 视频封面播放的时长秒
 
     def wrap_title_text(text, max_width, font_path, fontsize):
