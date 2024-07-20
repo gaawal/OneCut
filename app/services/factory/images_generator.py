@@ -2,7 +2,7 @@
 # @Time : 2024/6/30 13:34
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
-# @File : images.py
+# @File : images_generator.py
 # @Software: PyCharm
 import json
 

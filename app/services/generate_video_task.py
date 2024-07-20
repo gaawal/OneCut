@@ -1,4 +1,3 @@
-import asyncio
 import math
 import os
 import time
@@ -12,12 +11,12 @@ from app.constant.video_const import TaskState, SubtitleProvider, TaskDetailStat
 from app.core.ctx import CTX_USER_ID
 from app.schemas.drafts import Draft
 from app.schemas.movies import VideoParams, VideoConcatMode, TaskProgress
-from app.services import llm, material, voice, video, subtitle
-from app.services.images import get_images_files
-from app.services.video import get_bgm_file
+from app.services.factory import llm_generator, material_generator, subtitle_generator, video_generator, voice_generator
+from app.services.factory.images_generator import get_images_files
+from app.services.factory.video_generator import get_bgm_file
 from app.settings import movies_config
 from app.utils import utils
-from app.utils.utils import calculate_duration, get_font_path
+from app.utils.utils import calculate_duration
 from app.services.redis_service import redis_service
 from app.controllers.video_task import task_controller
 from app.schemas.video_task import TaskCreate, TaskUpdate
@@ -104,12 +103,12 @@ async def start(task_id, params: VideoParams, request: Request):
             downloaded_videos = []
             if params.weibo_mid:
                 logger.info("微博话题模式，视频素材从本地获取")
-                downloaded_videos = material.get_local_videos(audio_duration, params.video_clip_duration)
+                downloaded_videos = material_generator.get_local_videos(audio_duration, params.video_clip_duration)
             if not downloaded_videos:
-                downloaded_videos = await material.download_videos(task_id, video_terms, params.video_source,
-                                                                   params.video_aspect, params.video_concat_mode,
-                                                                   audio_duration, params.video_clip_duration, draft,
-                                                                   utils.task_dir(task_id))
+                downloaded_videos = await material_generator.download_videos(task_id, video_terms, params.video_source,
+                                                                             params.video_aspect, params.video_concat_mode,
+                                                                             audio_duration, params.video_clip_duration, draft,
+                                                                             utils.task_dir(task_id))
             logger.info(f"视频素材文件为：{downloaded_videos}")
             if not subtitle_path:
                 await save_task_state(task_id, TaskState.FAILED, 50, TaskFailureReason.FAILED_GENERATING_SUBTITLE,
@@ -232,7 +231,7 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
         index = i + 1
         combined_video = path.join(utils.task_dir(task_id), f"combined-{index}.mp4")
         logger.info(f"\n\n## combining video: {index} => {combined_video}")
-        video.combine_videos(
+        video_generator.combine_videos(
             combined_video_path=combined_video,
             video_paths=downloaded_videos,
             audio_file=audio_file,
@@ -248,7 +247,7 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
         combined_video_path.append(combined_video)
 
         # 更新草稿
-        duration = video.get_duration(combined_video)
+        duration = video_generator.get_duration(combined_video)
         draft.add_playback_info("videos", {"path": combined_video, "start_time": start_time, "duration": duration})
         start_time += duration
 
@@ -267,9 +266,9 @@ async def generate_final_video(task_id, video_title, params, combined_video_path
         final_video = path.join(utils.task_dir(task_id), f"final-{i + 1}.mp4")
         logger.info(f"\n\n## generating final video: {i + 1} => {final_video}")
 
-        video.generate_video(task_id=task_id, title=video_title, video_path=combined_video, audio_path=audio_file,
-                             bgm_path=bgm_file,
-                             subtitle_path=subtitle_path, output_file=final_video, params=params)
+        video_generator.generate_video(task_id=task_id, title=video_title, video_path=combined_video, audio_path=audio_file,
+                                       bgm_path=bgm_file,
+                                       subtitle_path=subtitle_path, output_file=final_video, params=params)
         _progress += 1
         await save_task_state(task_id, TaskState.PROCESSING, _progress, TaskDetailState.GENERATING_FINAL_VIDEO, draft)
         _progress += 50 / len(combined_video_path) / 2
@@ -284,12 +283,12 @@ def generate_video_script_and_terms(params):
     video_terms = params.video_terms
     video_title = params.video_subject
     if not video_script:
-        video_script, video_terms, video_title = llm.generate_script_and_terms(video_subject=params.video_subject,
-                                                                               language=params.video_language,
-                                                                               paragraph_number=params.paragraph_number,
-                                                                               video_category=params.video_category,
-                                                                               amount=params.amount,
-                                                                               word_count=params.word_count)
+        video_script, video_terms, video_title = llm_generator.generate_script_and_terms(video_subject=params.video_subject,
+                                                                                         language=params.video_language,
+                                                                                         paragraph_number=params.paragraph_number,
+                                                                                         video_category=params.video_category,
+                                                                                         amount=params.amount,
+                                                                                         word_count=params.word_count)
     else:
         logger.info("no need to generate video script.")
     return video_script, video_terms, video_title
@@ -313,11 +312,11 @@ async def generate_audio(task_id, video_script, voice_name):
     logger.info("\n\n## generating audio")
     audio_file = path.join(utils.task_dir(task_id), f"audio.mp3")
     try:
-        sub_maker = await voice.tts(text=video_script, voice_name=voice_name, voice_file=audio_file)
+        sub_maker = await voice_generator.tts(text=video_script, voice_name=voice_name, voice_file=audio_file)
         if sub_maker is None:
             raise ValueError("TTS service returned None")
 
-        audio_duration = voice.get_audio_duration(sub_maker)
+        audio_duration = voice_generator.get_audio_duration(sub_maker)
         audio_duration = math.ceil(audio_duration)
         return audio_file, audio_duration, sub_maker
     except Exception as e:
@@ -333,17 +332,17 @@ async def generate_subtitle(task_id, params, audio_file, video_script, sub_maker
         logger.info(f"\n\n## generating subtitle, provider: {subtitle_provider}")
         subtitle_fallback = False
         if subtitle_provider == SubtitleProvider.EDGE:
-            voice.create_subtitle(text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path)
+            voice_generator.create_subtitle(text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path)
             if not os.path.exists(subtitle_path):
                 subtitle_fallback = True
                 logger.warning("subtitle file not found, fallback to whisper")
 
         if subtitle_provider == SubtitleProvider.WHISPER or subtitle_fallback:
-            subtitle.create(audio_file=audio_file, subtitle_file=subtitle_path)
+            subtitle_generator.create(audio_file=audio_file, subtitle_file=subtitle_path)
             logger.info("\n\n## correcting subtitle")
-            subtitle.correct(subtitle_file=subtitle_path, video_script=video_script)
+            subtitle_generator.correct(subtitle_file=subtitle_path, video_script=video_script)
 
-        subtitle_lines = subtitle.file_to_subtitles(subtitle_path)
+        subtitle_lines = subtitle_generator.file_to_subtitles(subtitle_path)
         if not subtitle_lines:
             logger.warning(f"subtitle file is invalid: {subtitle_path}")
             subtitle_path = ""

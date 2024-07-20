@@ -12,14 +12,13 @@ from loguru import logger
 from mutagen.mp3 import MP3
 
 from app.constant.redis_const import RedisKeyPrefix
-from app.manager.redis_manager import RedisTaskManager, redis_taskmanager
+from app.manager.redis_manager import redis_taskmanager
 from app.models.exception import HttpException
 from app.schemas import Success, Fail
 from app.schemas.movies import BgmUploadResponse, BgmRetrieveResponse, VoiceRetrieveResponse, StreamAudioRequest
 from app.schemas.voice_tts import TTSRequest
-from app.services import voice
 from app.services.redis_service import redis_service
-from app.services.voice import get_all_azure_voices
+from app.services.factory.voice_generator import get_all_azure_voices
 from app.settings import movies_config
 from app.utils import request_base
 from app.utils import utils

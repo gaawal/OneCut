@@ -2,7 +2,7 @@ import json
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageFont
 from loguru import logger
 from moviepy.editor import *
 from moviepy.video.fx.resize import resize
@@ -213,9 +213,14 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     return result, height
 
 
-def create_title_clip(params, title, video_width, video_height, font_path, duration=1):
+def create_title_clip(params, title, video_width, video_height, font_path):
+    """生成视频封面"""
     # 包装文本 字体显示的宽度和大小
-    wrapped_title, _ = wrap_text(title, video_width * 0.5, font=font_path, fontsize=params.font_size * 2.5)
+    width_factor = 0.4  # 字幕显示的区域占比视频画面宽度的比例
+    font_factor = 3  # 封面标题字体大小与字幕字体大小倍率
+    duration = 0.5  # 视频封面播放的时长秒
+    wrapped_title, _ = wrap_text(title, video_width * width_factor, font=font_path,
+                                 fontsize=params.font_size * font_factor)
 
     # 创建文字剪辑
     text_clip = TextClip(
@@ -312,7 +317,7 @@ def generate_video(task_id, title, video_path, audio_path, bgm_path, subtitle_pa
         cover_image_path = os.path.join(utils.task_dir(), task_id, "cover.png")
         image = Image.fromarray(frame)
         image.save(cover_image_path)
-    logger.success("cover image saved",cover_image_path)
+    logger.success("cover image saved", cover_image_path)
 
 
 def add_image_clips(image_paths, video_width, video_height, clip_duration):

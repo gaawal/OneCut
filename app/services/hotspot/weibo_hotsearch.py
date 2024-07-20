@@ -24,7 +24,7 @@ async def get_weibo_hotsearch():
             raw_data = response.json().get('data', {})
             hotsearch_data = []
             for item in raw_data.get('realtime', {}):
-                if item.get("mid") != 0:
+                if item.get("mid"):
                     hotsearch_data.append({
                         "mid": item.get("mid"),  # 热搜id
                         "category": item.get("category"),
