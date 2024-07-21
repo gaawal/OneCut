@@ -115,8 +115,6 @@ async def get_hot_spot(request: Request):
                 # 如果已经采集过了，更新采集状态
                 if await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.get('title'))):
                     hotsearch_data[i]['collect_status'] = True
-                else:
-                    hotsearch_data[i]['collect_status'] = False
             await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps(hotsearch_data, ensure_ascii=False),
                                      expire=RedisExpireTime.THIRTY_MINUTES)
     return Success(data=hotsearch_data)

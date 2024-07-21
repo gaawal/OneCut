@@ -28,9 +28,6 @@ class SchedulerTasks:
                 if await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.get('title'))):
                     print("定时采集过了")
                     hotsearch_data[i]['collect_status'] = True
-                else:
-                    print("定时采集没有")
-                    hotsearch_data[i]['collect_status'] = False
             await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps(hotsearch_data, ensure_ascii=False),
                                      expire=RedisExpireTime.ONE_HOUR)
 
