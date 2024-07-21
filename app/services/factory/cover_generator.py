@@ -19,7 +19,7 @@ compute_type = movies_config.whisper.get("compute_type", "int8")
 model = None
 
 
-def create_title_clip(params, title, video_width, video_height, font_path, cover_mode="text", video_path=None,
+def create_title_clip(params, title, video_width, video_height, font_path, video_path=None, cover_mode="text",
                       random_bg=True):
     """生成视频封面"""
     width_factor = 0.4  # 字幕显示的区域占比视频画面宽度的比例
