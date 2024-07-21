@@ -16,7 +16,21 @@ from app.constant.video_const import VIDEO_STYLE_MAP, VIDEO_INSPIRED
 from app.settings import movies_config
 
 _max_retries = 5
-
+def generate_video_script_and_terms(params):
+    logger.info("\n\n## generating video script")
+    video_script = params.video_script.strip()
+    video_terms = params.video_terms
+    video_title = params.video_subject
+    if not video_script:
+        video_script, video_terms, video_title = generate_script_and_terms(video_subject=params.video_subject,
+                                                                                         language=params.video_language,
+                                                                                         paragraph_number=params.paragraph_number,
+                                                                                         video_category=params.video_category,
+                                                                                         amount=params.amount,
+                                                                                         word_count=params.word_count)
+    else:
+        logger.info("no need to generate video script.")
+    return video_script, video_terms, video_title
 
 def _generate_response(prompt: str) -> str:
     content = ""

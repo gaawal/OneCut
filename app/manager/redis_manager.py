@@ -3,7 +3,7 @@ from typing import Callable, Any, Dict
 from fastapi import FastAPI
 from loguru import logger
 from app.schemas.movies import VideoParams
-from app.services import generate_video_task as generate_video_task
+from app.services import video_controller as generate_video_task
 import asyncio
 
 FUNC_MAP = {
@@ -26,7 +26,7 @@ class RedisTaskManager:
     async def add_task(self, func: Callable, *args: Any, **kwargs: Any):
         async with self.lock:
             if self.current_tasks < self.max_concurrent_tasks:
-                logger.info(f"Adding task: {func.__name__}, current tasks: {self.current_tasks}")
+                logger.info(f"任务队列添加视频生成任务: {func.__name__}, 当前待处理任务数: {self.current_tasks}")
                 await self.execute_task(func, *args, **kwargs)
             else:
                 logger.info(f"Enqueuing task: {func.__name__}, current tasks: {self.current_tasks}")

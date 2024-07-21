@@ -2,7 +2,7 @@ import os
 import pathlib
 import shutil
 
-from fastapi import Request, Depends, Path, BackgroundTasks, APIRouter, HTTPException
+from fastapi import Request, Depends, Path, BackgroundTasks, APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from loguru import logger
 from moviepy.video.io.VideoFileClip import VideoFileClip
@@ -13,7 +13,7 @@ from app.models.exception import HttpException
 from app.schemas import Success, Fail
 from app.schemas.movies import TaskVideoRequest, TaskQueryResponse, TaskResponse, TaskQueryRequest, \
     TaskDeletionResponse, ThumbnailRequest
-from app.services import generate_video_task as generate_video_task
+from app.services import video_controller as generate_video_task
 from app.services.redis_service import redis_service
 from app.settings import movies_config
 from app.utils import request_base
@@ -46,7 +46,7 @@ async def create_video(background_tasks: BackgroundTasks, request: Request, para
 
         await redis_service.update_task(task_id)
         await redis_taskmanager.add_task(generate_video_task.start, task_id=task_id, params=params, request=request)
-        logger.success(f"video created: {utils.to_json(task)}\ntask_id is {task_id} ")
+        logger.info(f"视频生成任务已创建: {utils.to_json(task)}\ntask_id is {task_id} ")
 
         return Success(data=task)
     except ValueError as e:
@@ -190,3 +190,17 @@ async def download_video(_: Request, file_path: str):
     }
     return FileResponse(path=video_path, headers=headers, filename=f"{filename}{extension}",
                         media_type=f'video/{extension[1:]}')
+
+
+@router.get("/stream_video", summary="返回生成的视频文件")
+async def stream_video(task_id: str = Query(...)):
+    # 假设视频文件保存在一个以 task_id 命名的目录下
+    video_dir = os.path.join(utils.task_dir(), task_id)
+    video_path = os.path.join(video_dir, "final-1.mp4")
+
+    if not os.path.exists(video_path):
+        raise HTTPException(status_code=404, detail="视频文件未找到")
+
+    # 返回视频文件
+    return FileResponse(video_path, media_type="video/mpeg")
+

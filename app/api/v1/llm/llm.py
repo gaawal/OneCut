@@ -29,7 +29,7 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
         cached_data = await redis_service.get(
             RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(body.weibo_title))  # 使用 await 关键字调用异步方法
         if cached_data:
-            logger.success(f"获取微博热搜话题缓存成功--{body.weibo_title}】")
+            logger.success(f"获取微博热搜话题缓存成功【{body.weibo_title}】")
             weibo_article_data = json.loads(cached_data)
         else:
             weibo_article_data = await fetch_hot_article(body.weibo_mid, body.weibo_url)

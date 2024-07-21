@@ -26,8 +26,10 @@ class SchedulerTasks:
             for i, hotsearch in enumerate(hotsearch_data):
                 # 如果已经采集过了，更新采集状态
                 if await redis_service.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.get('title'))):
+                    print("定时采集过了")
                     hotsearch_data[i]['collect_status'] = True
                 else:
+                    print("定时采集没有")
                     hotsearch_data[i]['collect_status'] = False
             await redis_service.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps(hotsearch_data, ensure_ascii=False),
                                     expire=RedisExpireTime.ONE_HOUR)
@@ -37,8 +39,19 @@ class SchedulerTasks:
         try:
             cached_data = await redis_service.get(RedisKeyPrefix.WEIBO_HOT_SEARCH)  # 使用 await 关键字调用异步方法
             if cached_data:
-
                 hotsearch_data = json.loads(cached_data)
+                for i, item in enumerate(hotsearch_data):
+                    title = item.get('title')
+                    url = item.get('url')
+                    if not await redis_service.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(title)):
+                        logger.info(f"Hot article {title} need to fetched")
+                        hot_article_data = await fetch_hot_article(url)
+                        await save_weibo_article_and_update_data(title, hot_article_data)
+                        break
+                    else:
+                        logger.info(f"Hot article {title} have already fetched")
+
+
 
         except Exception as e:
             logger.error(f"{str(e)}")

@@ -1,4 +1,5 @@
 import asyncio
+import math
 import os
 import re
 import traceback
@@ -14,6 +15,20 @@ from app.schemas.movies import Voice
 from app.settings import movies_config
 from app.utils import utils
 
+async def generate_audio(task_id, video_script, voice_name):
+    logger.info("\n\n## generating audio")
+    audio_file = os.path.join(utils.task_dir(task_id), f"audio.mp3")
+    try:
+        sub_maker = await tts(text=video_script, voice_name=voice_name, voice_file=audio_file)
+        if sub_maker is None:
+            raise ValueError("TTS service returned None")
+
+        audio_duration = get_audio_duration(sub_maker)
+        audio_duration = math.ceil(audio_duration)
+        return audio_file, audio_duration, sub_maker
+    except Exception as e:
+        logger.error(f"Failed to generate audio: {str(e)}")
+        return None, None, None
 
 def get_all_azure_voices(filter_locals=None) -> list[dict]:
     if filter_locals is None:

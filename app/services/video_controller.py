@@ -1,4 +1,3 @@
-import math
 import os
 import time
 import traceback
@@ -7,14 +6,12 @@ from os import path
 from fastapi import Request
 from loguru import logger
 
-from app.constant.video_const import TaskState, SubtitleProvider, TaskDetailState, TaskFailureReason
+from app.constant.video_const import TaskState, TaskDetailState, TaskFailureReason
 from app.core.ctx import CTX_USER_ID
 from app.schemas.drafts import Draft
 from app.schemas.movies import VideoParams, VideoConcatMode, TaskProgress
-from app.services.factory import llm_generator, material_generator, subtitle_generator, video_generator, voice_generator
-from app.services.factory.images_generator import get_images_files
-from app.services.factory.video_generator import get_bgm_file
-from app.settings import movies_config
+from app.services.factory import llm_generator, material_generator, subtitle_generator, video_generator, \
+    voice_generator, images_generator, audio_generator
 from app.utils import utils
 from app.utils.utils import calculate_duration
 from app.services.redis_service import redis_service
@@ -57,7 +54,7 @@ async def start(task_id, params: VideoParams, request: Request):
     try:
         if not os.path.exists(draft_file):
             await save_task_state(task_id, TaskState.PROCESSING, 5, TaskDetailState.GENERATING_SCRIPT, draft)
-            video_script, video_terms, video_title = generate_video_script_and_terms(params)
+            video_script, video_terms, video_title = llm_generator.generate_video_script_and_terms(params)
             if not all([video_script, video_terms, video_title]):
                 await save_task_state(task_id, TaskState.FAILED, 5, TaskFailureReason.FAILED_GENERATING_SCRIPT, draft,
                                       TaskFailureReason.FAILED_GENERATING_SCRIPT)
@@ -76,9 +73,10 @@ async def start(task_id, params: VideoParams, request: Request):
             draft.save_to_file(utils.task_dir(task_id))
 
             await save_task_state(task_id, TaskState.PROCESSING, 15, TaskDetailState.GENERATING_AUDIO, draft)
-            bgm_path = await get_bgm_file(request=request, bgm_type=params.bgm_type, bgm_file=params.bgm_file)
-            audio_file, audio_duration, sub_maker = await generate_audio(task_id, video_script,
-                                                                         params.voice_name)
+            bgm_path = await audio_generator.get_bgm_file(request=request, bgm_type=params.bgm_type,
+                                                          bgm_file=params.bgm_file)
+            audio_file, audio_duration, sub_maker = await voice_generator.generate_audio(task_id, video_script,
+                                                                                         params.voice_name)
             if not audio_file:
                 await save_task_state(task_id, TaskState.FAILED, 16, TaskFailureReason.FAILED_GENERATING_AUDIO, draft,
                                       TaskFailureReason.FAILED_GENERATING_AUDIO)
@@ -95,18 +93,22 @@ async def start(task_id, params: VideoParams, request: Request):
 
             draft.save_to_file(utils.task_dir(task_id))
 
-            subtitle_path = await generate_subtitle(task_id, params, audio_file, video_script, sub_maker)
+            subtitle_path = await subtitle_generator.generate_subtitle(task_id, params, audio_file, video_script,
+                                                                       sub_maker)
 
-            images_files = await get_images_files(request=request, params=params)
+            images_files = await images_generator.get_images_files(request=request, params=params)
             await save_task_state(task_id, TaskState.PROCESSING, 50, TaskDetailState.DOWNLOADING_VIDEOS, draft)
             downloaded_videos = []
             if params.weibo_mid:
                 logger.info("微博话题模式，视频素材从本地获取")
                 downloaded_videos = material_generator.get_local_videos(audio_duration, params.video_clip_duration)
             if not downloaded_videos:
+                logger.info("视频素材在线获取")
                 downloaded_videos = await material_generator.download_videos(task_id, video_terms, params.video_source,
-                                                                             params.video_aspect, params.video_concat_mode,
-                                                                             audio_duration, params.video_clip_duration, draft,
+                                                                             params.video_aspect,
+                                                                             params.video_concat_mode,
+                                                                             audio_duration, params.video_clip_duration,
+                                                                             draft,
                                                                              utils.task_dir(task_id))
             logger.info(f"视频素材文件为：{downloaded_videos}")
             if not subtitle_path:
@@ -176,45 +178,6 @@ async def start(task_id, params: VideoParams, request: Request):
     return task_progress.dict()
 
 
-async def save_task_state(task_id, state, progress, detail_state, draft, extra=None):
-    task = await task_controller.get_by_task_id(task_id)
-    if task:
-        task_update = TaskUpdate(
-            id=task.id,
-            user_id=task.user_id,
-            task_id=task_id,
-            progress=progress,
-            state=state,
-            draft_content=draft.to_dict(),
-            detail_state=detail_state,
-        )
-        await task_controller.update(obj_in=task_update)
-
-    # 保存到 Redis
-    data = {"state": state, "progress": progress, "detail_state": detail_state}
-    if redis_service is not None:
-        await redis_service.update_task(task_id, **data)
-    else:
-        logger.warning(f"redis_service is None, unable to update task {task_id} state")
-
-
-def restore_task_progress_from_draft(draft: Draft) -> TaskProgress:
-    task_progress = TaskProgress()
-    script_info = draft.draft["script_info"]
-    task_progress.script = script_info["video_script"]
-    task_progress.video_title = script_info["video_title"]
-    task_progress.search_terms = script_info["video_terms"]
-
-    materials = draft.draft["materials"]
-    task_progress.audio_file = materials["audios"][0]["path"] if materials["audios"] else None
-    task_progress.audio_duration = materials["audios"][0]["duration"] if materials["audios"] else 0
-    task_progress.subtitle_file = materials["subtitles"][0]["path"] if materials["subtitles"] else None
-    task_progress.images_files = [img["path"] for img in materials["images"]] if materials["images"] else []
-    task_progress.downloaded_videos = [video["path"] for video in materials["videos"]] if materials["videos"] else []
-
-    return task_progress
-
-
 async def combine_videos(task_id, params, downloaded_videos, audio_file, images_files, task_progress,
                          draft):
     combined_video_path = []
@@ -265,7 +228,8 @@ async def generate_final_video(task_id, video_title, params, combined_video_path
         final_video = path.join(utils.task_dir(task_id), f"final-{i + 1}.mp4")
         logger.info(f"\n\n## generating final video: {i + 1} => {final_video}")
 
-        video_generator.generate_video(task_id=task_id, title=video_title, video_path=combined_video, audio_path=audio_file,
+        video_generator.generate_video(task_id=task_id, title=video_title, video_path=combined_video,
+                                       audio_path=audio_file,
                                        bgm_path=bgm_file,
                                        subtitle_path=subtitle_path, output_file=final_video, params=params)
         _progress += 1
@@ -274,23 +238,6 @@ async def generate_final_video(task_id, video_title, params, combined_video_path
         task_progress.final_videos.append(final_video)
         final_video_paths.append(final_video)
     return final_video_paths
-
-
-def generate_video_script_and_terms(params):
-    logger.info("\n\n## generating video script")
-    video_script = params.video_script.strip()
-    video_terms = params.video_terms
-    video_title = params.video_subject
-    if not video_script:
-        video_script, video_terms, video_title = llm_generator.generate_script_and_terms(video_subject=params.video_subject,
-                                                                                         language=params.video_language,
-                                                                                         paragraph_number=params.paragraph_number,
-                                                                                         video_category=params.video_category,
-                                                                                         amount=params.amount,
-                                                                                         word_count=params.word_count)
-    else:
-        logger.info("no need to generate video script.")
-    return video_script, video_terms, video_title
 
 
 def save_script(task_id, video_script, video_terms, params):
@@ -307,48 +254,6 @@ def save_script(task_id, video_script, video_terms, params):
     return script_file
 
 
-async def generate_audio(task_id, video_script, voice_name):
-    logger.info("\n\n## generating audio")
-    audio_file = path.join(utils.task_dir(task_id), f"audio.mp3")
-    try:
-        sub_maker = await voice_generator.tts(text=video_script, voice_name=voice_name, voice_file=audio_file)
-        if sub_maker is None:
-            raise ValueError("TTS service returned None")
-
-        audio_duration = voice_generator.get_audio_duration(sub_maker)
-        audio_duration = math.ceil(audio_duration)
-        return audio_file, audio_duration, sub_maker
-    except Exception as e:
-        logger.error(f"Failed to generate audio: {str(e)}")
-        return None, None, None
-
-
-async def generate_subtitle(task_id, params, audio_file, video_script, sub_maker):
-    subtitle_path = ""
-    if params.subtitle_enabled:
-        subtitle_path = path.join(utils.task_dir(task_id), f"subtitle.srt")
-        subtitle_provider = movies_config.app.get("subtitle_provider", "").strip().lower()
-        logger.info(f"\n\n## generating subtitle, provider: {subtitle_provider}")
-        subtitle_fallback = False
-        if subtitle_provider == SubtitleProvider.EDGE:
-            voice_generator.create_subtitle(text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path)
-            if not os.path.exists(subtitle_path):
-                subtitle_fallback = True
-                logger.warning("subtitle file not found, fallback to whisper")
-
-        if subtitle_provider == SubtitleProvider.WHISPER or subtitle_fallback:
-            subtitle_generator.create(audio_file=audio_file, subtitle_file=subtitle_path)
-            logger.info("\n\n## correcting subtitle")
-            subtitle_generator.correct(subtitle_file=subtitle_path, video_script=video_script)
-
-        subtitle_lines = subtitle_generator.file_to_subtitles(subtitle_path)
-        if not subtitle_lines:
-            logger.warning(f"subtitle file is invalid: {subtitle_path}")
-            subtitle_path = ""
-
-    return subtitle_path
-
-
 async def handle_task_failure(task_id, failure_reason, error, task_progress, draft):
     logger.error(f"task failed: {task_id} cause by {traceback.format_exc()}")
     if redis_service is not None:
@@ -358,3 +263,42 @@ async def handle_task_failure(task_id, failure_reason, error, task_progress, dra
         logger.warning(f"redis_service is None, unable to update task {task_id} state to failed")
     # 保存草稿
     draft.save_to_file(utils.task_dir(task_id))
+
+
+async def save_task_state(task_id, state, progress, detail_state, draft, extra=None):
+    task = await task_controller.get_by_task_id(task_id)
+    if task:
+        task_update = TaskUpdate(
+            id=task.id,
+            user_id=task.user_id,
+            task_id=task_id,
+            progress=progress,
+            state=state,
+            draft_content=draft.to_dict(),
+            detail_state=detail_state,
+        )
+        await task_controller.update(obj_in=task_update)
+
+    # 保存到 Redis
+    data = {"state": state, "progress": progress, "detail_state": detail_state}
+    if redis_service is not None:
+        await redis_service.update_task(task_id, **data)
+    else:
+        logger.warning(f"redis_service is None, unable to update task {task_id} state")
+
+
+def restore_task_progress_from_draft(draft: Draft) -> TaskProgress:
+    task_progress = TaskProgress()
+    script_info = draft.draft["script_info"]
+    task_progress.script = script_info["video_script"]
+    task_progress.video_title = script_info["video_title"]
+    task_progress.search_terms = script_info["video_terms"]
+
+    materials = draft.draft["materials"]
+    task_progress.audio_file = materials["audios"][0]["path"] if materials["audios"] else None
+    task_progress.audio_duration = materials["audios"][0]["duration"] if materials["audios"] else 0
+    task_progress.subtitle_file = materials["subtitles"][0]["path"] if materials["subtitles"] else None
+    task_progress.images_files = [img["path"] for img in materials["images"]] if materials["images"] else []
+    task_progress.downloaded_videos = [video["path"] for video in materials["videos"]] if materials["videos"] else []
+
+    return task_progress

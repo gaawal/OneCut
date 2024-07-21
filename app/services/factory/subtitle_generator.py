@@ -1,11 +1,16 @@
+
 import json
 import os.path
 import re
+from os import path
+from timeit import default_timer as timer
 
 from faster_whisper import WhisperModel
-from timeit import default_timer as timer
 from loguru import logger
+from moviepy.editor import *
 
+from app.constant.video_const import SubtitleProvider
+from app.services.factory import voice_generator
 from app.settings import movies_config
 from app.utils import utils
 
@@ -13,7 +18,30 @@ model_size = movies_config.whisper.get("model_size", "large-v3")
 device = movies_config.whisper.get("device", "cpu")
 compute_type = movies_config.whisper.get("compute_type", "int8")
 model = None
+async def generate_subtitle(task_id, params, audio_file, video_script, sub_maker):
+    subtitle_path = ""
+    if params.subtitle_enabled:
+        subtitle_path = path.join(utils.task_dir(task_id), f"subtitle.srt")
+        subtitle_provider = movies_config.app.get("subtitle_provider", "").strip().lower()
+        logger.info(f"\n\n## generating subtitle, provider: {subtitle_provider}")
+        subtitle_fallback = False
+        if subtitle_provider == SubtitleProvider.EDGE:
+            voice_generator.create_subtitle(text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path)
+            if not os.path.exists(subtitle_path):
+                subtitle_fallback = True
+                logger.warning("subtitle file not found, fallback to whisper")
 
+        if subtitle_provider == SubtitleProvider.WHISPER or subtitle_fallback:
+            create(audio_file=audio_file, subtitle_file=subtitle_path)
+            logger.info("\n\n## correcting subtitle")
+            correct(subtitle_file=subtitle_path, video_script=video_script)
+
+        subtitle_lines = file_to_subtitles(subtitle_path)
+        if not subtitle_lines:
+            logger.warning(f"subtitle file is invalid: {subtitle_path}")
+            subtitle_path = ""
+
+    return subtitle_path
 
 def create(audio_file, subtitle_file: str = ""):
     global model
@@ -192,3 +220,5 @@ if __name__ == "__main__":
 
     subtitle_file = f"{task_dir}/subtitle-test.srt"
     create(audio_file, subtitle_file)
+
+

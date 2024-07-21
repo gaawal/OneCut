@@ -4,6 +4,8 @@ import requests
 import random
 from loguru import logger
 
+from app.utils.utils import generate_md5_id
+
 
 async def get_weibo_hotsearch():
     hotsearch_data = []
@@ -25,12 +27,13 @@ async def get_weibo_hotsearch():
             hotsearch_data = []
             for item in raw_data.get('realtime', {}):
                 if item.get("mid"):
+                    url = f"https://s.weibo.com/weibo?q=%23{item.get('note')}%23"
                     hotsearch_data.append({
-                        "mid": item.get("mid"),  # 热搜id
+                        "mid":  generate_md5_id(url),  # 热搜id
                         "category": item.get("category"),
                         "title": item.get("note"),
                         "hot": item.get("num"),
-                        "url": f"https://s.weibo.com/weibo?q=%23{item.get('note')}%23",
+                        "url": url,
                     })
 
             logger.success("Weibo data saved redis successfully.")

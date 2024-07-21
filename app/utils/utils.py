@@ -1,18 +1,20 @@
+import json
 import locale
 import os
 import threading
 from typing import Any
-from loguru import logger
-import json
 from uuid import uuid4
+
 import urllib3
+from loguru import logger
 
 from app.constant import video_const
 from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
 from app.services.redis_service import redis_service
 
-
 urllib3.disable_warnings()
+import hashlib
+import uuid
 
 
 def get_response(status: int, data: Any = None, message: str = ""):
@@ -119,6 +121,7 @@ def font_dir(sub_dir: str = ""):
         os.makedirs(d)
     return d
 
+
 def get_font_path(params):
     font_path = ""
     if params.subtitle_enabled:
@@ -130,6 +133,7 @@ def get_font_path(params):
 
         logger.info(f"using font: {font_path}")
     return font_path
+
 
 def song_dir(sub_dir: str = ""):
     d = resource_dir(f"songs")
@@ -293,6 +297,7 @@ async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cac
     保存话题内容到缓存中，同时刷新微博已采集的话题数据
     """
     if weibo_article_cache:
+        logger.info(f"保存话题内容成功【{weibo_title}】")
         await redis_service.set(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title),
                                 json.dumps(weibo_article_cache, ensure_ascii=False),
                                 expire=RedisExpireTime.ONE_DAY)
@@ -305,9 +310,18 @@ async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cac
                     hot_data[i]["collect_status"] = True
         await redis_service.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps(hot_data, ensure_ascii=False),
                                 expire=RedisExpireTime.THIRTY_MINUTES)
+        logger.success("刷新已采集的微博数据成功！", hot_data)
+
+
+def generate_md5_id(url: str) -> str:
+    # 创建md5对象
+    md5 = hashlib.md5()
+    # 更新md5对象
+    md5.update(url.encode('utf-8'))
+    # 返回UUID和MD5编码组合的字符串
+    return f"{md5.hexdigest()}"
 
 
 if __name__ == '__main__':
-    result = split_string_by_punctuations(
-        '千万不要再相信那些博主说自媒体文案随随便便就能生成爆款！今天，我要揭露一个真相：爆款文案背后隐藏的秘密。你可能不知道，每一篇爆款文案都是经过精心策划和数据分析的结果。首先，你需要了解你的目标受众，他们的痛点、需求和兴趣点。接着，运用心理学原理，比如稀缺性、紧迫感，来激发他们的购买欲望。然后，巧妙地使用故事叙述技巧，让读者产生共鸣，增强文案的吸引力。最后，别忘了测试和优化，通过数据反馈不断调整文案策略。掌握了这些技巧，你也能写出让人眼前一亮的爆款文案。别再盲目跟风，学会这些，让你的自媒体文案独树一帜！')
-    print(result)
+    print(generate_md5_id(
+        "https://cn.bing.com/search?q=%E8%99%BE%E7%B1%B3&form=TRBLS1&qnlst=xiami&sblst=See%20results%20in%20English"))

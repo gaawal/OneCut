@@ -1,4 +1,3 @@
-import json
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -9,9 +8,8 @@ from moviepy.video.fx.resize import resize
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.editor import ImageClip
 
-from app.constant.video_const import PUNCTUATIONS
 from app.schemas.movies import VideoAspect, VideoConcatMode
-from app.services.redis_service import redis_service
+from app.services.factory.cover_generator import create_title_clip
 from app.utils import utils
 from app.utils.utils import get_font_path
 
@@ -23,45 +21,6 @@ def get_duration(video_path):
     except Exception as e:
         logger.error(f"Failed to get duration for video {video_path}: {str(e)}")
         return 0
-
-
-async def get_bgm_file(request, bgm_type="random", bgm_file=""):
-    logger.info(f"get bgm file, bgm_type is {bgm_type}, bgm_file is {bgm_file}")
-    suffix = ".mp3"
-    choose_bgm_file = ""
-    song_dir = utils.song_dir()
-
-    if not bgm_file and bgm_type == "random":
-        cache_key = "bgm_list_cache"
-        cached_data = await redis_service.get(cache_key)
-        if cached_data:
-            logger.success("get bgm list in redis cache ok, try to random choice it")
-            response = json.loads(cached_data)
-            files = response.get("files")
-            random_file_info = random.choice(files)
-            genres = random_file_info.get("genres")
-            name = random_file_info.get("name")
-            choose_bgm_file = os.path.join(song_dir, genres, name)
-            logger.info(f"random choice bgm file is {choose_bgm_file}")
-    else:
-        bgm_file_key = "bgm_file_cache:"
-        cache_bgm_key = f"{bgm_file_key}{bgm_file}{suffix}"
-        if not bgm_type:
-            logger.warning(f"get bgm file failed, {bgm_file} is not available")
-            return ""
-        cached_data = await redis_service.get(cache_bgm_key)
-        if cached_data:
-            logger.success(f"get bgm in redis cache ok, redis key is {cache_bgm_key}")
-            bgm_info = json.loads(cached_data)
-            genres = bgm_info.get("genres")
-            name = bgm_info.get("name")
-            choose_bgm_file = os.path.join(song_dir, genres, name)
-        else:
-            logger.warning(f"No bgm in redis cache, redis key is {cache_bgm_key}")
-    if not choose_bgm_file or not os.path.exists(choose_bgm_file):
-        logger.info(f"No bgm file found at path {choose_bgm_file}")
-
-    return choose_bgm_file
 
 
 def resize_clip(clip, video_width, video_height):
@@ -84,7 +43,7 @@ def resize_clip(clip, video_width, video_height):
 
             background = ColorClip(size=(video_width, video_height), color=(0, 0, 0))
             clip = CompositeVideoClip([background.set_duration(clip.duration), clip_resized.set_position("center")])
-        logger.info(f"resizing video to {video_width} x {video_height}, clip size: {clip_w} x {clip_h}")
+        logger.info(f"调整视频分辨率为:{video_width} x {video_height}, 原始素材分辨率为:{clip_w} x {clip_h}")
     return clip
 
 
@@ -213,58 +172,6 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     result = "\n".join(_wrapped_lines_).strip()
     height = len(_wrapped_lines_) * height
     return result, height
-
-
-def create_title_clip(params, title, video_width, video_height, font_path):
-    """生成视频封面"""
-    # 包装文本 字体显示的宽度和大小
-    width_factor = 0.4  # 字幕显示的区域占比视频画面宽度的比例
-    font_size_factor = 1.5  # 封面标题字体大小与字幕字体大小倍率
-    duration = 0.5  # 视频封面播放的时长秒
-
-    def wrap_title_text(text, max_width, font_path, fontsize):
-        font = ImageFont.truetype(font_path, fontsize)
-
-        def get_text_size(inner_text):
-            inner_text = inner_text.strip()
-            left, top, right, bottom = font.getbbox(inner_text)
-            return right - left, bottom - top
-
-        lines = []
-        current_line = ""
-        for char in text:
-            # 如果标题中有中文标点符号就换行
-            if char in PUNCTUATIONS:
-                lines.append(current_line.strip())
-                current_line = ""
-            else:
-                current_line += char
-                width, _ = get_text_size(current_line)
-                if width > max_width:
-                    lines.append(current_line.strip())
-                    current_line = ""
-        if current_line:
-            lines.append(current_line.strip())
-
-        wrapped_text = "\n".join(lines)
-        return wrapped_text
-
-    wrapped_title = wrap_title_text(title, video_width * width_factor, font_path, params.font_size * font_size_factor)
-
-    # 创建文字剪辑
-    text_clip = TextClip(
-        wrapped_title,
-        font=font_path,
-        fontsize=params.font_size * font_size_factor,
-        color=params.text_fore_color,
-        bg_color=params.text_background_color,
-        stroke_color=params.stroke_color,
-        stroke_width=params.stroke_width,
-        size=(video_width, video_height),
-        method='label'
-    ).set_duration(duration).set_position(("center", "center"))
-
-    return text_clip
 
 
 def generate_video(task_id, title, video_path, audio_path, bgm_path, subtitle_path, output_file, params):

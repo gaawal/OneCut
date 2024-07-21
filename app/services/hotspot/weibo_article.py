@@ -7,6 +7,7 @@ from playwright.async_api import async_playwright
 import random
 
 from app.utils import utils
+from app.utils.utils import generate_md5_id
 
 
 async def fetch_article_content_and_record(weibo_mid, url, video_path):
@@ -110,7 +111,7 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
                             logger.warning(f"Image not found or clickable: {e}")
                         if len(articles) < article_max:
                             articles.append(article)
-            logger.info(f"successfully fetch articles count: {len(articles)}")
+            logger.info(f"{url}获取文章数： {len(articles)}")
         except Exception as e:
             logger.debug(traceback.format_exc())
 
@@ -122,7 +123,8 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
         return introduction, articles
 
 
-async def fetch_hot_article(weibo_mid, hot_url):
+async def fetch_hot_article(hot_url):
+    weibo_mid = generate_md5_id(hot_url)
     # 定位至实际的热门
     target_url = f'{hot_url}'
     video_dir = utils.cache_browser_info_dir()
