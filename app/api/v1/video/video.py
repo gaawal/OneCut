@@ -14,7 +14,7 @@ from app.schemas import Success, Fail
 from app.schemas.movies import TaskVideoRequest, TaskQueryResponse, TaskResponse, TaskQueryRequest, \
     TaskDeletionResponse, ThumbnailRequest
 from app.services import video_controller as generate_video_task
-from app.services.redis_service import redis_service
+from app.services.redis_service import redis_instance
 from app.settings import movies_config
 from app.utils import request_base
 from app.utils import utils
@@ -44,7 +44,7 @@ async def create_video(background_tasks: BackgroundTasks, request: Request, para
         if not params.voice_name:
             raise ValueError(tr("Please select a Valid Voice Source"))
 
-        await redis_service.update_task(task_id)
+        await redis_instance.update_task(task_id)
         await redis_taskmanager.add_task(generate_video_task.start, task_id=task_id, params=params, request=request)
         logger.info(f"视频生成任务已创建: {utils.to_json(task)}\ntask_id is {task_id} ")
 
@@ -62,7 +62,7 @@ async def get_task(request: Request, task_id: str = Path(..., description="Task 
     endpoint = endpoint.rstrip("/")
 
     request_id = request_base.get_task_id(request)
-    task = await redis_service.get_task(task_id)
+    task = await redis_instance.get_task(task_id)
     if task:
         task_dir = utils.task_dir()
 
@@ -118,14 +118,14 @@ async def get_thumbnails(request: Request, params: ThumbnailRequest):
 @router.delete("/tasks/{task_id}", response_model=TaskDeletionResponse, summary="删除生成的短视频任务")
 async def delete_video(request: Request, task_id: str = Path(..., description="Task ID")):
     request_id = request_base.get_task_id(request)
-    task = redis_service.get_task(task_id)
+    task = redis_instance.get_task(task_id)
     if task:
         tasks_dir = utils.task_dir()
         current_task_dir = os.path.join(tasks_dir, task_id)
         if os.path.exists(current_task_dir):
             shutil.rmtree(current_task_dir)
 
-        await redis_service.delete_task(task_id)
+        await redis_instance.delete_task(task_id)
         logger.success(f"video deleted: {utils.to_json(task)}")
         return utils.get_response(200)
 

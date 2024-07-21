@@ -13,5 +13,5 @@ scheduler = AsyncIOScheduler()
 def register_scheduler_job(app):
     # 初始化并启动定时任务
     scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=30)
-    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=3)
+    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=1)
     scheduler.start()

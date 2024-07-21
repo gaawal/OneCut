@@ -12,7 +12,7 @@ from app.core.init_app import (
 )
 from app.db.redis_init import redis_client
 from app.manager.redis_manager import redis_taskmanager
-from app.services.redis_service import redis_service
+from app.services.redis_service import redis_instance
 
 try:
     from app.settings.base_config import base_settings
@@ -48,7 +48,7 @@ async def startup_event():
     await init_scheduler(app)
     await redis_client.init_redis_pool()
     app.state.redis = redis_client.redis
-    redis_service.initialize(app)
+    redis_instance.initialize(app)
     redis_taskmanager.initialize(app)
 
 

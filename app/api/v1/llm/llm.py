@@ -15,7 +15,7 @@ from app.schemas.movies import VideoScriptResponse, VideoScriptRequest
 from app.services.factory import llm_generator
 from app.services.hotspot.weibo_article import fetch_hot_article, generate_weibo_summary
 from app.services.hotspot.weibo_hotsearch import get_weibo_hotsearch
-from app.services.redis_service import redis_service
+from app.services.redis_service import redis_instance
 from app.utils.utils import save_weibo_article_and_update_data
 
 router = APIRouter()
@@ -26,7 +26,7 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
     if body.weibo_title:
         # 如果要从微博热搜获取微博信息
         logger.info(f"开始获取实时微博热搜话题【{body.weibo_title}】")
-        cached_data = await redis_service.get(
+        cached_data = await redis_instance.get(
             RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(body.weibo_title))  # 使用 await 关键字调用异步方法
         if cached_data:
             logger.success(f"获取微博热搜话题缓存成功【{body.weibo_title}】")
@@ -103,7 +103,7 @@ def generate_video_script_and_terms(request: Request, body: VideoScriptRequest):
 
 @router.get("/hot-spot", response_model=VideoScriptResponse, summary="搜索新闻热点")
 async def get_hot_spot(request: Request):
-    cached_data = await redis_service.get(RedisKeyPrefix.WEIBO_HOT_SEARCH)  # 使用 await 关键字调用异步方法
+    cached_data = await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_SEARCH)  # 使用 await 关键字调用异步方法
     if cached_data:
         logger.info("获取微博热搜redis缓存")
         hotsearch_data = json.loads(cached_data)
@@ -113,10 +113,10 @@ async def get_hot_spot(request: Request):
             # 将数据缓存到 Redis
             for i, hotsearch in enumerate(hotsearch_data):
                 # 如果已经采集过了，更新采集状态
-                if await redis_service.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.get('title'))):
+                if await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.get('title'))):
                     hotsearch_data[i]['collect_status'] = True
                 else:
                     hotsearch_data[i]['collect_status'] = False
-            await redis_service.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps(hotsearch_data, ensure_ascii=False),
-                                    expire=RedisExpireTime.THIRTY_MINUTES)
+            await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps(hotsearch_data, ensure_ascii=False),
+                                     expire=RedisExpireTime.THIRTY_MINUTES)
     return Success(data=hotsearch_data)

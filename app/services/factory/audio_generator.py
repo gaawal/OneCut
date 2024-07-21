@@ -10,7 +10,7 @@ import random
 
 from loguru import logger
 
-from app.services import redis_service
+from app.services.redis_service import redis_instance
 from app.utils import utils
 
 
@@ -22,7 +22,7 @@ async def get_bgm_file(request, bgm_type="random", bgm_file=""):
 
     if not bgm_file and bgm_type == "random":
         cache_key = "bgm_list_cache"
-        cached_data = await redis_service.get(cache_key)
+        cached_data = await redis_instance.get(cache_key)
         if cached_data:
             logger.success("get bgm list in redis cache ok, try to random choice it")
             response = json.loads(cached_data)
@@ -38,7 +38,7 @@ async def get_bgm_file(request, bgm_type="random", bgm_file=""):
         if not bgm_type:
             logger.warning(f"get bgm file failed, {bgm_file} is not available")
             return ""
-        cached_data = await redis_service.get(cache_bgm_key)
+        cached_data = await redis_instance.get(cache_bgm_key)
         if cached_data:
             logger.success(f"get bgm in redis cache ok, redis key is {cache_bgm_key}")
             bgm_info = json.loads(cached_data)

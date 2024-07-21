@@ -84,4 +84,4 @@ class RedisService(BaseState):
         return value
 
 
-redis_service = RedisService()
+redis_instance = RedisService()

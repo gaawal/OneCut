@@ -17,7 +17,7 @@ from app.models.exception import HttpException
 from app.schemas import Success, Fail
 from app.schemas.movies import BgmUploadResponse, BgmRetrieveResponse, VoiceRetrieveResponse, StreamAudioRequest
 from app.schemas.voice_tts import TTSRequest
-from app.services.redis_service import redis_service
+from app.services.redis_service import redis_instance
 from app.services.factory.voice_generator import get_all_azure_voices
 from app.settings import movies_config
 from app.utils import request_base
@@ -44,7 +44,7 @@ def get_voices_list(request: Request):
 async def get_bgm_list(request: Request):
     cache_key = RedisKeyPrefix.BGMS_LIST
     bgm_file_key = RedisKeyPrefix.BGM_FILE
-    cached_data = await redis_service.get(cache_key)
+    cached_data = await redis_instance.get(cache_key)
     if cached_data:
         response = json.loads(cached_data)
     else:
@@ -69,14 +69,14 @@ async def get_bgm_list(request: Request):
                         "duration": await format_duration(int(audio.info.length)),
                         "genres": genre,
                         "image": image_data if image_data else None,
-                        "waveform": await get_waveform_data(redis_service, file)  # 获取波形数据
+                        "waveform": await get_waveform_data(redis_instance, file)  # 获取波形数据
                     }
                     bgm_list.append(bgm_info)
-                    await redis_service.set(bgm_file_key.format(name), json.dumps(bgm_info, ensure_ascii=False))
+                    await redis_instance.set(bgm_file_key.format(name), json.dumps(bgm_info, ensure_ascii=False))
                     logger.info(f"save bgm file index {name} success")
         bgm_list_sorted = sorted(bgm_list, key=lambda x: x["name"])
         response = {"files": bgm_list_sorted}
-        await redis_service.set(cache_key, json.dumps(response, ensure_ascii=False))
+        await redis_instance.set(cache_key, json.dumps(response, ensure_ascii=False))
 
     return Success(data=response)
 

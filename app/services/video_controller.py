@@ -14,7 +14,7 @@ from app.services.factory import llm_generator, material_generator, subtitle_gen
     voice_generator, images_generator, audio_generator
 from app.utils import utils
 from app.utils.utils import calculate_duration
-from app.services.redis_service import redis_service
+from app.services.redis_service import redis_instance
 from app.controllers.video_task import task_controller
 from app.schemas.video_task import TaskCreate, TaskUpdate
 import warnings
@@ -256,9 +256,9 @@ def save_script(task_id, video_script, video_terms, params):
 
 async def handle_task_failure(task_id, failure_reason, error, task_progress, draft):
     logger.error(f"task failed: {task_id} cause by {traceback.format_exc()}")
-    if redis_service is not None:
-        await redis_service.update_task(task_id, state=TaskState.FAILED, progress=100, failure_reason=failure_reason,
-                                        error=error, **task_progress.dict())
+    if redis_instance is not None:
+        await redis_instance.update_task(task_id, state=TaskState.FAILED, progress=100, failure_reason=failure_reason,
+                                         error=error, **task_progress.dict())
     else:
         logger.warning(f"redis_service is None, unable to update task {task_id} state to failed")
     # 保存草稿
@@ -281,8 +281,8 @@ async def save_task_state(task_id, state, progress, detail_state, draft, extra=N
 
     # 保存到 Redis
     data = {"state": state, "progress": progress, "detail_state": detail_state}
-    if redis_service is not None:
-        await redis_service.update_task(task_id, **data)
+    if redis_instance is not None:
+        await redis_instance.update_task(task_id, **data)
     else:
         logger.warning(f"redis_service is None, unable to update task {task_id} state")
 
