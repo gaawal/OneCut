@@ -189,7 +189,7 @@ def generate_video(task_id, title, video_path, audio_path, bgm_path, subtitle_pa
     font_path = get_font_path(params)
 
     # 创建封面文字剪辑
-    title_clip = create_title_clip(params, title, video_width, video_height, font_path)
+    title_clip = create_title_clip(params, title, video_width, video_height, font_path, cover_mode="text", video_path=video_path)
 
     def create_text_clip(subtitle_item):
         phrase = subtitle_item[1]
