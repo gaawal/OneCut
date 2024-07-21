@@ -99,7 +99,7 @@ async def start(task_id, params: VideoParams, request: Request):
             images_files = await images_generator.get_images_files(request=request, params=params)
             await save_task_state(task_id, TaskState.PROCESSING, 50, TaskDetailState.DOWNLOADING_VIDEOS, draft)
             downloaded_videos = []
-            if params.weibo_mid:
+            if params.weibo_title:
                 logger.info("微博话题模式，视频素材从本地获取")
                 downloaded_videos = material_generator.get_local_videos(audio_duration, params.video_clip_duration)
             if not downloaded_videos:
