@@ -7,7 +7,7 @@ export const basicRoutes = [
   {
     path: '/',
     redirect: '/workbench',
-    meta: { order: 0 }
+    meta: { order: 0 },
   },
   {
     name: t('views.workbench.label_workbench'),

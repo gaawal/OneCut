@@ -36,7 +36,7 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
                 logger.warning(f"Introduction not found: {e}")
 
             # 提取热门评论
-            await page.wait_for_selector('//div[@action-type="feed_list_item"]', timeout=15000)
+            await page.wait_for_selector('//div[@action-type="feed_list_item"]', timeout=1500)
             comment_elements = page.locator('//div[@action-type="feed_list_item"]')
             count = await comment_elements.count()
 
@@ -81,10 +81,10 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
                                     thumbnail = thumbnails.nth(j)
                                     if await thumbnail.is_visible():
                                         await thumbnail.scroll_into_view_if_needed()
-                                        await thumbnail.click(timeout=500)
+                                        await thumbnail.click(timeout=1500)
                                         await page.wait_for_selector(
                                             '[node-type="feed_list_media_disp"] [node-type="imagesBox"] [node-type="picShow"] [node-type="imgBox"] img',
-                                            timeout=500)
+                                            timeout=1000)
                                         await asyncio.sleep(1)  # 等待大图加载
 
                                         # 查找并处理展开的图片容器，仅在当前card_wrap范围内

@@ -174,7 +174,7 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     return result, height
 
 
-def generate_video(task_id, title, video_path, audio_path, bgm_path, subtitle_path, output_file, params):
+def generate_video(task_id, title, video_path,images_path, audio_path, bgm_path, subtitle_path, output_file, params):
     aspect = VideoAspect(params.video_aspect)
     video_width, video_height = aspect.to_resolution()
 
@@ -189,8 +189,8 @@ def generate_video(task_id, title, video_path, audio_path, bgm_path, subtitle_pa
     font_path = get_font_path(params)
 
     # 创建封面文字剪辑
-    title_clip = create_title_clip(params, title, video_width, video_height, font_path, video_path=video_path,
-                                   cover_mode="text", random_bg=True)
+    title_clip = create_title_clip(params, title, video_width, video_height,images_path, font_path, video_path=video_path,
+                                   cover_mode="video_frame", random_bg=True)
 
     def create_text_clip(subtitle_item):
         phrase = subtitle_item[1]

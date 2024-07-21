@@ -26,7 +26,6 @@ class SchedulerTasks:
             for i, hotsearch in enumerate(hotsearch_data):
                 # 如果已经采集过了，更新采集状态
                 if await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.get('title'))):
-                    print("定时采集过了")
                     hotsearch_data[i]['collect_status'] = True
             await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps(hotsearch_data, ensure_ascii=False),
                                      expire=RedisExpireTime.ONE_HOUR)
@@ -45,9 +44,6 @@ class SchedulerTasks:
                         hot_article_data = await fetch_hot_article(url)
                         await save_weibo_article_and_update_data(title, hot_article_data)
                         break
-                    else:
-                        logger.info(f"Hot article {title} have already fetched")
-
 
 
         except Exception as e:

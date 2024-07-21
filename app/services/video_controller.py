@@ -144,7 +144,7 @@ async def start(task_id, params: VideoParams, request: Request):
         task_progress.combined_videos = combined_video_path
         await save_task_state(task_id, TaskState.PROCESSING, 80, TaskDetailState.COMBINED_VIDEOS_COMPLETE, draft,
                               task_progress.dict())
-        final_video_path = await generate_final_video(task_id, video_title, params, combined_video_path,
+        final_video_path = await generate_final_video(task_id, video_title, params, combined_video_path,images_files,
                                                       task_progress.audio_file,
                                                       bgm_path, subtitle_path, task_progress, draft)
         if not final_video_path:
@@ -218,7 +218,7 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
     return combined_video_path
 
 
-async def generate_final_video(task_id, video_title, params, combined_video_path, audio_file, bgm_file, subtitle_path,
+async def generate_final_video(task_id, video_title, params, combined_video_path, images_files,audio_file, bgm_file, subtitle_path,
                                task_progress,
                                draft):
     final_video_paths = []
@@ -228,7 +228,7 @@ async def generate_final_video(task_id, video_title, params, combined_video_path
         final_video = path.join(utils.task_dir(task_id), f"final-{i + 1}.mp4")
         logger.info(f"\n\n## generating final video: {i + 1} => {final_video}")
 
-        video_generator.generate_video(task_id=task_id, title=video_title, video_path=combined_video,
+        video_generator.generate_video(task_id=task_id, title=video_title, video_path=combined_video,images_path=images_files,
                                        audio_path=audio_file,
                                        bgm_path=bgm_file,
                                        subtitle_path=subtitle_path, output_file=final_video, params=params)

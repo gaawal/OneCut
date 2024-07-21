@@ -32,7 +32,7 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
             logger.success(f"获取微博热搜话题缓存成功【{body.weibo_title}】")
             weibo_article_data = json.loads(cached_data)
         else:
-            weibo_article_data = await fetch_hot_article(body.weibo_mid, body.weibo_url)
+            weibo_article_data = await fetch_hot_article(body.weibo_url)
             logger.success(f"实时获取微博热搜话题成功--{body.weibo_title}")
             await save_weibo_article_and_update_data(body.weibo_title, weibo_article_data)
 
