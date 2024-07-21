@@ -257,7 +257,6 @@ const stepsMap = {
 
 const overlap = ref(false)
 const videoStore = useVideoStore()
-const videoTaskId = ref('')
 
 const handleGenerateVideo = async () => {
   videoStore.showTaskProgressModal = true
@@ -308,9 +307,9 @@ const handleGenerateVideo = async () => {
     const statusCode = response.code
     console.log('StatusCode', statusCode)
     if (statusCode === 200) {
-      videoTaskId.value = response.data.task_id
+      videoStore.videoTaskId = response.data.task_id
       $message.success('创建文生视频任务成功')
-      pollTaskProgress(videoTaskId.value)
+      pollTaskProgress()
     } else if (statusCode === 400) {
       $message.info(response.data.msg || '请求错误，请检查输入参数')
     } else {
@@ -325,10 +324,10 @@ const handleExportVideo = () => {
   // 实现导出视频的逻辑
 }
 // 轮训获取任务状态
-const pollTaskProgress = (taskId) => {
+const pollTaskProgress = () => {
   const interval = setInterval(async () => {
     try {
-      const response = await api.getVideoTask(taskId)
+      const response = await api.getVideoTask(videoStore.videoTaskId)
       if (response.code === 200) {
         const progress = response.data
         const currentStepIndex = stepsOrder.indexOf(progress.detail_state)

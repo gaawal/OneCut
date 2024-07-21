@@ -8,36 +8,44 @@
   >
     <NCard>
       <div class="task-progress-container">
-        <h3>{{ videoStore.videoTitle }}</h3>
-        <NSteps
-          :current="currentStep"
-          :status="progressState"
-          size="small"
-          style="margin-bottom: 20px"
-        >
-          <NStep v-for="(step, index) in steps" :key="index" :title="step.title" />
-        </NSteps>
-        <div class="progress-info">
-          <NProgress type="circle" :percentage="progressPercentage" show-info>
-            <template #info>
-              <div class="progress-info-content">
-                <div>{{ progressPercentage }}%</div>
-                <div>{{ currentStepTitle }}</div>
-              </div>
-            </template>
-          </NProgress>
+        <div v-if="progressPercentage !== 100">
+          <h3>{{ videoStore.videoTitle }}</h3>
+          <NSteps
+            :current="currentStep"
+            :status="progressState"
+            size="small"
+            style="margin-bottom: 20px"
+          >
+            <NStep v-for="(step, index) in steps" :key="index" :title="step.title" />
+          </NSteps>
+          <div class="progress-info">
+            <NProgress type="circle" :percentage="progressPercentage" show-info>
+              <template #info>
+                <div class="progress-info-content">
+                  <div>{{ progressPercentage }}%</div>
+                  <div>{{ currentStepTitle }}</div>
+                </div>
+              </template>
+            </NProgress>
+            <p>{{ taskDetailState }}</p>
+          </div>
         </div>
-        <p>{{ taskDetailState }}</p>
+        <div v-if="progressPercentage === 100" class="video-container">
+          <video ref="videoPlayer" :src="videoUrl" controls style="width: 100%"></video>
+        </div>
       </div>
     </NCard>
   </NModal>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, watch, ref } from 'vue'
+import axios from 'axios'
 import { useVideoStore } from '@/store'
+import { getToken } from '@/utils'
 
 const videoStore = useVideoStore()
+const videoUrl = ref('')
 
 const steps = [
   { title: '生成文案' },
@@ -57,6 +65,22 @@ const currentStepTitle = computed(() => {
   return currentStep.value > 0 && currentStep.value <= steps.length
     ? steps[currentStep.value - 1].title
     : ''
+})
+
+// Watcher to detect when video generation is complete
+watch(progressPercentage, async (newPercentage) => {
+  if (newPercentage === 100) {
+    try {
+      const response = await axios.get(`/api/v1/video/stream_video`, {
+        headers: { token: getToken() },
+        params: { task_id: videoStore.videoTaskId },
+        responseType: 'blob',
+      })
+      videoUrl.value = URL.createObjectURL(response.data)
+    } catch (error) {
+      console.error('Error fetching video:', error)
+    }
+  }
 })
 </script>
 
@@ -79,5 +103,10 @@ const currentStepTitle = computed(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.video-container {
+  margin-top: 20px;
+  width: 100%;
 }
 </style>
