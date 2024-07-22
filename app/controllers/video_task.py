@@ -4,11 +4,13 @@
 # @Email : 840132699@qq.com
 # @File : tasks.py
 
-from typing import List, Optional
+
+from typing import List, Optional, Dict, Any
 
 from app.core.crud import CRUDBase
 from app.models.tasks import Task
 from app.schemas.video_task import TaskCreate, TaskUpdate
+
 
 class TaskController(CRUDBase[Task, TaskCreate, TaskUpdate]):
     def __init__(self):
@@ -26,5 +28,14 @@ class TaskController(CRUDBase[Task, TaskCreate, TaskUpdate]):
 
     async def update(self, obj_in: TaskUpdate) -> Task:
         return await super().update(id=obj_in.id, obj_in=obj_in.update_dict())
+
+    async def list(self, page: int, page_size: int, search: Dict[str, Any]) -> (int, List[Task]):
+        query = self.model.all()
+        if search:
+            for key, value in search.items():
+                query = query.filter(**{key: value})
+        total = await query.count()
+        results = await query.offset((page - 1) * page_size).limit(page_size).all()
+        return total, results
 
 task_controller = TaskController()

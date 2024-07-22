@@ -1,7 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useTaskStore } from '@/store'
 import ToolsBar from '../onecut/component/ToolsBar.vue'
 const works = ref([])
+const taskStore = useTaskStore()
+const fetchTasks = () => {
+  taskStore.fetchTasks()
+}
 
 const fetchData = async () => {
   // Mock data based on the provided structure
@@ -43,118 +48,6 @@ const fetchData = async () => {
           width: 1920,
           workId: '102126506135960881',
         },
-        {
-          auditStatus: 3,
-          downloadPic: '/thumbnail/demo.png',
-          downloadUrl:
-            'https://bin-trans.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623&filename=广州一宝马冲撞人群_致多人受伤5死13伤这绝对是故意杀人_不过用的工具是车罢.mp4',
-          duration: 37000,
-          fileSize: '9.03MB',
-          height: 1080,
-          levelTag: 0,
-          mediaId: '7018923473452728320',
-          nickname: '豁达大度的霸王龙GRZV',
-          onlineStatus: 0,
-          picture: '/thumbnail/demo.png',
-          productId: '16645914991689856',
-          shareUrl: '',
-          showCreateUrl: 0,
-          status: 9,
-          title: '广州一宝马冲撞人群 致多人受伤#5死13伤！这绝对是故意杀人，不过用的工具是车罢',
-          uid: '1243221032477718548',
-          uniqueIndexId: 2,
-          updateTime: '2023-01-11 20:57:06',
-          url: 'https://alicdnliz.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623',
-          version: 1,
-          videoDownloadSize: 0,
-          videoType: 0,
-          width: 1920,
-          workId: '10645911348478048',
-        },
-        {
-          auditStatus: 3,
-          downloadPic: '/thumbnail/demo.png',
-          downloadUrl:
-            'https://bin-trans.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623&filename=广州一宝马冲撞人群_致多人受伤5死13伤这绝对是故意杀人_不过用的工具是车罢.mp4',
-          duration: 37000,
-          fileSize: '9.03MB',
-          height: 1080,
-          levelTag: 0,
-          mediaId: '7018923473452728320',
-          nickname: '豁达大度的霸王龙GRZV',
-          onlineStatus: 0,
-          picture: '/thumbnail/demo.png',
-          productId: '16645914991689856',
-          shareUrl: '',
-          showCreateUrl: 0,
-          status: 9,
-          title: '广州一宝马冲撞人群 致多人受伤#5死13伤！这绝对是故意杀人，不过用的工具是车罢',
-          uid: '1243221032477718548',
-          uniqueIndexId: 2,
-          updateTime: '2023-01-11 20:57:06',
-          url: 'https://alicdnliz.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623',
-          version: 1,
-          videoDownloadSize: 0,
-          videoType: 0,
-          width: 1920,
-          workId: '10645911348478048',
-        },
-        {
-          auditStatus: 3,
-          downloadPic: '/thumbnail/demo.png',
-          downloadUrl:
-            'https://bin-trans.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623&filename=广州一宝马冲撞人群_致多人受伤5死13伤这绝对是故意杀人_不过用的工具是车罢.mp4',
-          duration: 37000,
-          fileSize: '9.03MB',
-          height: 1080,
-          levelTag: 0,
-          mediaId: '7018923473452728320',
-          nickname: '豁达大度的霸王龙GRZV',
-          onlineStatus: 0,
-          picture: '/thumbnail/demo.png',
-          productId: '16645914991689856',
-          shareUrl: '',
-          showCreateUrl: 0,
-          status: 9,
-          title: '广州一宝马冲撞人群 致多人受伤#5死13伤！这绝对是故意杀人，不过用的工具是车罢',
-          uid: '1243221032477718548',
-          uniqueIndexId: 2,
-          updateTime: '2023-01-11 20:57:06',
-          url: 'https://alicdnliz.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623',
-          version: 1,
-          videoDownloadSize: 0,
-          videoType: 0,
-          width: 1920,
-          workId: '10645911348478048',
-        },
-        {
-          auditStatus: 3,
-          downloadPic: '/thumbnail/demo.png',
-          downloadUrl:
-            'https://bin-trans.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623&filename=广州一宝马冲撞人群_致多人受伤5死13伤这绝对是故意杀人_不过用的工具是车罢.mp4',
-          duration: 37000,
-          fileSize: '9.03MB',
-          height: 1080,
-          levelTag: 0,
-          mediaId: '7018923473452728320',
-          nickname: '豁达大度的霸王龙GRZV',
-          onlineStatus: 0,
-          picture: '/thumbnail/demo.png',
-          productId: '16645914991689856',
-          shareUrl: '',
-          showCreateUrl: 0,
-          status: 9,
-          title: '广州一宝马冲撞人群 致多人受伤#5死13伤！这绝对是故意杀人，不过用的工具是车罢',
-          uid: '1243221032477718548',
-          uniqueIndexId: 2,
-          updateTime: '2023-01-11 20:57:06',
-          url: 'https://alicdnliz.miaopai.com/stream/vPkZUp2X78gVYhSEDN1pHRaDD2gNPYHMs1oSNw__.mp4?ssig=6275c7a8fa046cd4b7750b137f721150&time_stamp=1718978646623',
-          version: 1,
-          videoDownloadSize: 0,
-          videoType: 0,
-          width: 1920,
-          workId: '10645911348478048',
-        },
       ],
       hasMore: 0,
     },
@@ -179,6 +72,9 @@ const formatDuration = (ms) => {
   const seconds = Math.floor((ms % 60000) / 1000)
   return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
 }
+onMounted(() => {
+  fetchTasks()
+})
 
 onMounted(fetchData)
 </script>

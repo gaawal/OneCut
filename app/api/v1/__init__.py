@@ -10,6 +10,7 @@ from .users import users_router
 from .llm import llm_router
 from .video import video_router
 from .audio import audio_router
+from .video_task import task_router
 
 v1_router = APIRouter()
 
@@ -21,3 +22,4 @@ v1_router.include_router(apis_router, prefix="/api", dependencies=[DependPermiss
 v1_router.include_router(llm_router, prefix="/llm", dependencies=[DependPermisson])
 v1_router.include_router(video_router, prefix="/video", dependencies=[DependPermisson])
 v1_router.include_router(audio_router, prefix="/audio", dependencies=[DependPermisson])
+v1_router.include_router(task_router, prefix="/tasks", dependencies=[DependPermisson])

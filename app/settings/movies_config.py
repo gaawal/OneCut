@@ -45,12 +45,10 @@ proxy = _cfg.get("proxy", {})
 azure = _cfg.get("azure", {})
 ui = _cfg.get("ui", {})
 
-hostname = socket.gethostname()
 
-log_level = _cfg.get("log_level", "DEBUG")
 project_name = _cfg.get("project_name", "OneCutMovieTools")
 project_description = _cfg.get("project_description",
-                               "<a href='https://github.com/harry0703/MoneyPrinterTurbo'>https://github.com/harry0703/MoneyPrinterTurbo</a>")
+                               "")
 project_version = _cfg.get("project_version", "0.0.1")
 reload_debug = False
 

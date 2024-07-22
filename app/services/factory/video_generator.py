@@ -174,7 +174,8 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     return result, height
 
 
-def generate_video(task_id, title, video_path,images_path, audio_path, bgm_path, subtitle_path, output_file, params):
+def generate_video(task_id, title, video_path, images_path, audio_path, bgm_path, subtitle_path, output_file, params,
+                   draft):
     aspect = VideoAspect(params.video_aspect)
     video_width, video_height = aspect.to_resolution()
 
@@ -189,8 +190,11 @@ def generate_video(task_id, title, video_path,images_path, audio_path, bgm_path,
     font_path = get_font_path(params)
 
     # 创建封面文字剪辑
-    title_clip = create_title_clip(params, title, video_width, video_height,images_path, font_path, video_path=video_path,
-                                   cover_mode="video_frame", random_bg=True)
+    cover_mode = "video_frame"
+    random_bg = True
+    title_clip = create_title_clip(params, title, video_width, video_height, images_path, font_path,
+                                   video_path=video_path,
+                                   cover_mode=cover_mode, random_bg=random_bg)
 
     def create_text_clip(subtitle_item):
         phrase = subtitle_item[1]
@@ -254,7 +258,14 @@ def generate_video(task_id, title, video_path,images_path, audio_path, bgm_path,
         cover_image_path = os.path.join(utils.task_dir(), task_id, "cover.png")
         image = Image.fromarray(frame)
         image.save(cover_image_path)
+
     logger.success("cover image saved", cover_image_path)
+    # 更新草稿
+    draft.add_material("cover", {"path": cover_image_path,
+                                 "cover_mode": cover_mode,
+                                 "text": title
+                                 }
+                       )
 
 
 def add_image_clips(image_paths, video_width, video_height, clip_duration):

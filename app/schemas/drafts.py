@@ -39,7 +39,8 @@ class Draft:
                 "videos": [],
                 "audios": [],
                 "subtitles": [],
-                "images": []
+                "images": [],
+                "cover": []
             },
 
         }

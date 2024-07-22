@@ -50,4 +50,10 @@ export default {
   // videos
   createVideos: (params = {}) => request.post('/video/createVideos', params),
   getVideoTask: (taskId) => request.get(`/video/tasks/${encodeURIComponent(taskId)}`),
+  // tasks
+  fetchTasks: (data) => request.post('/tasks/list', data),
+  fetchTaskDetail: (data) => request.post('/tasks/get', data),
+  createTask: (data) => request.post('/tasks/create', data),
+  updateTask: (data) => request.post('/tasks/update', data),
+  deleteTask: (data) => request.post('/tasks/delete', data),
 }

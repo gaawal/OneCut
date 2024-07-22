@@ -53,19 +53,6 @@ class PlayAudioParams(BaseModel):
 
 
 class VideoParams(BaseModel):
-    """
-    {
-      "video_subject": "",
-      "video_aspect": "横屏 16:9（西瓜视频）",
-      "voice_name": "女生-晓晓",
-      "bgm_name": "random",
-      "font_name": "STHeitiMedium 黑体-中",
-      "text_color": "#FFFFFF",
-      "font_size": 60,
-      "stroke_color": "#000000",
-      "stroke_width": 1.5
-    }
-    """
     video_subject: str  # 视频主题
     video_script: str = ""  # 用于生成视频的脚本
     word_count: int = 300  # 文案字数
@@ -364,3 +351,23 @@ class BgmUploadResponse(BaseResponse):
                 }
             },
         }
+class TaskListRequest(BaseModel):
+    page: int
+    page_size: int
+    user_id: Optional[int] = None
+
+class TaskIdRequest(BaseModel):
+    task_id: str
+
+class TaskCreateRequest(BaseModel):
+    user_id: int
+    task_id: str
+    progress: int
+    state: str
+    draft_content: dict
+
+class TaskUpdateRequest(BaseModel):
+    id: int
+    progress: int
+    state: str
+    draft_content: dict
