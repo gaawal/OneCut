@@ -5,16 +5,15 @@ import shutil
 from loguru import logger
 
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-config_file = f"{root_dir}/config.toml"
+config_file = os.path.join(root_dir,"config.toml")
 
 
 def load_config():
-    # fix: IsADirectoryError: [Errno 21] Is a directory: '/MoneyPrinterTurbo/config.toml'
     if os.path.isdir(config_file):
         shutil.rmtree(config_file)
 
     if not os.path.isfile(config_file):
-        example_file = f"{root_dir}/config.example.toml"
+        example_file = os.path.join(root_dir,"config.example.toml")
         if os.path.isfile(example_file):
             shutil.copyfile(example_file, config_file)
             logger.info(f"copy config.example.toml to config.toml")
