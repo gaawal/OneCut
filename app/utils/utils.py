@@ -300,7 +300,7 @@ async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cac
         logger.info(f"保存话题内容成功【{weibo_title}】")
         await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title),
                                  json.dumps(weibo_article_cache, ensure_ascii=False),
-                                 expire=RedisExpireTime.ONE_DAY)
+                                 expire=RedisExpireTime.ONE_WEEK)
         # 更新微博话题是否采集信息到微博热搜榜单
         hot_data = await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_SEARCH)
         if hot_data:
@@ -309,8 +309,8 @@ async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cac
                 if weibo_title == item.get('title'):
                     logger.info("刷新已采集状态")
                     hot_data[i]["collect_status"] = True
-        await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps(hot_data, ensure_ascii=False),
-                                 expire=RedisExpireTime.THIRTY_MINUTES)
+            await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps(hot_data, ensure_ascii=False),
+                                     expire=RedisExpireTime.THIRTY_MINUTES)
         logger.success("刷新已采集的微博数据成功！", hot_data)
 
 
