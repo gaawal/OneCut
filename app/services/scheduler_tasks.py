@@ -99,7 +99,7 @@ class SchedulerTasks:
                           "stroke_color": "#1e1e1b",
                           "stroke_width": 1.5,
                           "n_threads": 8,
-                          "paragraph_number": 1,
+                          "paragraph_number": 4,
                           "amount": 5,
                           "weibo_mid": weibo_article_data.weibo_mid,
                           "weibo_title": weibo_artcle_title.replace("weibo_hot_article:","")}
@@ -114,7 +114,7 @@ class SchedulerTasks:
                     word_count=body.word_count)
                 body.video_terms = video_terms
                 body.video_script = video_script
-                body.video_title = video_title
+                body.video_subject = video_title
                 # 生成视频后自动发布
                 task_id = RedisKeyPrefix.VIDEO_TASK.format(utils.get_uuid())
                 task = {
@@ -127,6 +127,7 @@ class SchedulerTasks:
                     await redis_instance.update_task(task_id)
                     await redis_taskmanager.add_task(video_controller.start, task_id=task_id, params=body)
                     logger.info(f"自动生成视频任务已创建: {utils.to_json(task)}\ntask_id is {task_id} ")
+                    break
                 except Exception as e:
                     logger.error("生成视频失败")
                     logger.error(f"{traceback.format_exc()}")
