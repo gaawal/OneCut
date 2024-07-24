@@ -1,16 +1,21 @@
 import asyncio
+import json
 import os.path
 import traceback
+from typing import List, Tuple
 
 from loguru import logger
 from playwright.async_api import async_playwright
 import random
 
+from app.services.redis_service import redis_instance
+from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
+from app.schemas.movies import WeiboArticleData, WeiboArticle
 from app.utils import utils
 from app.utils.utils import generate_md5_id
 
 
-async def fetch_article_content_and_record(weibo_mid, url, video_path):
+async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path: str) -> Tuple[str, List[WeiboArticle]]:
     logger.info(f"Fetching article content url is {url}")
     article_max = 20
     async with async_playwright() as p:
@@ -29,9 +34,11 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
         try:
             # 尝试提取导语
             try:
+                logger.info("提取导语ing")
                 introduction_element = page.locator('//*[@id="pl_feedlist_index"]/div[2]/div[1]/p')
                 if await introduction_element.count() > 0:
                     introduction = await introduction_element.inner_text()
+                    logger.info(f"{introduction}")
             except Exception as e:
                 logger.warning(f"Introduction not found: {e}")
 
@@ -39,38 +46,34 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
             await page.wait_for_selector('//div[@action-type="feed_list_item"]', timeout=1500)
             comment_elements = page.locator('//div[@action-type="feed_list_item"]')
             count = await comment_elements.count()
-
+            logger.info(f"提取热门评论有{count}条")
             for i in range(count):
+
                 card_wrap = comment_elements.nth(i)
                 nickname = (await card_wrap.locator('.name').first.inner_text()).strip()
                 comment = (
-                    await card_wrap.locator('p[node-type="feed_list_content"]').first.inner_text()).strip().replace(
-                    "展开c", "")
-
+                    await card_wrap.locator('p[node-type="feed_list_content"]').first.inner_text()).strip()
+                logger.info(f"{i+1}、网友[{nickname}」热门评论:{comment}")
+                article = WeiboArticle(
+                    nickname=nickname,
+                    comment=comment,
+                    screenshot_path="",
+                    images=[]
+                )
                 await card_wrap.scroll_into_view_if_needed()
                 await asyncio.sleep(random.uniform(1, 3))
 
-                # 确保卡片可见且在页面范围内
                 if await card_wrap.is_visible():
-                    # 检查是否存在视频不支持播放的提示框
                     if await card_wrap.locator(
                             '[node-type="feed_list_media_prev"] .wbpv-error-display.wbpv-modal-dialog').count() > 0:
                         continue
 
-                    # 截图当前卡片区域
                     bounding_box = await card_wrap.bounding_box()
                     if bounding_box:
-                        screenshot_path = os.path.join(video_path, f"{weibo_mid}-card_screenshot_{i}.png")
-                        await page.screenshot(path=screenshot_path, clip=bounding_box)
-
-                        article = {
-                            "nickname": nickname,
-                            "comment": comment,
-                            "screenshot": screenshot_path,
-                            "images": []
-                        }
-
-                        # 查找图片列表容器并点击缩略图
+                        card_screenshot = os.path.join(video_path, f"{weibo_mid}-card_screenshot_{i}.png")
+                        await page.screenshot(path=card_screenshot, clip=bounding_box)
+                        article.screenshot_path = card_screenshot
+                        logger.info(f"{i+1}、保存评论截图：{card_screenshot}")
                         try:
                             if await card_wrap.locator(
                                     '[node-type="feed_list_media_prev"] [node-type="fl_pic_list"]').is_visible():
@@ -85,9 +88,8 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
                                         await page.wait_for_selector(
                                             '[node-type="feed_list_media_disp"] [node-type="imagesBox"] [node-type="picShow"] [node-type="imgBox"] img',
                                             timeout=1500)
-                                        await asyncio.sleep(1)  # 等待大图加载
+                                        await asyncio.sleep(1)
 
-                                        # 查找并处理展开的图片容器，仅在当前card_wrap范围内
                                         big_image_selector = '[node-type="feed_list_media_disp"] [node-type="imagesBox"] [node-type="picShow"] [node-type="imgBox"] img'
                                         big_image_elements = card_wrap.locator(big_image_selector)
                                         big_image_count = await big_image_elements.count()
@@ -99,10 +101,8 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
                                                 big_image_path = os.path.join(video_path,
                                                                               f"{weibo_mid}-big_image_{i}_{j}_{k}.png")
                                                 await page.screenshot(path=big_image_path, clip=bounding_box)
-
-                                                article["images"].append(big_image_path)
-
-                                        # 关闭大图
+                                                article.images.append(big_image_path)
+                                                logger.info(f"{i+1}、保存评论大图：{big_image_path}")
                                         close_button = card_wrap.locator(
                                             '[node-type="imagesBox"] [action-type="tosmall"]')
                                         if await close_button.is_visible():
@@ -110,13 +110,13 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
                                         await asyncio.sleep(1)
                         except Exception as e:
                             logger.warning(f"Image not found or clickable: {e}")
-                        if len(articles) < article_max:
-                            articles.append(article)
+
+                if len(articles) < article_max:
+                    articles.append(article)
             logger.info(f"{url}获取文章数： {len(articles)}")
         except Exception as e:
-            logger.debug(traceback.format_exc())
+            logger.error(traceback.format_exc())
 
-        # 关闭页面和浏览器
         await page.close()
         await context.close()
         await browser.close()
@@ -124,32 +124,63 @@ async def fetch_article_content_and_record(weibo_mid, url, video_path):
         return introduction, articles
 
 
-async def fetch_hot_article(hot_url):
+async def fetch_hot_article(hot_url: str) -> WeiboArticleData:
     weibo_mid = generate_md5_id(hot_url)
-    # 定位至实际的热门
     target_url = f'{hot_url}'
     video_dir = utils.cache_browser_info_dir()
+    weibo_article_data = []
     introduction, articles = await fetch_article_content_and_record(weibo_mid, target_url, video_dir)
-
-    weibo_article_data = {
-        "weibo_mid": weibo_mid,
-        "url": target_url,
-        "introduction": introduction,
-        "articles": articles
-    }
+    if articles:
+        weibo_article_data = WeiboArticleData(
+            weibo_mid=weibo_mid,
+            url=target_url,
+            introduction=introduction,
+            articles=articles
+        )
+    else:
+        logger.warning("获取微博文章内容信息缺失")
     return weibo_article_data
 
 
-def generate_weibo_summary(data, num_comments):
-    introduction = data["introduction"]
-    articles = data["articles"]
+def generate_weibo_summary(data: WeiboArticleData, num_comments):
+    introduction = data.introduction if hasattr(data, 'introduction') else None
+    articles = data.articles
     summary = ""
     if introduction:
         summary += introduction + "\n\n"
     summary += "主题相关信息：\n"
     for i, article in enumerate(articles[:num_comments]):
-        summary += f"{i + 1}.{article['comment']}\n"
+        summary += f"{i + 1}.{article.comment}\n"
     return summary
+
+
+async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cache: WeiboArticleData):
+    """
+    保存话题内容到缓存中，同时刷新微博已采集的话题数据
+    """
+    if weibo_article_cache:
+        weibo_article_json = json.dumps(weibo_article_cache.dict(), ensure_ascii=False)
+        logger.info(f"保存话题内容成功【{weibo_title}】")
+        await redis_instance.set(
+            RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title),
+            weibo_article_json,
+            expire=RedisExpireTime.ONE_HOUR)
+
+        hot_data = await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_SEARCH)
+        if hot_data:
+            hot_data = json.loads(hot_data)
+            for i, item in enumerate(hot_data):
+                if weibo_title == item.get('title'):
+                    logger.info("刷新已采集状态")
+                    hot_data[i]["collect_status"] = True
+            await redis_instance.set(
+                RedisKeyPrefix.WEIBO_HOT_SEARCH,
+                json.dumps(hot_data, ensure_ascii=False),
+                expire=RedisExpireTime.THIRTY_MINUTES
+            )
+        logger.success("刷新已采集的微博数据成功！", hot_data)
+        return True
+    return False
 
 
 async def main():

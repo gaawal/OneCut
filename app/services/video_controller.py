@@ -161,7 +161,7 @@ async def start(task_id, params: VideoParams, request: Request):
         draft.update_duration(task_progress.audio_duration)
         draft.save_to_file(utils.task_dir(task_id))
 
-        logger.success(f"task {task_id} finished, generated final video: {final_video_path}.")
+        logger.success(f"{task_id} create video task finished, generated final video: {final_video_path}.")
     except ValueError as e:
         await handle_task_failure(task_id, TaskFailureReason.VALUE_ERROR, str(e), task_progress, draft)
         await save_task_state(task_id, TaskState.FAILED, 100, TaskDetailState.FAILED, draft,

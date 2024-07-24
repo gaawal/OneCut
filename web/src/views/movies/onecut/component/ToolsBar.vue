@@ -309,7 +309,6 @@ const handleGenerateVideo = async () => {
     if (statusCode === 200) {
       videoStore.videoTaskId = response.data.task_id
       $message.success('创建文生视频任务成功')
-      pollTaskProgress()
     } else if (statusCode === 400) {
       $message.info(response.data.msg || '请求错误，请检查输入参数')
     } else {
@@ -319,6 +318,7 @@ const handleGenerateVideo = async () => {
     console.error('生成视频时出错:', error)
     $message.error(`视频生成失败，请重试。错误信息: ${error.message || '未知错误'}`)
   }
+  pollTaskProgress()
 }
 const handleExportVideo = () => {
   // 实现导出视频的逻辑

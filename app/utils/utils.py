@@ -9,13 +9,10 @@ import urllib3
 from loguru import logger
 
 from app.constant import video_const
-from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
-from app.services.redis_service import redis_instance
+
 
 urllib3.disable_warnings()
 import hashlib
-import uuid
-
 
 def get_response(status: int, data: Any = None, message: str = ""):
     obj = {
@@ -290,29 +287,6 @@ def calculate_duration(start_time, end_time):
     minutes = int(duration // 60)
     seconds = int(duration % 60)
     return minutes, seconds
-
-
-async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cache: dict):
-    """
-    保存话题内容到缓存中，同时刷新微博已采集的话题数据
-    """
-    if weibo_article_cache:
-        logger.info(f"保存话题内容成功【{weibo_title}】")
-        await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title),
-                                 json.dumps(weibo_article_cache, ensure_ascii=False),
-                                 expire=RedisExpireTime.ONE_WEEK)
-        # 更新微博话题是否采集信息到微博热搜榜单
-        hot_data = await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_SEARCH)
-        if hot_data:
-            hot_data = json.loads(hot_data)
-            for i, item in enumerate(hot_data):
-                if weibo_title == item.get('title'):
-                    logger.info("刷新已采集状态")
-                    hot_data[i]["collect_status"] = True
-            await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps(hot_data, ensure_ascii=False),
-                                     expire=RedisExpireTime.THIRTY_MINUTES)
-        logger.success("刷新已采集的微博数据成功！", hot_data)
-
 
 def generate_md5_id(url: str) -> str:
     # 创建md5对象

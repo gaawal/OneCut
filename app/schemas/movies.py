@@ -351,13 +351,17 @@ class BgmUploadResponse(BaseResponse):
                 }
             },
         }
+
+
 class TaskListRequest(BaseModel):
     page: int
     page_size: int
     user_id: Optional[int] = None
 
+
 class TaskIdRequest(BaseModel):
     task_id: str
+
 
 class TaskCreateRequest(BaseModel):
     user_id: int
@@ -366,8 +370,32 @@ class TaskCreateRequest(BaseModel):
     state: str
     draft_content: dict
 
+
 class TaskUpdateRequest(BaseModel):
     id: int
     progress: int
     state: str
     draft_content: dict
+
+
+class WeiboArticle(BaseModel):
+    nickname: Optional[str] = None
+    comment: Optional[str] = None
+    screenshot_path: str = ""
+    images: List[str]
+
+
+class WeiboArticleData(BaseModel):
+    weibo_mid: Optional[str] = ""
+    url: Optional[str] = ""
+    introduction: Optional[str] = ""
+    articles: List[WeiboArticle] = []
+
+
+class HotSearchItem(BaseModel):
+    mid: str
+    category: Optional[str] = None
+    title: str
+    hot: Optional[int] = None
+    url: str
+    collect_status: Optional[bool] = False
