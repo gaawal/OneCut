@@ -29,7 +29,8 @@ class SchedulerTasks:
                 if await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.title)):
                     hotsearch.collect_status = True
                     hotsearch_data[i] = hotsearch
-            await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_SEARCH, json.dumps([item.dict() for item in hotsearch_data], ensure_ascii=False),
+            await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_SEARCH,
+                                     json.dumps([item.dict() for item in hotsearch_data], ensure_ascii=False),
                                      expire=RedisExpireTime.ONE_HOUR)
 
     @staticmethod
