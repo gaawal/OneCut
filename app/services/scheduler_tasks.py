@@ -59,6 +59,10 @@ class SchedulerTasks:
 
     @staticmethod
     async def generate_video_by_weibo_hotspot():
+        # 当前生成的视频数量 不能全部生成
+        generate_counts = 0
+        # 每次定时任务计划生成几个视频
+        target_generate_max = 1
         # 获取已存在的微博热搜列表
         weibo_artcle_list: List[str] = await redis_instance.get_keys(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format("*"))
         for weibo_artcle_title in weibo_artcle_list:
@@ -102,7 +106,7 @@ class SchedulerTasks:
                           "paragraph_number": 4,
                           "amount": 5,
                           "weibo_mid": weibo_article_data.weibo_mid,
-                          "weibo_title": weibo_artcle_title.replace("weibo_hot_article:","")}
+                          "weibo_title": weibo_artcle_title.replace("weibo_hot_article:", "")}
                 body = VideoParams(**params)
                 logger.info(f"开始自动生成文案")
                 video_script, video_terms, video_title = llm_generator.generate_script_and_terms(
@@ -127,7 +131,9 @@ class SchedulerTasks:
                     await redis_instance.update_task(task_id)
                     await redis_taskmanager.add_task(video_controller.start, task_id=task_id, params=body)
                     logger.info(f"自动生成视频任务已创建: {utils.to_json(task)}\ntask_id is {task_id} ")
-                    break
+                    generate_counts += 1
+                    if generate_counts > target_generate_max:
+                        break
                 except Exception as e:
                     logger.error("生成视频失败")
                     logger.error(f"{traceback.format_exc()}")
