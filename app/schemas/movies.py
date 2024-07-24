@@ -90,6 +90,7 @@ class VideoParams(BaseModel):
     video_durations: List[int] = []
     weibo_mid: Optional[str] = ""
     weibo_title: Optional[str] = ""
+    auto_generate: Optional[bool] = False
 
 
 class VideoScriptParams:
@@ -390,6 +391,7 @@ class WeiboArticleData(BaseModel):
     url: Optional[str] = ""
     introduction: Optional[str] = ""
     articles: List[WeiboArticle] = []
+    is_generated: Optional[bool] = False # 是否自动生成视频了
 
 
 class HotSearchItem(BaseModel):

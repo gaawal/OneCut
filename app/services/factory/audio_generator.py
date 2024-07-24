@@ -14,7 +14,7 @@ from app.services.redis_service import redis_instance
 from app.utils import utils
 
 
-async def get_bgm_file(request, bgm_type="random", bgm_file=""):
+async def get_bgm_file( bgm_type="random", bgm_file=""):
     logger.info(f"get bgm file, bgm_type is {bgm_type}, bgm_file is {bgm_file}")
     suffix = ".mp3"
     choose_bgm_file = ""

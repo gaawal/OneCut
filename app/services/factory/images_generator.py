@@ -14,7 +14,7 @@ from app.schemas.movies import VideoParams
 from app.services.redis_service import redis_instance
 
 
-async def get_images_files(request: Request, params: VideoParams):
+async def get_images_files(params: VideoParams):
     logger.info(f"get images file begin,weibo title is {params.weibo_title}")
     images_path = []
     if params.weibo_title:

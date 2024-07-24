@@ -3,7 +3,6 @@ import time
 import traceback
 from os import path
 
-from fastapi import Request
 from loguru import logger
 
 from app.constant.video_const import TaskState, TaskDetailState, TaskFailureReason
@@ -12,6 +11,7 @@ from app.schemas.drafts import Draft
 from app.schemas.movies import VideoParams, VideoConcatMode, TaskProgress
 from app.services.factory import llm_generator, material_generator, subtitle_generator, video_generator, \
     voice_generator, images_generator, audio_generator
+from app.services.hotspot.weibo_article import update_finished_weibo_artticle
 from app.utils import utils
 from app.utils.utils import calculate_duration
 from app.services.redis_service import redis_instance
@@ -23,7 +23,7 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="moviepy")
 
 
-async def start(task_id, params: VideoParams, request: Request):
+async def start(task_id, params: VideoParams):
     start_time = time.time()
     logger.info(f"start task: {task_id}")
     task_progress = TaskProgress()
@@ -73,7 +73,7 @@ async def start(task_id, params: VideoParams, request: Request):
             draft.save_to_file(utils.task_dir(task_id))
 
             await save_task_state(task_id, TaskState.PROCESSING, 15, TaskDetailState.GENERATING_AUDIO, draft)
-            bgm_path = await audio_generator.get_bgm_file(request=request, bgm_type=params.bgm_type,
+            bgm_path = await audio_generator.get_bgm_file( bgm_type=params.bgm_type,
                                                           bgm_file=params.bgm_file)
             audio_file, audio_duration, sub_maker = await voice_generator.generate_audio(task_id, video_script,
                                                                                          params.voice_name)
@@ -96,7 +96,7 @@ async def start(task_id, params: VideoParams, request: Request):
             subtitle_path = await subtitle_generator.generate_subtitle(task_id, params, audio_file, video_script,
                                                                        sub_maker)
 
-            images_files = await images_generator.get_images_files(request=request, params=params)
+            images_files = await images_generator.get_images_files(params=params)
             await save_task_state(task_id, TaskState.PROCESSING, 50, TaskDetailState.DOWNLOADING_VIDEOS, draft)
             downloaded_videos = []
             if params.weibo_title:
@@ -175,6 +175,10 @@ async def start(task_id, params: VideoParams, request: Request):
     end_time = time.time()
     minutes, seconds = calculate_duration(start_time, end_time)
     logger.info(f"生成时长为：{minutes} 分钟 {seconds} 秒")
+    if params.auto_generate:
+        # 如果是自动生成视频的，你要把对应微博数据的生成状态改为True 防止定时任务重新生成该文章视频
+        await update_finished_weibo_artticle(params.weibo_title)
+        pass
     return task_progress.dict()
 
 

@@ -2,9 +2,7 @@ import asyncio
 from pathlib import Path
 import json
 
-from conf import BASE_DIR
-from douyin_uploader.main import douyin_setup, DouYinVideo
-from utils.files_times import generate_schedule_time_next_day
+
 
 
 # 读取draft.json文件并获取video_title
@@ -14,6 +12,8 @@ def get_video_title(draft_path):
         return data.get('script_info', {}).get('video_title', 'No Title')
 
 
+def auto_upload_douyin():
+    pass
 if __name__ == '__main__':
     # 设置基础目录和账号文件路径
     base_dir = Path(BASE_DIR)

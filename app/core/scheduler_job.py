@@ -12,6 +12,8 @@ scheduler = AsyncIOScheduler()
 
 def register_scheduler_job(app):
     # 初始化并启动定时任务
-    scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=30)
-    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=5)
+    scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=60)
+    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=30)
+    # 自动生成文案的定时任务间隔时间请大于平均视频生成时间
+    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=7)
     scheduler.start()

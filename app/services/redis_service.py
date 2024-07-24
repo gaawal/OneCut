@@ -1,5 +1,6 @@
 import ast
 from abc import ABC, abstractmethod
+from typing import List
 
 from fastapi import FastAPI
 
@@ -43,6 +44,14 @@ class RedisService(BaseState):
 
     async def hget(self, hash_key: str, field: str):
         return await self.redis.hget(hash_key, field)
+
+    async def get_keys(self, pattern: str) -> List[str]:
+        keys = []
+        cursor = b'0'
+        while cursor:
+            cursor, batch = await self.redis.scan(cursor=cursor, match=pattern)
+            keys.extend(batch)
+        return keys
 
     async def update_task(self, task_id: str, state: int = TaskState.PROCESSING, progress: int = 0, **kwargs):
         progress = int(progress)

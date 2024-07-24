@@ -53,7 +53,7 @@ async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path:
                 nickname = (await card_wrap.locator('.name').first.inner_text()).strip()
                 comment = (
                     await card_wrap.locator('p[node-type="feed_list_content"]').first.inner_text()).strip()
-                logger.info(f"{i+1}、网友[{nickname}」热门评论:{comment}")
+                logger.info(f"{i + 1}、网友[{nickname}」热门评论:{comment}")
                 article = WeiboArticle(
                     nickname=nickname,
                     comment=comment,
@@ -73,7 +73,7 @@ async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path:
                         card_screenshot = os.path.join(video_path, f"{weibo_mid}-card_screenshot_{i}.png")
                         await page.screenshot(path=card_screenshot, clip=bounding_box)
                         article.screenshot_path = card_screenshot
-                        logger.info(f"{i+1}、保存评论截图：{card_screenshot}")
+                        logger.info(f"{i + 1}、保存评论截图：{card_screenshot}")
                         try:
                             if await card_wrap.locator(
                                     '[node-type="feed_list_media_prev"] [node-type="fl_pic_list"]').is_visible():
@@ -102,7 +102,7 @@ async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path:
                                                                               f"{weibo_mid}-big_image_{i}_{j}_{k}.png")
                                                 await page.screenshot(path=big_image_path, clip=bounding_box)
                                                 article.images.append(big_image_path)
-                                                logger.info(f"{i+1}、保存评论大图：{big_image_path}")
+                                                logger.info(f"{i + 1}、保存评论大图：{big_image_path}")
                                         close_button = card_wrap.locator(
                                             '[node-type="imagesBox"] [action-type="tosmall"]')
                                         if await close_button.is_visible():
@@ -164,7 +164,7 @@ async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cac
         await redis_instance.set(
             RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title),
             weibo_article_json,
-            expire=RedisExpireTime.ONE_HOUR)
+            expire=RedisExpireTime.ONE_DAY)
 
         hot_data = await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_SEARCH)
         if hot_data:
@@ -181,6 +181,18 @@ async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cac
         logger.success("刷新已采集的微博数据成功！", hot_data)
         return True
     return False
+
+
+async def update_finished_weibo_artticle(weibo_title):
+    if cached_data := await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title)):
+        weibo_article_cache = json.loads(cached_data)
+        weibo_article_cache = WeiboArticleData(**weibo_article_cache)
+        weibo_article_cache.is_generated = True
+        weibo_article_json = json.dumps(weibo_article_cache.dict(), ensure_ascii=False)
+        await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title), weibo_article_json,
+                                 expire=RedisExpireTime.ONE_DAY)
+        logger.success("视频自动生成完成，刷新微博is_generated状态为True")
+    pass
 
 
 async def main():

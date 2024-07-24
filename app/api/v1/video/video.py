@@ -13,7 +13,7 @@ from app.models.exception import HttpException
 from app.schemas import Success, Fail
 from app.schemas.movies import TaskVideoRequest, TaskQueryResponse, TaskResponse, TaskQueryRequest, \
     TaskDeletionResponse, ThumbnailRequest
-from app.services import video_controller as generate_video_task
+from app.services import video_controller as generate_video_task, video_controller
 from app.services.redis_service import redis_instance
 from app.settings import movies_config
 from app.utils import request_base
@@ -24,7 +24,7 @@ router = APIRouter()
 
 
 @router.post("/createVideos", response_model=TaskResponse, summary="生成短视频")
-async def create_video(background_tasks: BackgroundTasks, request: Request, params: TaskVideoRequest):
+async def create_video(request: Request, params: TaskVideoRequest):
     task_id = RedisKeyPrefix.VIDEO_TASK.format(utils.get_uuid())
     request_id = request_base.get_task_id(request)
     task = {
@@ -45,7 +45,7 @@ async def create_video(background_tasks: BackgroundTasks, request: Request, para
             raise ValueError(tr("Please select a Valid Voice Source"))
 
         await redis_instance.update_task(task_id)
-        await redis_taskmanager.add_task(generate_video_task.start, task_id=task_id, params=params, request=request)
+        await redis_taskmanager.add_task(video_controller.start, task_id=task_id, params=params)
         logger.info(f"视频生成任务已创建: {utils.to_json(task)}\ntask_id is {task_id} ")
 
         return Success(data=task)

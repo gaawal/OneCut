@@ -270,7 +270,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - Video subject: {video_subject}
     - Language: {language}
     - Number of paragraphs: {paragraph_number}
-    - Word limit:{word_count - 10}-{word_count + 100}，
+    - Word limit:Between {word_count - 10} and {word_count + 100} words
     """.strip()
     logger.info(prompt)
 
@@ -388,7 +388,7 @@ def generate_script_and_terms_by_inpire(video_inspire: str, video_inspire_keywor
     - Video Inpiration Keyword: '{video_inspire_keyword}'
     - Language: {language}
     - Number of paragraphs: {paragraph_number}
-    - Word limit:{word_count - 10}-{word_count + 100}，
+    - Between {word_count - 10} and {word_count + 100} words
     """.strip()
     logger.info(prompt)
 

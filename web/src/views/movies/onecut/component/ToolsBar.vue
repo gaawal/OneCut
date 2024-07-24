@@ -260,6 +260,7 @@ const videoStore = useVideoStore()
 
 const handleGenerateVideo = async () => {
   videoStore.showTaskProgressModal = true
+
   videoStore.progressPercentage = 1
   videoStore.currentStep = 1
   const params = {
