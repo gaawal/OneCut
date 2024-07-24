@@ -94,7 +94,7 @@ class RedisTaskManager:
                     return None
                 if 'params' in task_info['kwargs'] and isinstance(task_info['kwargs']['params'], dict):
                     task_info['kwargs']['params'] = VideoParams(**task_info['kwargs']['params'])
-                logger.info(f"Dequeued task: {task_info}")
+                logger.info(f"生成视频任务加入队列)
                 return task_info
             return None
         except Exception as e:
