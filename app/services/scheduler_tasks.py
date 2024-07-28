@@ -6,22 +6,23 @@
 
 import json
 import traceback
+import tracemalloc
 from typing import List
 
+import objgraph
+import psutil
 from loguru import logger
 
 from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
 from app.manager.redis_manager import redis_taskmanager
-from app.schemas.movies import HotSearchItem, VideoParams, WeiboArticle, WeiboArticleData
+from app.schemas.movies import HotSearchItem, VideoParams, WeiboArticleData
 from app.services import video_controller
 from app.services.factory import llm_generator
 from app.services.hotspot.weibo_article import fetch_hot_article, save_weibo_article_and_update_data, \
     generate_weibo_summary
 from app.services.hotspot.weibo_hotsearch import get_weibo_hotsearch
 from app.services.redis_service import redis_instance
-from app.settings import movies_config
-from app.utils import request_base, utils
-from app.utils.utils import tr
+from app.utils import utils
 
 
 class SchedulerTasks:
@@ -59,6 +60,7 @@ class SchedulerTasks:
 
     @staticmethod
     async def generate_video_by_weibo_hotspot():
+        logger.info("Generating video by weibo hotspot begin")
         # 当前生成的视频数量 不能全部生成
         generate_counts = 0
         # 每次定时任务计划生成几个视频
@@ -119,8 +121,9 @@ class SchedulerTasks:
                 body.video_terms = video_terms
                 body.video_script = video_script
                 body.video_subject = video_title
+
                 # 生成视频后自动发布
-                task_id = RedisKeyPrefix.VIDEO_TASK.format(utils.get_uuid())
+                task_id = utils.get_task_id()
                 task = {
                     "task_id": task_id,
                     "params": body.dict(),
@@ -137,3 +140,25 @@ class SchedulerTasks:
                 except Exception as e:
                     logger.error("生成视频失败")
                     logger.error(f"{traceback.format_exc()}")
+        logger.info("Generating video by weibo hotspot check over")
+    @staticmethod
+    def log_memory_usage():
+        """使用 psutil 定期记录内存使用情况"""
+        process = psutil.Process()
+        mem_info = process.memory_info()
+        logger.info(
+            f"Memory usage: RSS = {mem_info.rss / (1024 * 1024):.2f} MB, VMS = {mem_info.vms / (1024 * 1024):.2f} MB")
+
+    @staticmethod
+    def log_tracemalloc_snapshot():
+        """使用 tracemalloc 监控内存分配"""
+        snapshot = tracemalloc.take_snapshot()
+        top_stats = snapshot.statistics('lineno')
+        logger.info("[ Top 10 memory usage ]")
+        for stat in top_stats[:10]:
+            logger.info(stat)
+
+    @staticmethod
+    def show_most_common_types():
+        """使用 memory_profiler 监控特定函数的内存使用情况，并使用 objgraph 查找内存泄漏。"""
+        objgraph.show_most_common_types()

@@ -27,6 +27,7 @@ async def list_tasks(request: Request, body: TaskListRequest):
     q = {'user_id': user_id}
     total, tasks = await task_controller.list(page=body.page, page_size=body.page_size, search=q)
     data = [await task.to_dict() for task in tasks]
+
     return SuccessExtra(data=data, total=total, page=body.page, page_size=body.page_size)
 
 

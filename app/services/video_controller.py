@@ -178,7 +178,7 @@ async def start(task_id, params: VideoParams):
     if params.auto_generate:
         # 如果是自动生成视频的，你要把对应微博数据的生成状态改为True 防止定时任务重新生成该文章视频
         await update_finished_weibo_artticle(params.weibo_title)
-        pass
+
     return task_progress.dict()
 
 

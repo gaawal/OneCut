@@ -2,18 +2,17 @@ import os
 import pathlib
 import shutil
 
-from fastapi import Request, Depends, Path, BackgroundTasks, APIRouter, HTTPException, Query
+from fastapi import Request, Depends, Path, APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from loguru import logger
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
-from app.constant.redis_const import RedisKeyPrefix
 from app.manager.redis_manager import redis_taskmanager
 from app.models.exception import HttpException
 from app.schemas import Success, Fail
 from app.schemas.movies import TaskVideoRequest, TaskQueryResponse, TaskResponse, TaskQueryRequest, \
     TaskDeletionResponse, ThumbnailRequest
-from app.services import video_controller as generate_video_task, video_controller
+from app.services import video_controller
 from app.services.redis_service import redis_instance
 from app.settings import movies_config
 from app.utils import request_base
@@ -25,7 +24,7 @@ router = APIRouter()
 
 @router.post("/createVideos", response_model=TaskResponse, summary="生成短视频")
 async def create_video(request: Request, params: TaskVideoRequest):
-    task_id = RedisKeyPrefix.VIDEO_TASK.format(utils.get_uuid())
+    task_id = utils.get_task_id()
     request_id = request_base.get_task_id(request)
     task = {
         "task_id": task_id,

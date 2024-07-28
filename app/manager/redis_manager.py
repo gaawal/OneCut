@@ -13,6 +13,12 @@ FUNC_MAP = {
 
 
 class RedisTaskManager:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(RedisTaskManager, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
     def __init__(self):
         self.max_concurrent_tasks = 1  # 示例最大并发任务数
         self.current_tasks = 0

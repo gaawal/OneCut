@@ -2,6 +2,7 @@ import json
 import locale
 import os
 import threading
+from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
@@ -9,10 +10,11 @@ import urllib3
 from loguru import logger
 
 from app.constant import video_const
-
+from app.constant.redis_const import RedisKeyPrefix
 
 urllib3.disable_warnings()
 import hashlib
+
 
 def get_response(status: int, data: Any = None, message: str = ""):
     obj = {
@@ -62,6 +64,15 @@ def get_uuid(remove_hyphen: bool = False):
     if remove_hyphen:
         u = u.replace("-", "")
     return u
+
+
+def get_task_id():
+    # 格式化为包含秒的字符串
+    # 获取当前时间
+    current_time = datetime.now()
+    formatted_time_str = current_time.strftime("%Y%m%d%H%M%-")
+    task_id = formatted_time_str + get_uuid()
+    return task_id
 
 
 def root_dir():
@@ -287,6 +298,7 @@ def calculate_duration(start_time, end_time):
     minutes = int(duration // 60)
     seconds = int(duration % 60)
     return minutes, seconds
+
 
 def generate_md5_id(url: str) -> str:
     # 创建md5对象

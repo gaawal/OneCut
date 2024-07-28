@@ -1,3 +1,5 @@
+import tracemalloc
+
 from fastapi import FastAPI
 from loguru import logger
 
@@ -41,6 +43,8 @@ app = create_app()
 
 @app.on_event("startup")
 async def startup_event():
+    # 确保 tracemalloc 开始跟踪内存分配。
+    tracemalloc.start()
     # 在应用启动时执行的初始化任务 固定写法
     logger.info("app启动初始化任务")
     await init_superuser()

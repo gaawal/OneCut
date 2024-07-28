@@ -39,6 +39,8 @@ opencv-python = ">=4.9.0.80,<4.10.0.0" # 添加这一行解决module 'PIL.Image'
 playwright = "^1.44.0"  # 安装次模块后需要执行playwright install 安装浏览器内核
 aerich = "^0.7.2"
 jieba = "^0.42.1"
+psutil = "^6.0.0"
+objgraph = "^3.6.1"
 
 [tool.black]
 line-length = 120
