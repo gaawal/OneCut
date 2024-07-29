@@ -92,5 +92,15 @@ class RedisService(BaseState):
             return int(value)
         return value
 
+    async def rpush(self, key: str, value: str):
+        await self.redis.rpush(key, value)
+
+    async def lpop(self, key: str):
+        return await self.redis.lpop(key)
+
+    async def lrem(self, key: str, count: int, value: str):
+        """从任务队列中剔除key"""
+        await self.redis.lrem(key, count, value)
+
 
 redis_instance = RedisService()

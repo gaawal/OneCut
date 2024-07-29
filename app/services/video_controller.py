@@ -11,7 +11,7 @@ from app.schemas.drafts import Draft
 from app.schemas.movies import VideoParams, VideoConcatMode, TaskProgress
 from app.services.factory import llm_generator, material_generator, subtitle_generator, video_generator, \
     voice_generator, images_generator, audio_generator
-from app.services.hotspot.weibo_article import update_finished_weibo_artticle
+from app.services.hotspot.weibo_article import push_finished
 from app.utils import utils
 from app.utils.utils import calculate_duration
 from app.services.redis_service import redis_instance
@@ -73,7 +73,7 @@ async def start(task_id, params: VideoParams):
             draft.save_to_file(utils.task_dir(task_id))
 
             await save_task_state(task_id, TaskState.PROCESSING, 15, TaskDetailState.GENERATING_AUDIO, draft)
-            bgm_path = await audio_generator.get_bgm_file( bgm_type=params.bgm_type,
+            bgm_path = await audio_generator.get_bgm_file(bgm_type=params.bgm_type,
                                                           bgm_file=params.bgm_file)
             audio_file, audio_duration, sub_maker = await voice_generator.generate_audio(task_id, video_script,
                                                                                          params.voice_name)
@@ -177,7 +177,7 @@ async def start(task_id, params: VideoParams):
     logger.info(f"生成时长为：{minutes} 分钟 {seconds} 秒")
     if params.auto_generate:
         # 如果是自动生成视频的，你要把对应微博数据的生成状态改为True 防止定时任务重新生成该文章视频
-        await update_finished_weibo_artticle(params.weibo_title)
+        await push_finished(task_id, params.weibo_title)
 
     return task_progress.dict()
 

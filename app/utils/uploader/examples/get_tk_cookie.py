@@ -1,8 +1,8 @@
 import asyncio
 from pathlib import Path
 
-from conf import BASE_DIR
-from tk_uploader.main_chrome import tiktok_setup
+from app.utils.uploader.conf import BASE_DIR
+from app.utils.uploader.tk_uploader.main_chrome import tiktok_setup
 
 if __name__ == '__main__':
     account_file = Path(BASE_DIR / "tk_uploader" / "account.json")

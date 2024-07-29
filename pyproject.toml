@@ -41,6 +41,8 @@ aerich = "^0.7.2"
 jieba = "^0.42.1"
 psutil = "^6.0.0"
 objgraph = "^3.6.1"
+xhs = "^0.2.13"
+biliup = "^0.4.72"
 
 [tool.black]
 line-length = 120

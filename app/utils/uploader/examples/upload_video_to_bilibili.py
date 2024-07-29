@@ -1,10 +1,15 @@
 import time
 from pathlib import Path
 
-from bilibili_uploader.main import read_cookie_json_file, extract_keys_from_json, random_emoji, BilibiliUploader
-from conf import BASE_DIR
-from utils.constant import VideoZoneTypes
-from utils.files_times import generate_schedule_time_next_day, get_title_and_hashtags
+# from bilibili_uploader.main import read_cookie_json_file, extract_keys_from_json, random_emoji, BilibiliUploader
+# from conf import BASE_DIR
+# from utils.constant import VideoZoneTypes
+# from utils.files_times import generate_schedule_time_next_day, get_title_and_hashtags
+from app.utils.uploader.bilibili_uploader.main import read_cookie_json_file, extract_keys_from_json, random_emoji, \
+    BilibiliUploader
+from app.utils.uploader.conf import BASE_DIR
+from app.utils.uploader.utils.constant import VideoZoneTypes
+from app.utils.uploader.utils.files_times import generate_schedule_time_next_day, get_title_and_hashtags
 
 if __name__ == '__main__':
     filepath = Path(BASE_DIR) / "videos"

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 
+from loguru import logger
 from playwright.async_api import Playwright, async_playwright
 import os
 import asyncio
 
-from conf import LOCAL_CHROME_PATH
-from utils.base_social_media import set_init_script
-from utils.log import douyin_logger
+from app.utils.uploader.conf import LOCAL_CHROME_PATH
+from app.utils.uploader.utils.base_social_media import set_init_script
 
 
 async def cookie_auth(account_file):
@@ -21,10 +21,10 @@ async def cookie_auth(account_file):
         await page.goto("https://creator.douyin.com/creator-micro/content/upload")
         try:
             await page.wait_for_selector("div.boards-more h3:text('抖音排行榜')", timeout=5000)  # 等待5秒
-            douyin_logger.error(f'等待5秒 cookie 失效')
+            logger.error(f'等待5秒 cookie 失效')
             return False
         except:
-            douyin_logger.success(f'cookie 有效')
+            logger.success(f'cookie 有效')
             return True
 
 
@@ -33,7 +33,7 @@ async def douyin_setup(account_file, handle=False):
         if not handle:
 
             return False
-        douyin_logger.info('[+] cookie文件不存在或已失效，即将自动打开浏览器，请扫码登录，登陆后会自动生成cookie文件')
+        logger.info('[+] cookie文件不存在或已失效，即将自动打开浏览器，请扫码登录，登陆后会自动生成cookie文件')
         await douyin_cookie_gen(account_file)
     return True
 
@@ -83,7 +83,7 @@ class DouYinVideo(object):
         await asyncio.sleep(1)
 
     async def handle_upload_error(self, page):
-        douyin_logger.info('视频出错了，重新上传中')
+        logger.info('视频出错了，重新上传中')
         await page.locator('div.progress-div [class^="upload-btn-input"]').set_input_files(self.file_path)
 
     async def upload(self, playwright: Playwright) -> None:
@@ -100,9 +100,9 @@ class DouYinVideo(object):
         page = await context.new_page()
         # 访问指定的 URL
         await page.goto("https://creator.douyin.com/creator-micro/content/upload")
-        douyin_logger.info(f'[+]正在上传-------{self.title}.mp4')
+        logger.info(f'[+]正在上传-------{self.title}.mp4')
         # 等待页面跳转到指定的 URL，没进入，则自动等待到超时
-        douyin_logger.info(f'[-] 正在打开主页...')
+        logger.info(f'[-] 正在打开主页...')
         await page.wait_for_url("https://creator.douyin.com/creator-micro/content/upload")
         # 点击 "上传视频" 按钮
         await page.locator(".upload-btn--9eZLd").set_input_files(self.file_path)
@@ -115,14 +115,14 @@ class DouYinVideo(object):
                     "https://creator.douyin.com/creator-micro/content/publish?enter_from=publish_page")
                 break
             except:
-                douyin_logger.info(f'  [-] 正在等待进入视频发布页面...')
+                logger.info(f'  [-] 正在等待进入视频发布页面...')
                 await asyncio.sleep(0.1)
 
         # 填充标题和话题
         # 检查是否存在包含输入框的元素
         # 这里为了避免页面变化，故使用相对位置定位：作品标题父级右侧第一个元素的input子元素
         await asyncio.sleep(1)
-        douyin_logger.info(f'  [-] 正在填充标题和话题...')
+        logger.info(f'  [-] 正在填充标题和话题...')
         title_container = page.get_by_text('作品标题').locator("..").locator("xpath=following-sibling::div[1]").locator("input")
         if await title_container.count():
             await title_container.fill(self.title[:30])
@@ -138,7 +138,7 @@ class DouYinVideo(object):
         for index, tag in enumerate(self.tags, start=1):
             await page.type(css_selector, "#" + tag)
             await page.press(css_selector, "Space")
-        douyin_logger.info(f'总共添加{len(self.tags)}个话题')
+        logger.info(f'总共添加{len(self.tags)}个话题')
 
         while True:
             # 判断重新上传按钮是否存在，如果不存在，代表视频正在上传，则等待
@@ -146,17 +146,17 @@ class DouYinVideo(object):
                 #  新版：定位重新上传
                 number = await page.locator('div label+div:has-text("重新上传")').count()
                 if number > 0:
-                    douyin_logger.success("  [-]视频上传完毕")
+                    logger.success("  [-]视频上传完毕")
                     break
                 else:
-                    douyin_logger.info("  [-] 正在上传视频中...")
+                    logger.info("  [-] 正在上传视频中...")
                     await asyncio.sleep(2)
 
                     if await page.locator('div.progress-div > div:has-text("上传失败")').count():
-                        douyin_logger.error("  [-] 发现上传出错了... 准备重试")
+                        logger.error("  [-] 发现上传出错了... 准备重试")
                         await self.handle_upload_error(page)
             except:
-                douyin_logger.info("  [-] 正在上传视频中...")
+                logger.info("  [-] 正在上传视频中...")
                 await asyncio.sleep(2)
 
         # 更换可见元素
@@ -191,15 +191,15 @@ class DouYinVideo(object):
                     pass
                 await page.wait_for_url("https://creator.douyin.com/creator-micro/content/manage?enter_from=publish",
                                         timeout=1500)  # 如果自动跳转到作品页面，则代表发布成功
-                douyin_logger.success("  [-]视频发布成功")
+                logger.success("  [-]视频发布成功")
                 break
             except:
-                douyin_logger.info("  [-] 视频正在发布中...")
+                logger.info("  [-] 视频正在发布中...")
                 await page.screenshot(full_page=True)
                 await asyncio.sleep(0.5)
 
         await context.storage_state(path=self.account_file)  # 保存cookie
-        douyin_logger.success('  [-]cookie更新完毕！')
+        logger.success('  [-]cookie更新完毕！')
         await asyncio.sleep(2)  # 这里延迟是为了方便眼睛直观的观看
         # 关闭浏览器上下文和浏览器实例
         await context.close()

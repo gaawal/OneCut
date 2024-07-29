@@ -1,0 +1,65 @@
+import asyncio
+import os.path
+from pathlib import Path
+import json
+import time
+
+from loguru import logger
+
+from app.services.redis_service import redis_instance
+from app.utils import utils
+from app.utils.uploader.conf import BASE_DIR
+from app.utils.uploader.douyin_uploader.main import douyin_setup, DouYinVideo
+
+
+# 读取draft.json文件并获取video_title和script
+def get_video_title_and_script(draft_path):
+    with open(draft_path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+        title = data.get('script_info', {}).get('video_title', '标题')
+        script = data.get('script_info', {}).get('script', '内容')
+        return title, script
+
+
+# 自动发布抖音视频
+async def auto_upload_douyin(task_id):
+    logger.info("自动发布至抖音，任务id：", task_id)
+    base_dir = Path(BASE_DIR)
+    account_file = base_dir / "douyin_uploader" / "account.json"
+
+    # 获取视频任务目录
+    tasks_dir = utils.task_dir()
+    task_folder = os.path.join(tasks_dir, task_id)
+
+    if not os.path.exists(task_folder):
+        print(f"任务目录 {task_folder} 不存在")
+        return
+
+    draft_path = os.path.join(task_folder, "draft.json")
+    video_file = os.path.join(task_folder, "final-1.mp4")
+
+    if os.path.exists(draft_path) and  os.path.exists(video_file):
+        # 获取视频标题和脚本
+        title, script = get_video_title_and_script(draft_path)
+        tags = ['热门', '奥运会', '孙颖莎', '王楚钦']
+
+        # 打印视频文件名、标题和 hashtag
+        print(f"视频文件名：{video_file}")
+        print(f"标题：{title}, 脚本：{script}")
+        print(f"Hashtag：{tags}")
+
+        # 设置cookie
+        await douyin_setup(account_file, handle=False)
+
+        # 创建并上传视频
+        app = DouYinVideo(title, video_file, tags, 0, account_file)
+        await app.main()
+        # 从 Redis 队列中删除任务ID
+        await redis_instance.lrem("video_publish_queue", 0, task_id)
+    else:
+        print(f"draft.json 或 final-1.mp4 在目录 {task_folder} 中不存在")
+
+
+if __name__ == '__main__':
+    task_id = "example_task_id"  # 示例任务 ID
+    asyncio.run(auto_upload_douyin(task_id))

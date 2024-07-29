@@ -11,6 +11,7 @@ from typing import List
 
 import objgraph
 import psutil
+from fastapi import FastAPI
 from loguru import logger
 
 from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
@@ -23,10 +24,20 @@ from app.services.hotspot.weibo_article import fetch_hot_article, save_weibo_art
 from app.services.hotspot.weibo_hotsearch import get_weibo_hotsearch
 from app.services.redis_service import redis_instance
 from app.utils import utils
+from app.utils.uploader.examples.upload_video_to_douyin import auto_upload_douyin
 
 
 class SchedulerTasks:
-
+    @staticmethod
+    async def publish_videos(app: FastAPI):
+        logger.info("检测自动生成视频待发布视频任务")
+        while True:
+            task_id = await redis_instance.lpop("video_publish_queue")
+            if task_id:
+                await auto_upload_douyin(task_id.decode("utf-8"))
+            else:
+                logger.info("当前没有待自动发布的视频任务")
+                break
     @staticmethod
     async def get_weibo_hotsearch():
         hotsearch_data: List[HotSearchItem] = await get_weibo_hotsearch()
@@ -60,11 +71,11 @@ class SchedulerTasks:
 
     @staticmethod
     async def generate_video_by_weibo_hotspot():
-        logger.info("Generating video by weibo hotspot begin")
+        logger.info("Generating video by weibo hotspot check begin")
         # 当前生成的视频数量 不能全部生成
         generate_counts = 0
         # 每次定时任务计划生成几个视频
-        target_generate_max = 1
+        target_generate_max = 50
         # 获取已存在的微博热搜列表
         weibo_artcle_list: List[str] = await redis_instance.get_keys(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format("*"))
         for weibo_artcle_title in weibo_artcle_list:

@@ -1,11 +1,10 @@
 import asyncio
 from pathlib import Path
 
-from conf import BASE_DIR
-from tencent_uploader.main import weixin_setup, TencentVideo
-from utils.constant import TencentZoneTypes
-from utils.files_times import generate_schedule_time_next_day, get_title_and_hashtags
-
+from app.utils.uploader.conf import BASE_DIR
+from app.utils.uploader.tencent_uploader.main import weixin_setup, TencentVideo
+from app.utils.uploader.utils.constant import TencentZoneTypes
+from app.utils.uploader.utils.files_times import generate_schedule_time_next_day, get_title_and_hashtags
 
 if __name__ == '__main__':
     filepath = Path(BASE_DIR) / "videos"
