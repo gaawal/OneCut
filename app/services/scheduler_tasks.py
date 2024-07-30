@@ -33,11 +33,14 @@ class SchedulerTasks:
         logger.info("检测自动生成视频待发布视频任务")
         while True:
             task_id = await redis_instance.lpop("video_publish_queue")
+
             if task_id:
-                await auto_upload_douyin(task_id.decode("utf-8"))
+                logger.info("存在生成视频待发布视频任务,task_id：", task_id)
+                await auto_upload_douyin(task_id)
             else:
                 logger.info("当前没有待自动发布的视频任务")
                 break
+
     @staticmethod
     async def get_weibo_hotsearch():
         hotsearch_data: List[HotSearchItem] = await get_weibo_hotsearch()
@@ -152,6 +155,7 @@ class SchedulerTasks:
                     logger.error("生成视频失败")
                     logger.error(f"{traceback.format_exc()}")
         logger.info("Generating video by weibo hotspot check over")
+
     @staticmethod
     def log_memory_usage():
         """使用 psutil 定期记录内存使用情况"""
