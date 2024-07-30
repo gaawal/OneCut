@@ -33,7 +33,7 @@ from app.utils.uploader.examples.upload_video_to_douyin import auto_upload_douyi
 
 class SchedulerTasks:
     @staticmethod
-    async def publish_videos(app: FastAPI):
+    async def publish_videos():
         logger.info("检测自动生成视频待发布视频任务")
         while True:
             task_id = await redis_instance.lpop("video_publish_queue")
