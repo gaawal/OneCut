@@ -5,7 +5,6 @@ import json
 
 from loguru import logger
 
-from app.services.redis_service import redis_instance
 from app.utils import utils
 from app.utils.uploader.conf import BASE_DIR
 from app.utils.uploader.douyin_uploader.main import douyin_setup, DouYinVideo

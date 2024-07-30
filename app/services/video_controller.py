@@ -70,7 +70,7 @@ async def start(task_id, params: VideoParams):
             save_script(task_id, video_script, video_terms, video_tags, params)
 
             # 更新草稿
-            draft.add_script_info(video_script, video_terms, video_title, video_tags)
+            draft.add_script_info(params,video_script, video_terms, video_title, video_tags)
             draft.save_to_file(utils.task_dir(task_id))
 
             await save_task_state(task_id, TaskState.PROCESSING, 15, TaskDetailState.GENERATING_AUDIO, draft)
@@ -99,7 +99,7 @@ async def start(task_id, params: VideoParams):
 
             images_files = await images_generator.get_images_files(params=params)
             if not images_files:
-                logger.warning(f'没有图片素材资源')
+                logger.warning(f'没有图片素材资源，不进行视频生成')
                 return
             await save_task_state(task_id, TaskState.PROCESSING, 50, TaskDetailState.DOWNLOADING_VIDEOS, draft)
             downloaded_videos = []

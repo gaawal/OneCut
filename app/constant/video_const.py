@@ -8,7 +8,7 @@ class TaskState:
     FAILED = 'error'
     COMPLETE = 'finish'
     WAITING = 'wait'
-    PROCESSING = 'process'
+    PROCESSING = 'processing'
     WAITING_PUBLISH = 'wait_publish'  # 待发布
     PUBLISHING = 'publishing'  # 发布中
     PUBLISH_OK = 'publish_ok'  # 已发布

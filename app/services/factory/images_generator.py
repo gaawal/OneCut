@@ -29,7 +29,7 @@ async def get_images_files(params: VideoParams):
             articles = article_info.get('articles')
 
             for i in articles:
-                screenshot_images_path: str = i.get('screenshot')
+                screenshot_images_path: str = i.get('screenshot_path')
                 weibo_images_list: list = i.get('images')
                 if screenshot_images_path:
                     images_path.append(screenshot_images_path)

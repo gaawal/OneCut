@@ -50,6 +50,7 @@ class SchedulerTasks:
                         # 刷新发布成功状态
                         await save_task_state(task_id, TaskState.PUBLISH_OK, 100, TaskDetailState.PUBLISH_OK)
                         await redis_instance.lrem("video_publish_queue", 0, task_id)
+                        break
                     else:
                         logger.info("存在已发布成功或发布中的视频任务,不需要重新发布task_id：", task_id)
                 else:
