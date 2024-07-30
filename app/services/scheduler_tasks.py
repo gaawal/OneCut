@@ -56,6 +56,7 @@ class SchedulerTasks:
                     logger.info("当前没有待自动发布的视频任务")
                     break
             except Exception as e:
+                logger.error(traceback.format_exc())
                 # 刷新发布失败状态
                 await save_task_state(task_id, TaskState.PUBLIS_FAILED, 100, TaskDetailState.PUBLIS_FAILED)
 

@@ -5,7 +5,7 @@
 # @File : tasks.py
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict
 
 
 class TaskBase(BaseModel):
@@ -13,7 +13,7 @@ class TaskBase(BaseModel):
     task_id: str
     progress: int
     state: str
-    draft_content: dict
+    draft_content: Optional[Dict] = None
 
 
 class TaskCreate(TaskBase):

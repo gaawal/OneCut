@@ -292,6 +292,7 @@ async def save_task_state(task_id, state, progress, detail_state, draft=None, ex
 
         if draft is not None:
             task_update_data["draft_content"] = draft.to_dict()
+
         task_update = TaskUpdate(**task_update_data)
         await task_controller.update(obj_in=task_update)
 
