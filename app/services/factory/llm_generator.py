@@ -23,6 +23,7 @@ def generate_video_script_and_terms(params):
     video_script = params.video_script.strip()
     video_terms = params.video_terms
     video_title = params.video_subject
+    video_tags = params.video_tags
     if not video_script:
         video_script, video_terms, video_title, video_tags = generate_script_and_terms(
             video_subject=params.video_subject,

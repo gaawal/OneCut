@@ -13,7 +13,8 @@ export const useVideoStore = defineStore('video', {
     weiboTitle: '',
     continueScript: '',
     wordCount: 300,
-    videoKeywords: [],
+    videoTerms: [],
+    videoTags: [],
     videoTitle: '',
     videoCategory: 'opinion_sharing',
     inspirationKeyword: '', //视频灵感关键词语句
@@ -102,7 +103,8 @@ export const useVideoStore = defineStore('video', {
         // 发起请求
         const scriptResponse = await api.getScriptsTerms(requestBody)
         this.videoScript = scriptResponse.data.video_script
-        this.videoKeywords = scriptResponse.data.video_terms
+        this.videoTerms = scriptResponse.data.video_terms
+        this.videoTags = scriptResponse.data.video_tags
         this.videoTheme = scriptResponse.data.video_title
         this.videoTitle = scriptResponse.data.video_title
       } catch (error) {
@@ -132,7 +134,8 @@ export const useVideoStore = defineStore('video', {
         // 发起请求
         const scriptResponse = await api.getScriptsTermsByInspire(requestBody)
         this.videoScript = scriptResponse.data.video_script
-        this.videoKeywords = scriptResponse.data.video_terms
+        this.videoTerms = scriptResponse.data.video_terms
+        this.videoTags = scriptResponse.data.video_tags
         this.videoTheme = scriptResponse.data.video_title
         this.videoTitle = scriptResponse.data.video_title
       } catch (error) {
@@ -189,7 +192,8 @@ export const useVideoStore = defineStore('video', {
     handleResetScript() {
       this.videoTheme = ''
       this.videoScript = ''
-      this.videoKeywords = []
+      this.videoTerms = []
+      this.videoTags = []
       this.videoTitle = ''
     },
     async togglePlayAudio(index, playOptions, musicType) {

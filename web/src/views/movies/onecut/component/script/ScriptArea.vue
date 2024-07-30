@@ -135,9 +135,9 @@
             </div>
           </div>
 
-          <div v-if="videoStore.videoKeywords.length" class="keywords">
+          <div v-if="videoStore.videoTags.length" class="keywords">
             <NGradientText :size="14" type="danger"> 关键词 </NGradientText>
-            <span v-for="(keyword, index) in videoStore.videoKeywords" :key="index">
+            <span v-for="(keyword, index) in videoStore.videoTags" :key="index">
               <div class="keyword">
                 <NGradientText :size="14" type="danger"> {{ keyword }} </NGradientText>
               </div>
