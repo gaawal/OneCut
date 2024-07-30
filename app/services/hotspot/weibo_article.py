@@ -2,6 +2,7 @@ import asyncio
 import json
 import os.path
 import traceback
+from datetime import datetime
 from typing import List, Tuple
 
 from loguru import logger
@@ -18,6 +19,8 @@ from app.utils.utils import generate_md5_id
 async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path: str) -> Tuple[str, List[WeiboArticle]]:
     logger.info(f"Fetching article content url is {url}")
     article_max = 20
+    current_time = datetime.now()
+    formatted_time_str = current_time.strftime("%Y%m%d%H%M")
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
@@ -70,7 +73,8 @@ async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path:
 
                     bounding_box = await card_wrap.bounding_box()
                     if bounding_box:
-                        card_screenshot = os.path.join(video_path, f"{weibo_mid}-card_screenshot_{i}.png")
+                        card_screenshot = os.path.join(video_path,
+                                                       f"{formatted_time_str}-{weibo_mid}-card_screenshot_{i}.png")
                         await page.screenshot(path=card_screenshot, clip=bounding_box)
                         article.screenshot_path = card_screenshot
                         logger.info(f"{i + 1}、保存评论截图：{card_screenshot}")
@@ -98,8 +102,9 @@ async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path:
                                             if await big_image.is_visible():
                                                 await big_image.scroll_into_view_if_needed()
                                                 bounding_box = await big_image.bounding_box()
+
                                                 big_image_path = os.path.join(video_path,
-                                                                              f"{weibo_mid}-big_image_{i}_{j}_{k}.png")
+                                                                              f"{formatted_time_str}-{weibo_mid}-big_image_{i}_{j}_{k}.png")
                                                 await page.screenshot(path=big_image_path, clip=bounding_box)
                                                 article.images.append(big_image_path)
                                                 logger.info(f"{i + 1}、保存评论大图：{big_image_path}")
@@ -183,8 +188,7 @@ async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cac
     return False
 
 
-async def update_weibo_generated_state( weibo_title):
-
+async def update_weibo_generated_state(weibo_title):
     if cached_data := await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title)):
         weibo_article_cache = json.loads(cached_data)
         weibo_article_cache = WeiboArticleData(**weibo_article_cache)
