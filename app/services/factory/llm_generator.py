@@ -222,6 +222,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         1. 根据视频的主题生成一个短视频脚本
         2. 生成{amount}个用于搜索素材视频的搜索术语
         3. 为视频脚本生成一个标题
+        4、必须按照Output Example的格式输出
 
     ## 视频脚本结构的约束：
         - 视频文案风格结构: {VIDEO_STYLE_MAP.get(video_category).get("structure")}
@@ -247,7 +248,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         - 使用引号来精确匹配短语，使用减号排除不需要的结果
         - 如适用，建议类别
         - 考虑使用同义词和相关词
-        - 生成优化后的搜索关键词，以JSON格式输出到video_terms字段
+        - 生成优化后的搜索关键词，必须以JSON格式输出到video_terms字段
 
     ## 标题的约束:
         1. 生成反映视频脚本主要内容的标题，不使用“揭秘：xxx”开头
@@ -267,7 +268,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     }}
 
     # Initialization:
-    - Video subject: {video_subject}
+    - Video theme related information: {video_subject}
     - Language: {language}
     - Number of paragraphs: {paragraph_number}
     - Word limit:Between {word_count - 10} and {word_count + 100} words
@@ -317,6 +318,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         raise RuntimeError("Failed to generate video script and terms after maximum retries.")
 
     try:
+        print("final_response",final_response)
         response_json = json.loads(final_response)
         logger.info(f"Got final response,{response_json}")
         video_script = format_response(response_json["video_script"])
