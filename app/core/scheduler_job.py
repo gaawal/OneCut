@@ -13,14 +13,16 @@ scheduler = AsyncIOScheduler()
 
 
 def register_scheduler_job(app):
-    scheduler.add_job(SchedulerTasks.log_memory_usage, 'interval', minutes=1)
-    scheduler.add_job(SchedulerTasks.log_tracemalloc_snapshot, 'interval', minutes=5)
-    scheduler.add_job(SchedulerTasks.show_most_common_types, 'interval', minutes=6)
     # 初始化并启动定时任务 指定时间 用于调试 CronTrigger(hour=00, minute=15)
+    scheduler.add_job(SchedulerTasks.log_memory_usage, 'interval', seconds=30)
+    scheduler.add_job(SchedulerTasks.log_tracemalloc_snapshot, 'interval', seconds=35)
+    scheduler.add_job(SchedulerTasks.show_most_common_types, 'interval', seconds=40)
+    # 刷新微博热搜榜单
     scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=15)
-    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=5)
-    # 自动生成文案的定时任务间隔时间请大于平均视频生成时间
-    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, CronTrigger(hour=22, minute=22))
-    # 自动发布视频检测
+    # 获取微博热搜内容图片评论信息
+    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', seconds=240)
+    # 自动生成微博热搜视频的定时任务
+    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=300)
+    # 自动发布视频的定时任务
     scheduler.add_job(SchedulerTasks.publish_videos, 'interval', seconds=60)
     scheduler.start()

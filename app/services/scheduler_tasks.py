@@ -182,14 +182,14 @@ class SchedulerTasks:
         process = psutil.Process()
         mem_info = process.memory_info()
         logger.info(
-            f"Memory usage: RSS = {mem_info.rss / (1024 * 1024):.2f} MB, VMS = {mem_info.vms / (1024 * 1024):.2f} MB")
+            f"当前内存使用大小: RSS = {mem_info.rss / (1024 * 1024):.2f} MB, 虚拟内存大小: VMS = {mem_info.vms / (1024 * 1024):.2f} MB")
 
     @staticmethod
     def log_tracemalloc_snapshot():
         """使用 tracemalloc 监控内存分配"""
         snapshot = tracemalloc.take_snapshot()
         top_stats = snapshot.statistics('lineno')
-        logger.info("[ Top 10 memory usage ]")
+        logger.info("[ Top 10 内存使用情况 ]")
         for stat in top_stats[:10]:
             logger.info(stat)
 
