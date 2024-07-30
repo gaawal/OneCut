@@ -11,7 +11,7 @@ from app.schemas.drafts import Draft
 from app.schemas.movies import VideoParams, VideoConcatMode, TaskProgress
 from app.services.factory import llm_generator, material_generator, subtitle_generator, video_generator, \
     voice_generator, images_generator, audio_generator
-from app.services.hotspot.weibo_article import push_finished
+from app.services.hotspot.weibo_article import update_weibo_generated_state
 from app.utils import utils
 from app.utils.utils import calculate_duration
 from app.services.redis_service import redis_instance
@@ -54,7 +54,7 @@ async def start(task_id, params: VideoParams):
     try:
         if not os.path.exists(draft_file):
             await save_task_state(task_id, TaskState.PROCESSING, 5, TaskDetailState.GENERATING_SCRIPT, draft)
-            video_script, video_terms, video_title = llm_generator.generate_video_script_and_terms(params)
+            video_script, video_terms, video_title, video_tags = llm_generator.generate_video_script_and_terms(params)
             if not all([video_script, video_terms, video_title]):
                 await save_task_state(task_id, TaskState.FAILED, 5, TaskFailureReason.FAILED_GENERATING_SCRIPT, draft,
                                       TaskFailureReason.FAILED_GENERATING_SCRIPT)
@@ -63,13 +63,14 @@ async def start(task_id, params: VideoParams):
             task_progress.script = video_script
             task_progress.video_title = video_title
             task_progress.search_terms = video_terms
+            task_progress.video_tags = video_tags
             await save_task_state(task_id, TaskState.PROCESSING, 10, TaskDetailState.SCRIPT_GENERATION_COMPLETE, draft,
                                   task_progress.dict())
 
-            save_script(task_id, video_script, video_terms, params)
+            save_script(task_id, video_script, video_terms, video_tags, params)
 
             # 更新草稿
-            draft.add_script_info(video_script, video_terms, video_title)
+            draft.add_script_info(video_script, video_terms, video_title, video_tags)
             draft.save_to_file(utils.task_dir(task_id))
 
             await save_task_state(task_id, TaskState.PROCESSING, 15, TaskDetailState.GENERATING_AUDIO, draft)
@@ -177,7 +178,10 @@ async def start(task_id, params: VideoParams):
     logger.info(f"生成时长为：{minutes} 分钟 {seconds} 秒")
     if params.auto_generate:
         # 如果是自动生成视频的，你要把对应微博数据的生成状态改为True 防止定时任务重新生成该文章视频
-        await push_finished(task_id, params.weibo_title)
+        await update_weibo_generated_state(params.weibo_title)
+        # 将任务ID添加到发布队列
+        await redis_instance.rpush("video_publish_queue", task_id)
+        logger.success("视频自动生成完成，刷新微博内容状态为已自动采集，并将任务ID添加到发布队列")
 
     return task_progress.dict()
 
@@ -246,11 +250,12 @@ async def generate_final_video(task_id, video_title, params, combined_video_path
     return final_video_paths
 
 
-def save_script(task_id, video_script, video_terms, params):
+def save_script(task_id, video_script, video_terms, video_tags, params):
     script_file = path.join(utils.task_dir(task_id), f"script.json")
     kwargs = {
         "script": video_script,
         "search_terms": video_terms,
+        "video_tags": video_tags,
         "params": params,
     }
 

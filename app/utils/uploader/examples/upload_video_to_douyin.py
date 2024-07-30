@@ -2,7 +2,6 @@ import asyncio
 import os.path
 from pathlib import Path
 import json
-import time
 
 from loguru import logger
 
@@ -18,7 +17,8 @@ def get_video_title_and_script(draft_path):
         data = json.load(file)
         title = data.get('script_info', {}).get('video_title', '标题')
         script = data.get('script_info', {}).get('script', '内容')
-        return title, script
+        video_tags = data.get('script_info', {}).get('video_tags', '内容')
+        return title, script, video_tags
 
 
 # 自动发布抖音视频
@@ -32,21 +32,19 @@ async def auto_upload_douyin(task_id):
     task_folder = os.path.join(tasks_dir, task_id)
 
     if not os.path.exists(task_folder):
-        print(f"任务目录 {task_folder} 不存在")
+        logger.warning(f"任务目录 {task_folder} 不存在")
         return
 
     draft_path = os.path.join(task_folder, "draft.json")
     video_file = os.path.join(task_folder, "final-1.mp4")
 
-    if os.path.exists(draft_path) and  os.path.exists(video_file):
+    if os.path.exists(draft_path) and os.path.exists(video_file):
         # 获取视频标题和脚本
-        title, script = get_video_title_and_script(draft_path)
-        tags = ['热门', '奥运会', '孙颖莎', '王楚钦']
-
+        title, script, tags = get_video_title_and_script(draft_path)
         # 打印视频文件名、标题和 hashtag
-        print(f"视频文件名：{video_file}")
-        print(f"标题：{title}, 脚本：{script}")
-        print(f"Hashtag：{tags}")
+        logger.info(f"视频文件名：{video_file}")
+        logger.info(f"标题：{title}, 脚本：{script}")
+        logger.info(f"视频话题：{tags}")
 
         # 设置cookie
         await douyin_setup(account_file, handle=False)
@@ -56,8 +54,9 @@ async def auto_upload_douyin(task_id):
         await app.main()
         # 从 Redis 队列中删除任务ID
         await redis_instance.lrem("video_publish_queue", 0, task_id)
+
     else:
-        print(f"draft.json 或 final-1.mp4 在目录 {task_folder} 中不存在")
+        logger.warning(f"draft.json 或 final-1.mp4 在目录 {task_folder} 中不存在")
 
 
 if __name__ == '__main__':

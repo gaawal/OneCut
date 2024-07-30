@@ -55,6 +55,7 @@ class PlayAudioParams(BaseModel):
 class VideoParams(BaseModel):
     video_subject: str  # 视频主题
     video_script: str = ""  # 用于生成视频的脚本
+    video_tags: list = []  # 用于发布视频的话题
     word_count: int = 300  # 文案字数
     video_category: str = "auto-detect"  # 用于生成视频文案的风格
     video_terms: Optional[str | list] = None  # 用于生成视频的关键词
@@ -135,6 +136,7 @@ class TaskProgress(BaseModel):
     script: Optional[str] = None
     video_title: Optional[str] = None
     search_terms: Optional[List[str]] = None
+    video_tags: Optional[List[str]] = None
     audio_file: Optional[str] = None
     bgm_file: Optional[str] = None
     images_files: Optional[List[str]] = None

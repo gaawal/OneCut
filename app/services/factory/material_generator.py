@@ -246,8 +246,8 @@ def search_videos_pixabay(search_term: str,
 
 
 def get_local_videos(audio_duration, video_clip_duration):
-    # 计算需要的视频片段总个数
-    video_counts = audio_duration // video_clip_duration
+    # 计算需要的视频片段总个数乘以2 多取几个
+    video_counts = audio_duration // video_clip_duration + 5
     # 获取缓存目录中的视频文件列表
     video_files = [os.path.join(utils.cache_videos_dir(), file) for file in os.listdir(utils.cache_videos_dir()) if
                    file.endswith('.mp4')]

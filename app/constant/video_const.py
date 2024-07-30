@@ -9,6 +9,9 @@ class TaskState:
     COMPLETE = 'finish'
     WAITING = 'wait'
     PROCESSING = 'process'
+    WAITING_PUBLISH = 'wait_publish' #待发布
+    PUBLISHING = 'publishing'  #发布中
+    PUBLISHED = 'published'    #已发布
 
 
 class TaskDetailState:

@@ -45,10 +45,11 @@ class Draft:
 
         }
 
-    def add_script_info(self, script: str, terms: List[str], title: str):
+    def add_script_info(self, script: str, terms: List[str], title: str, video_tags: List[str], ):
         self.draft["script_info"] = {
             "video_script": script,
             "video_terms": terms,
+            "video_tags": video_tags,
             "video_title": title
         }
 

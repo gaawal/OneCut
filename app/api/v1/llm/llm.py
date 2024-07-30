@@ -44,16 +44,18 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
         weibo_summary = generate_weibo_summary(weibo_article_data, get_content_counts)  # 假设需要获取5条评论
         # 把微博热搜作为视频主题输入
         body.video_subject = weibo_summary
-    video_script, video_terms, video_title = llm_generator.generate_script_and_terms(video_subject=body.video_subject,
-                                                                                     language=body.video_language,
-                                                                                     paragraph_number=body.paragraph_number,
-                                                                                     video_category=body.video_category,
-                                                                                     amount=body.amount,
-                                                                                     word_count=body.word_count)
+    video_script, video_terms, video_title, video_tags = llm_generator.generate_script_and_terms(
+        video_subject=body.video_subject,
+        language=body.video_language,
+        paragraph_number=body.paragraph_number,
+        video_category=body.video_category,
+        amount=body.amount,
+        word_count=body.word_count)
     response = {
         "video_title": video_title,
         "video_script": video_script,
-        "video_terms": video_terms
+        "video_terms": video_terms,
+        "video_tags": video_tags,
     }
     return Success(data=response)
 
@@ -61,7 +63,7 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
 @router.post("/inspire_scripts_terms", response_model=VideoScriptResponse, summary="通过文案灵感类别为视频创建脚本以及获取对应的关键词")
 async def generate_video_script_and_terms_by_inspire(request: Request, body: VideoScriptRequest):
     logger.info("Generating video by inspire，body is {}".format(body))
-    video_script, video_terms, video_title = llm_generator.generate_script_and_terms_by_inpire(
+    video_script, video_terms, video_title, video_tags = llm_generator.generate_script_and_terms_by_inpire(
         video_inspire=body.video_inspire,
         video_inspire_keyword=body.video_inspire_keyword,
         paragraph_number=body.paragraph_number,
@@ -70,7 +72,8 @@ async def generate_video_script_and_terms_by_inspire(request: Request, body: Vid
     response = {
         "video_title": video_title,
         "video_script": video_script,
-        "video_terms": video_terms
+        "video_terms": video_terms,
+        "video_tags": video_tags,
     }
     return Success(data=response)
 

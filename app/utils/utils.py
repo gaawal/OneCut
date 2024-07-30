@@ -70,7 +70,7 @@ def get_task_id():
     # 格式化为包含秒的字符串
     # 获取当前时间
     current_time = datetime.now()
-    formatted_time_str = current_time.strftime("%Y%m%d%H%M%-")
+    formatted_time_str = current_time.strftime("%Y%m%d%H%M-")
     task_id = formatted_time_str + get_uuid()
     return task_id
 

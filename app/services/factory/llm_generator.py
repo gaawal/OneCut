@@ -16,21 +16,25 @@ from app.constant.video_const import VIDEO_STYLE_MAP, VIDEO_INSPIRED
 from app.settings import movies_config
 
 _max_retries = 5
+
+
 def generate_video_script_and_terms(params):
     logger.info("\n\n## generating video script")
     video_script = params.video_script.strip()
     video_terms = params.video_terms
     video_title = params.video_subject
     if not video_script:
-        video_script, video_terms, video_title = generate_script_and_terms(video_subject=params.video_subject,
-                                                                                         language=params.video_language,
-                                                                                         paragraph_number=params.paragraph_number,
-                                                                                         video_category=params.video_category,
-                                                                                         amount=params.amount,
-                                                                                         word_count=params.word_count)
+        video_script, video_terms, video_title, video_tags = generate_script_and_terms(
+            video_subject=params.video_subject,
+            language=params.video_language,
+            paragraph_number=params.paragraph_number,
+            video_category=params.video_category,
+            amount=params.amount,
+            word_count=params.word_count)
     else:
         logger.info("no need to generate video script.")
-    return video_script, video_terms, video_title
+    return video_script, video_terms, video_title, video_tags
+
 
 def _generate_response(prompt: str) -> str:
     content = ""
@@ -222,7 +226,8 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         1. 根据视频的主题生成一个短视频脚本
         2. 生成{amount}个用于搜索素材视频的搜索术语
         3. 为视频脚本生成一个标题
-        4、必须按照Output Example的格式输出
+        4. 为视频生成4个核心话题关键词
+        5、必须按照Output Example的格式输出
 
     ## 视频脚本结构的约束：
         - 视频文案风格结构: {VIDEO_STYLE_MAP.get(video_category).get("structure")}
@@ -259,12 +264,21 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
             - 用反常识的信息制造反转效果
             - 用省略号制造悬念
             - 利用读者的身份吸引注意力（如大学生、宝妈、打工人）
-
+    ## 视频话题tags的约束:
+    - 你是一名视频话题总结助手
+    - 分析给定的视频文案，生成有效的视频话题关键词
+    - 每个话题关键词应该为人名或热门词汇
+    - 每个关键词应反映视频的核心内容或热点话题
+    - 将生成的关键词存到列表中
+    - 生成优化后的搜索关键词，以JSON格式输出到video_tags字段
+    - 确保每个关键词尽可能简洁并具有搜索价值
+    
     ## Output Example:
     {{
         "video_script": "Generated video script here...",
         "video_terms": ["term1+term2+term3", "term4+term5+term6", "term7+term8+term9"],
-        "title": "Generated title here"
+        "title": "Generated title here",
+        "video_tags":["话题1","话题2","话题3","话题4"]
     }}
 
     # Initialization:
@@ -318,16 +332,17 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         raise RuntimeError("Failed to generate video script and terms after maximum retries.")
 
     try:
-        print("final_response",final_response)
+        print("final_response", final_response)
         response_json = json.loads(final_response)
         logger.info(f"Got final response,{response_json}")
         video_script = format_response(response_json["video_script"])
         video_terms = response_json["video_terms"]
         video_title = response_json["title"]
+        video_tags = response_json["video_tags"]
     except Exception as e:
         raise RuntimeError(f"Failed to parse response JSON: {e}")
 
-    return video_script, video_terms, video_title
+    return video_script, video_terms, video_title, video_tags
 
 
 def generate_script_and_terms_by_inpire(video_inspire: str, video_inspire_keyword: str,
@@ -338,7 +353,8 @@ def generate_script_and_terms_by_inpire(video_inspire: str, video_inspire_keywor
         1. 根据视频的灵感类型和灵感关键词生成一个短视频主题脚本
         2. 生成{amount}个用于搜索素材视频的搜索术语
         3. 为视频脚本生成一个标题
-        4.仅生成单个主题的视频文案脚本，不可多个主题
+        4. 为视频生成4个核心话题关键词
+        5.仅生成单个主题的视频文案脚本，不可多个主题
 
     ## 视频脚本结构的约束：
         - 视频灵感风格结构: {VIDEO_INSPIRED.get(video_inspire).get("structure")}
@@ -377,12 +393,22 @@ def generate_script_and_terms_by_inpire(video_inspire: str, video_inspire_keywor
             - 用反常识的信息制造反转效果
             - 用省略号制造悬念
             - 利用读者的身份吸引注意力（如大学生、宝妈、打工人）
-
+            
+   ## 视频话题tags的约束:
+    - 你是一名视频话题总结助手
+    - 分析给定的视频文案，生成有效的视频话题关键词
+    - 每个话题关键词应该为人名或热门词汇
+    - 每个关键词应反映视频的核心内容或热点话题
+    - 将生成的关键词存到列表中
+    - 生成优化后的搜索关键词，以JSON格式输出到video_tags字段
+    - 确保每个关键词尽可能简洁并具有搜索价值
+    
     ## Output Example:
     {{
         "video_script": "Generated video script here...",
         "video_terms": ["term1+term2+term3", "term4+term5+term6", "term7+term8+term9"],
-        "title": "Generated title here"
+        "title": "Generated title here",
+        "video_tags":["话题1","话题2","话题3","话题4"]
     }}
 
     # Initialization:
@@ -442,10 +468,11 @@ def generate_script_and_terms_by_inpire(video_inspire: str, video_inspire_keywor
         video_script = format_response(response_json["video_script"])
         video_terms = response_json["video_terms"]
         video_title = response_json["title"]
+        video_tags = response_json["video_tags"]
     except Exception as e:
         raise RuntimeError(f"Failed to parse response JSON: {e}")
 
-    return video_script, video_terms, video_title
+    return video_script, video_terms, video_title, video_tags
 
 
 def refine_scripts(original_script: str,

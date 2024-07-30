@@ -33,7 +33,6 @@ class SchedulerTasks:
         logger.info("检测自动生成视频待发布视频任务")
         while True:
             task_id = await redis_instance.lpop("video_publish_queue")
-
             if task_id:
                 logger.info("存在生成视频待发布视频任务,task_id：", task_id)
                 await auto_upload_douyin(task_id)
@@ -125,7 +124,7 @@ class SchedulerTasks:
                           "weibo_title": weibo_artcle_title.replace("weibo_hot_article:", "")}
                 body = VideoParams(**params)
                 logger.info(f"开始自动生成文案")
-                video_script, video_terms, video_title = llm_generator.generate_script_and_terms(
+                video_script, video_terms, video_title,video_tags = llm_generator.generate_script_and_terms(
                     video_subject=body.video_subject,
                     language=body.video_language,
                     paragraph_number=body.paragraph_number,
@@ -135,6 +134,7 @@ class SchedulerTasks:
                 body.video_terms = video_terms
                 body.video_script = video_script
                 body.video_subject = video_title
+                body.video_tags = video_tags
 
                 # 生成视频后自动发布
                 task_id = utils.get_task_id()

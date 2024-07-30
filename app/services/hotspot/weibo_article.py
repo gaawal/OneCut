@@ -183,7 +183,7 @@ async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cac
     return False
 
 
-async def push_finished(task_id, weibo_title):
+async def update_weibo_generated_state( weibo_title):
 
     if cached_data := await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title)):
         weibo_article_cache = json.loads(cached_data)
@@ -192,9 +192,7 @@ async def push_finished(task_id, weibo_title):
         weibo_article_json = json.dumps(weibo_article_cache.dict(), ensure_ascii=False)
         await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title), weibo_article_json,
                                  expire=RedisExpireTime.ONE_DAY)
-        # 将任务ID添加到发布队列
-        await redis_instance.rpush("video_publish_queue", task_id)
-        logger.success("视频自动生成完成，刷新微博内容状态为已自动采集，并将任务ID添加到发布队列")
+
     pass
 
 

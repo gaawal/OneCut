@@ -81,7 +81,12 @@ def combine_videos(
         while start_time < clip_duration:
             end_time = min(start_time + max_clip_duration, clip_duration)
             split_clip = clip.subclip(start_time, end_time)
-            raw_clips.append(split_clip)
+            # Check clip resolution
+            if (split_clip.w == video_width) and (split_clip.h == video_height):
+                raw_clips.append(split_clip)
+            else:
+                logger.info(
+                    f"Skipping clip with resolution {split_clip.w}x{split_clip.h}, expected {video_width}x{video_height}")
             start_time = end_time
             if video_concat_mode == VideoConcatMode.sequential:
                 break
