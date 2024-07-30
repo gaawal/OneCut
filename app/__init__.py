@@ -1,5 +1,6 @@
 import tracemalloc
 
+import jieba
 from fastapi import FastAPI
 from loguru import logger
 
@@ -54,6 +55,8 @@ async def startup_event():
     app.state.redis = redis_client.redis
     redis_instance.initialize(app)
     redis_taskmanager.initialize(app)
+    # 在应用启动时初始化 jieba
+    jieba.initialize()
 
 
 @app.on_event("shutdown")

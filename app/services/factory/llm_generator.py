@@ -273,6 +273,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - 将生成的关键词存到列表中
     - 生成优化后的搜索关键词，以JSON格式输出到video_tags字段
     - 确保每个关键词尽可能简洁并具有搜索价值
+    - 根据视频主题的语言进行响应
     
     ## Output Example:
     {{
