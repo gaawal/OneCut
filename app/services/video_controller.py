@@ -205,8 +205,10 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
             combined_video_path=combined_video,
             video_paths=downloaded_videos,
             audio_file=audio_file,
-            video_aspect=params.video_aspect, video_concat_mode=video_concat_mode,
-            max_clip_duration=params.video_clip_duration, images_files=images_files,
+            video_aspect=params.video_aspect,
+            video_concat_mode=video_concat_mode,
+            max_clip_duration=params.video_clip_duration,
+            images_files=images_files,
             threads=params.n_threads)
 
         _progress += progress_increment
@@ -276,18 +278,21 @@ async def handle_task_failure(task_id, failure_reason, error, task_progress, dra
     draft.save_to_file(utils.task_dir(task_id))
 
 
-async def save_task_state(task_id, state, progress, detail_state, draft, extra=None):
+async def save_task_state(task_id, state, progress, detail_state, draft=None, extra=None):
     task = await task_controller.get_by_task_id(task_id)
     if task:
-        task_update = TaskUpdate(
-            id=task.id,
-            user_id=task.user_id,
-            task_id=task_id,
-            progress=progress,
-            state=state,
-            draft_content=draft.to_dict(),
-            detail_state=detail_state,
-        )
+        task_update_data = {
+            "id": task.id,
+            "user_id": task.user_id,
+            "task_id": task_id,
+            "progress": progress,
+            "state": state,
+            "detail_state": detail_state,
+        }
+
+        if draft is not None:
+            task_update_data["draft_content"] = draft.to_dict()
+        task_update = TaskUpdate(**task_update_data)
         await task_controller.update(obj_in=task_update)
 
     # 保存到 Redis
@@ -304,6 +309,7 @@ def restore_task_progress_from_draft(draft: Draft) -> TaskProgress:
     task_progress.script = script_info["video_script"]
     task_progress.video_title = script_info["video_title"]
     task_progress.search_terms = script_info["video_terms"]
+    task_progress.video_tags = script_info["video_tags"]
 
     materials = draft.draft["materials"]
     task_progress.audio_file = materials["audios"][0]["path"] if materials["audios"] else None

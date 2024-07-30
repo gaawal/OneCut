@@ -9,9 +9,10 @@ class TaskState:
     COMPLETE = 'finish'
     WAITING = 'wait'
     PROCESSING = 'process'
-    WAITING_PUBLISH = 'wait_publish' #待发布
-    PUBLISHING = 'publishing'  #发布中
-    PUBLISHED = 'published'    #已发布
+    WAITING_PUBLISH = 'wait_publish' # 待发布
+    PUBLISHING = 'publishing'  # 发布中
+    PUBLISH_OK = 'publish_ok'    # 已发布
+    PUBLIS_FAILED = 'publish_failed'    # 发布失败
 
 
 class TaskDetailState:
@@ -30,6 +31,10 @@ class TaskDetailState:
     GENERATING_FINAL_VIDEO = "generating_final_video"
     FINAL_VIDEO_GENERATION_COMPLETE = "final_video_generation_complete"
     LOADING_DRAFT = "loading_draft"
+    PUBLISH_OK = "publish_ok"
+    PUBLIS_FAILED = "publish_failed"
+    PUBLISHING = "publishing"
+
 
 
 class TaskFailureReason:

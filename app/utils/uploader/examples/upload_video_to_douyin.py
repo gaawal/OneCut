@@ -52,9 +52,6 @@ async def auto_upload_douyin(task_id):
         # 创建并上传视频
         app = DouYinVideo(title, video_file, tags, 0, account_file)
         await app.main()
-        # 从 Redis 队列中删除任务ID
-        await redis_instance.lrem("video_publish_queue", 0, task_id)
-
     else:
         logger.warning(f"draft.json 或 final-1.mp4 在目录 {task_folder} 中不存在")
 

@@ -15,7 +15,10 @@ from fastapi import FastAPI
 from loguru import logger
 
 from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
+from app.constant.video_const import TaskState, TaskDetailState
+from app.controllers.video_task import task_controller
 from app.manager.redis_manager import redis_taskmanager
+from app.models import Task
 from app.schemas.movies import HotSearchItem, VideoParams, WeiboArticleData
 from app.services import video_controller
 from app.services.factory import llm_generator
@@ -23,6 +26,7 @@ from app.services.hotspot.weibo_article import fetch_hot_article, save_weibo_art
     generate_weibo_summary
 from app.services.hotspot.weibo_hotsearch import get_weibo_hotsearch
 from app.services.redis_service import redis_instance
+from app.services.video_controller import save_task_state
 from app.utils import utils
 from app.utils.uploader.examples.upload_video_to_douyin import auto_upload_douyin
 
@@ -33,12 +37,25 @@ class SchedulerTasks:
         logger.info("检测自动生成视频待发布视频任务")
         while True:
             task_id = await redis_instance.lpop("video_publish_queue")
-            if task_id:
-                logger.info("存在生成视频待发布视频任务,task_id：", task_id)
-                await auto_upload_douyin(task_id)
-            else:
-                logger.info("当前没有待自动发布的视频任务")
-                break
+            try:
+                if task_id:
+                    task_obj: Task = await task_controller.get_by_task_id(task_id)
+                    # 判断该任务是否发布成功状态了，如果没有才能进入发布流程
+                    if task_obj.state != TaskState.PUBLISH_OK or task_obj.state != TaskState.PROCESSING:
+                        logger.info("存在生成视频待发布视频任务,task_id：", task_id)
+                        # 刷新待发布状态
+                        await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.PUBLISHING)
+                        await auto_upload_douyin(task_id)
+                        # 从 Redis 队列中删除任务ID
+                        # 刷新发布成功状态
+                        await save_task_state(task_id, TaskState.PUBLISH_OK, 100, TaskDetailState.PUBLISH_OK)
+                        await redis_instance.lrem("video_publish_queue", 0, task_id)
+                else:
+                    logger.info("当前没有待自动发布的视频任务")
+                    break
+            except Exception as e:
+                # 刷新发布失败状态
+                await save_task_state(task_id, TaskState.PUBLIS_FAILED, 100, TaskDetailState.PUBLIS_FAILED)
 
     @staticmethod
     async def get_weibo_hotsearch():
@@ -124,7 +141,7 @@ class SchedulerTasks:
                           "weibo_title": weibo_artcle_title.replace("weibo_hot_article:", "")}
                 body = VideoParams(**params)
                 logger.info(f"开始自动生成文案")
-                video_script, video_terms, video_title,video_tags = llm_generator.generate_script_and_terms(
+                video_script, video_terms, video_title, video_tags = llm_generator.generate_script_and_terms(
                     video_subject=body.video_subject,
                     language=body.video_language,
                     paragraph_number=body.paragraph_number,
