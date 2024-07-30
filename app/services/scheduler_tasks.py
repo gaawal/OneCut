@@ -113,7 +113,7 @@ class SchedulerTasks:
 
                 params = {"video_subject": weibo_summary,
                           "word_count": 300,
-                          "video_category": "opinion_sharing",
+                          "video_category": "generic",
                           "video_terms": [],
                           "video_aspect": "16:9",
                           "video_concat_mode":
@@ -123,7 +123,7 @@ class SchedulerTasks:
                           "video_source": "pixabay",
                           "video_materials": [],
                           "video_language": "auto-detect",
-                          "voice_name": "zh-CN-YunjianNeural",
+                          "voice_name": "zh-CN-YunxiNeural",
                           "voice_volume": 1,
                           "bgm_type": "random",
                           "bgm_file": "",

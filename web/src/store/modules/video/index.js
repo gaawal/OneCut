@@ -16,7 +16,7 @@ export const useVideoStore = defineStore('video', {
     videoTerms: [],
     videoTags: [],
     videoTitle: '',
-    videoCategory: 'opinion_sharing',
+    videoCategory: 'generic',
     inspirationKeyword: '', //视频灵感关键词语句
     selectedInspiration: {}, //当前选中视频灵感类型
     scriptLanguage: 'auto-detect',
