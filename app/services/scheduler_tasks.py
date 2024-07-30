@@ -114,7 +114,7 @@ class SchedulerTasks:
 
                 params = {"video_subject": weibo_summary,
                           "word_count": 300,
-                          "video_category": "generic",
+                          "video_category": "maikease",
                           "video_terms": [],
                           "video_aspect": "16:9",
                           "video_concat_mode":
@@ -124,10 +124,10 @@ class SchedulerTasks:
                           "video_source": "pixabay",
                           "video_materials": [],
                           "video_language": "auto-detect",
-                          "voice_name": "zh-CN-YunxiNeural",
+                          "voice_name": "zh-CN-YunjianNeural",
                           "voice_volume": 1,
                           "bgm_type": "random",
-                          "bgm_file": "",
+                          "bgm_file": "麦克阿瑟进行曲",
                           "bgm_volume": 0.1,
                           "subtitle_enabled": True,
                           "subtitle_position": "bottom",

@@ -24,5 +24,5 @@ def register_scheduler_job(app):
     # 自动生成微博热搜视频的定时任务
     scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=301)
     # 自动发布视频的定时任务
-    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', seconds=61)
+    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', seconds=50)
     scheduler.start()

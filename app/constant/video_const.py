@@ -9,14 +9,14 @@ class TaskState:
     COMPLETE = 'finish'
     WAITING = 'wait'
     PROCESSING = 'process'
-    WAITING_PUBLISH = 'wait_publish' # 待发布
+    WAITING_PUBLISH = 'wait_publish'  # 待发布
     PUBLISHING = 'publishing'  # 发布中
-    PUBLISH_OK = 'publish_ok'    # 已发布
-    PUBLIS_FAILED = 'publish_failed'    # 发布失败
+    PUBLISH_OK = 'publish_ok'  # 已发布
+    PUBLIS_FAILED = 'publish_failed'  # 发布失败
 
 
 class TaskDetailState:
-    FAILED ='failed'
+    FAILED = 'failed'
     SUCCESS = 'success'
     GENERATING_SCRIPT = "generating_script"
     SCRIPT_GENERATION_COMPLETE = "script_generation_complete"
@@ -34,7 +34,6 @@ class TaskDetailState:
     PUBLISH_OK = "publish_ok"
     PUBLIS_FAILED = "publish_failed"
     PUBLISHING = "publishing"
-
 
 
 class TaskFailureReason:
@@ -67,6 +66,7 @@ class SubtitleProvider:
 
 
 VIDEO_STYLE_MAP = {
+
     'generic': {
         'structure': '钩子开头+塑造期待+解决方案+结尾（完成闭环）',
         'example': """参考以下话术案例，选择最能符合当前语境的模板进行仿写文案，如
@@ -80,6 +80,24 @@ VIDEO_STYLE_MAP = {
                      话术原理就是经历这个词就能让人产生共鸣，如果再表现出来，那效果就太好了!
         5.经历体验型举例:我第一次一个人拿着500块去北京找工作是一种什么样的体验。话术原理就是这种开头合适作为VLOG为开头，更加的贴近现实生活。 
         6.避雷干货型举例:宝马的这个通病你要是了解，肯定能为你省下不少冤枉钱...话术原理就是给用户获得价值+获得感，看了这个视频就觉得赚了。"""
+    },
+    'maikease': {
+        'structure': '麦克阿瑟传奇文案',
+        'example': """"根据视频主题生成幽默讽刺的文案，使用以下结构和格式：
+#开头：
+以'给他（她）一个xx的机会，他（她）能xx'开头。
+#描述具体情境：
+根据提供的实际事件，使用幽默和夸张的手法描述具体情况。格式为'xx有xx，xx有xx'或具体描述情境。
+#经典语句：
+使用经典的对比句式，格式为'不是xx要不起，而是xx更有性价比'。
+#深刻描述：
+通过对比和幽默展示情境，使用幽默和夸张的手法描述。比如格式为'当你为了xx时，就是你xx的时候，你可以xx，但你不能xx，因为xx'。
+#引用麦克阿瑟言论：
+使用麦克阿瑟的评论增加文案的真实性和幽默感，评论的语句荒诞幽默搞笑夸张且瞎编但是要结合主题。格式为'就连远在大洋彼岸的五星评论家麦克阿瑟都不禁评论道，xx，xx'。
+#总结点题：
+最后用一句总结性的话点题，带有悬念或期待。格式为'大型纪录片《xx传奇》持续为您播出'。
+确保整体风格幽默夸张，有讽刺意味。
+#举例：给他一个在医院实习的机会，他能把整个医院变成实习生的天堂。不是护士聘不起，而是实习生更有性价比。左手奥跌6，右手宝马叉5，一问工资，每月倒贴3500。没错，这就是堪比射出的护理实习生。其他专业实习生，实习再差也有工资，而护理专业的学生不仅没有工资，还要倒贴实习费。干最累的活，还得交钱，交钱就算了，还要按时上下班，上下班就算了，还得跟着加班，加班就算了，还得受气，受气就算了，还得挨骂。过了一年的实习期，还不一定能留在医院，甚至还要重新找工作。计算机专业月薪6000寒冬降临，护理专业月薪3000，强势崛起。对此，美国著名五星护理上将麦克阿瑟评论道，毕业前，我当着全校宣誓，南丁格尔誓言的自豪与荣誉感，在我进入社会之后，被打得粉碎。大型纪录片《xx传奇》持续为您播出"""
     },
     'viral_script': {
         'structure': '精简+有趣+节奏+视觉冲击',
