@@ -203,7 +203,7 @@ async def update_weibo_generated_state(weibo_title):
 async def main():
     weibo_mid = "example_mid"  # Replace with the actual weibo_mid
     hot_url = 'https://s.weibo.com/weibo?q=%23%E5%86%85%E9%A9%AC%E5%B0%94%23'
-    weibo_article_data = await fetch_hot_article(weibo_mid, hot_url)
+    weibo_article_data = await fetch_hot_article(hot_url)
 
     print(generate_weibo_summary(weibo_article_data, 10))
 
