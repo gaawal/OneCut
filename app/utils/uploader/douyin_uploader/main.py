@@ -31,7 +31,6 @@ async def cookie_auth(account_file):
 async def douyin_setup(account_file, handle=False):
     if not os.path.exists(account_file) or not await cookie_auth(account_file):
         if not handle:
-
             return False
         logger.info('[+] cookie文件不存在或已失效，即将自动打开浏览器，请扫码登录，登陆后会自动生成cookie文件')
         await douyin_cookie_gen(account_file)
@@ -86,7 +85,8 @@ class DouYinVideo(object):
         logger.info('视频出错了，重新上传中')
         await page.locator('div.progress-div [class^="upload-btn-input"]').set_input_files(self.file_path)
 
-    async def upload(self, playwright: Playwright) -> None:
+    async def upload(self, playwright: Playwright) -> bool:
+        upload_ok = False
         # 使用 Chromium 浏览器启动一个浏览器实例
         if self.local_executable_path:
             browser = await playwright.chromium.launch(headless=False, executable_path=self.local_executable_path)
@@ -123,7 +123,8 @@ class DouYinVideo(object):
         # 这里为了避免页面变化，故使用相对位置定位：作品标题父级右侧第一个元素的input子元素
         await asyncio.sleep(1)
         logger.info(f'  [-] 正在填充标题和话题...')
-        title_container = page.get_by_text('作品标题').locator("..").locator("xpath=following-sibling::div[1]").locator("input")
+        title_container = page.get_by_text('作品标题').locator("..").locator("xpath=following-sibling::div[1]").locator(
+            "input")
         if await title_container.count():
             await title_container.fill(self.title[:30])
         else:
@@ -192,8 +193,10 @@ class DouYinVideo(object):
                 await page.wait_for_url("https://creator.douyin.com/creator-micro/content/manage?enter_from=publish",
                                         timeout=1500)  # 如果自动跳转到作品页面，则代表发布成功
                 logger.success("  [-]视频发布成功")
+                upload_ok = True
                 break
             except:
+
                 logger.info("  [-] 视频正在发布中...")
                 await page.screenshot(full_page=True)
                 await asyncio.sleep(0.5)
@@ -205,8 +208,8 @@ class DouYinVideo(object):
         await context.close()
         await browser.close()
 
+        return upload_ok
+
     async def main(self):
         async with async_playwright() as playwright:
             await self.upload(playwright)
-
-
