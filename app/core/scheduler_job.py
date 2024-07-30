@@ -22,5 +22,5 @@ def register_scheduler_job(app):
     # 自动生成文案的定时任务间隔时间请大于平均视频生成时间
     scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=5)
     # 自动发布视频检测
-    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', seconds=5)
+    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', seconds=60)
     scheduler.start()
