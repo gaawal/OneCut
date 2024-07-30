@@ -20,7 +20,7 @@ def register_scheduler_job(app):
     scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=15)
     scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=5)
     # 自动生成文案的定时任务间隔时间请大于平均视频生成时间
-    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, CronTrigger(hour=8, minute=40))
+    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=5)
     # 自动发布视频检测
     scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=5, args=[app])
     scheduler.start()
