@@ -201,24 +201,3 @@ def correct(subtitle_file, video_script):
         logger.success(f"subtitle is correct")
 
 
-if __name__ == "__main__":
-    task_id = "51493845-ff2a-451d-b7bb-4c5faa9918dd"
-    task_dir = utils.task_dir(task_id)
-    subtitle_file = f"{task_dir}/subtitle.srt"
-    audio_file = f"{task_dir}/audio.mp3"
-
-    subtitles = file_to_subtitles(subtitle_file)
-    print(subtitles)
-
-    script_file = f"{task_dir}/script.json"
-    with open(script_file, "r") as f:
-        script_content = f.read()
-    s = json.loads(script_content)
-    script = s.get("script")
-
-    correct(subtitle_file, script)
-
-    subtitle_file = f"{task_dir}/subtitle-test.srt"
-    create(audio_file, subtitle_file)
-
-

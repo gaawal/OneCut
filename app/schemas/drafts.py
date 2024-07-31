@@ -56,6 +56,7 @@ class Draft:
             "video_tags": video_tags,
             "video_title": title
         }
+        self.draft["params"] = params
 
     def add_material(self, material_type: str, material_info: Dict[str, Any]):
         if material_type in self.draft["materials"]:

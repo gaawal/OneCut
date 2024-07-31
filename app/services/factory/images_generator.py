@@ -31,8 +31,8 @@ async def get_images_files(params: VideoParams):
             for i in articles:
                 screenshot_images_path: str = i.get('screenshot_path')
                 weibo_images_list: list = i.get('images')
-                # if screenshot_images_path:
-                #     images_path.append(screenshot_images_path)
+                if screenshot_images_path:
+                    images_path.append(screenshot_images_path)
                 if weibo_images_list:
                     images_path.extend(weibo_images_list)
             logger.info(f'使用的微博图片素材资源为:{images_path}')

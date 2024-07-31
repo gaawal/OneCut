@@ -52,7 +52,8 @@ async def auto_upload_douyin(task_id):
         app = DouYinVideo(title, video_file, tags, 0, account_file)
         await app.main()
     else:
-        logger.warning(f"draft.json 或 final-1.mp4 在目录 {task_folder} 中不存在")
+        raise Exception(f"draft.json 或 final-1.mp4 在目录 {task_folder} 中不存在")
+    return True
 
 
 if __name__ == '__main__':

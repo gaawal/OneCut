@@ -28,13 +28,13 @@ from app.services.hotspot.weibo_hotsearch import get_weibo_hotsearch
 from app.services.redis_service import redis_instance
 from app.services.video_controller import save_task_state
 from app.utils import utils
+from app.utils.uploader.examples.get_douyin_cookie import get_douoyin_cookies
 from app.utils.uploader.examples.upload_video_to_douyin import auto_upload_douyin
 
 
 class SchedulerTasks:
     @staticmethod
     async def publish_videos():
-        logger.info("检测自动生成视频待发布视频任务")
         while True:
             task_id = await redis_instance.lpop("video_publish_queue")
             try:
@@ -45,16 +45,16 @@ class SchedulerTasks:
                         logger.info("存在生成视频待发布视频任务,task_id：", task_obj.task_id)
                         # 刷新待发布状态
                         await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.PUBLISHING)
-                        await auto_upload_douyin(task_id)
-                        # 从 Redis 队列中删除任务ID
-                        # 刷新发布成功状态
-                        await save_task_state(task_id, TaskState.PUBLISH_OK, 100, TaskDetailState.PUBLISH_OK)
-                        await redis_instance.lrem("video_publish_queue", 0, task_id)
+                        is_uploaded = await auto_upload_douyin(task_id)
+                        if is_uploaded:
+                            # 从 Redis 队列中删除任务ID
+                            # 刷新发布成功状态
+                            await save_task_state(task_id, TaskState.PUBLISH_OK, 100, TaskDetailState.PUBLISH_OK)
+                            await redis_instance.lrem("video_publish_queue", 0, task_id)
                         break
                     else:
                         logger.info("存在已发布成功或发布中的视频任务,不需要重新发布task_id：", task_id)
                 else:
-                    logger.info("当前没有待自动发布的视频任务")
                     break
             except Exception as e:
                 logger.error(traceback.format_exc())
@@ -170,12 +170,16 @@ class SchedulerTasks:
                     await redis_taskmanager.add_task(video_controller.start, task_id=task_id, params=body)
                     logger.info(f"自动生成视频任务已创建: {utils.to_json(task)}\ntask_id is {task_id} ")
                     generate_counts += 1
-                    if generate_counts > target_generate_max:
+                    if generate_counts >= target_generate_max:
                         break
                 except Exception as e:
                     logger.error("生成视频失败")
                     logger.error(f"{traceback.format_exc()}")
         logger.info("Generating video by weibo hotspot check over")
+
+    @staticmethod
+    def get_douoyin_cookies():
+        get_douoyin_cookies()
 
     @staticmethod
     def log_memory_usage():

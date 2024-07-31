@@ -66,11 +66,8 @@ async def start(task_id, params: VideoParams):
             task_progress.video_tags = video_tags
             await save_task_state(task_id, TaskState.PROCESSING, 10, TaskDetailState.SCRIPT_GENERATION_COMPLETE, draft,
                                   task_progress.dict())
-
-            save_script(task_id, video_script, video_terms, video_tags, params)
-
             # 更新草稿
-            draft.add_script_info(params,video_script, video_terms, video_title, video_tags)
+            draft.add_script_info(params, video_script, video_terms, video_title, video_tags)
             draft.save_to_file(utils.task_dir(task_id))
 
             await save_task_state(task_id, TaskState.PROCESSING, 15, TaskDetailState.GENERATING_AUDIO, draft)
@@ -99,7 +96,7 @@ async def start(task_id, params: VideoParams):
 
             images_files = await images_generator.get_images_files(params=params)
             if not images_files:
-                logger.warning(f'没有图片素材资源，不进行视频生成')
+                logger.warning(f'没有微博图片素材资源，不进行视频生成')
                 return
             await save_task_state(task_id, TaskState.PROCESSING, 50, TaskDetailState.DOWNLOADING_VIDEOS, draft)
             downloaded_videos = []
@@ -253,21 +250,6 @@ async def generate_final_video(task_id, video_title, params, combined_video_path
         task_progress.final_videos.append(final_video)
         final_video_paths.append(final_video)
     return final_video_paths
-
-
-def save_script(task_id, video_script, video_terms, video_tags, params):
-    script_file = path.join(utils.task_dir(task_id), f"script.json")
-    kwargs = {
-        "script": video_script,
-        "search_terms": video_terms,
-        "video_tags": video_tags,
-        "params": params,
-    }
-
-    with open(script_file, "w", encoding="utf-8") as f:
-        f.write(utils.to_json(kwargs))
-
-    return script_file
 
 
 async def handle_task_failure(task_id, failure_reason, error, task_progress, draft):
