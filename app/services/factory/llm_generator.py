@@ -287,7 +287,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - Video theme related information: {video_subject}
     - Language: {language}
     - Number of paragraphs: {paragraph_number}
-    - Word limit:Between {word_count - 10} and {word_count + 100} words
+    - Word limit:Between {word_count} and {word_count + 100} words
     """.strip()
     logger.info(prompt)
 

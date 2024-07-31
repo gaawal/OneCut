@@ -28,7 +28,7 @@ def register_scheduler_job(app):
     scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=301,
                       next_run_time=datetime.now() + timedelta(seconds=15))
     # 自动发布视频的定时任务
-    # scheduler.add_job(SchedulerTasks.publish_videos, 'interval', seconds=5)
+    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=13)
     # 更新抖音cookies
     # scheduler.add_job(SchedulerTasks.get_douoyin_cookies, 'interval', seconds=5)
 

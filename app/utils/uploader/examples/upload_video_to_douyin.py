@@ -1,5 +1,6 @@
 import asyncio
 import os.path
+import random
 from pathlib import Path
 import json
 
@@ -24,8 +25,10 @@ def get_video_title_and_script(draft_path):
 async def auto_upload_douyin(task_id):
     logger.info(f"自动发布至抖音，任务id：{task_id}")
     base_dir = Path(BASE_DIR)
-    account_file = base_dir / "douyin_uploader" / "account.json"
-
+    account_list = ["account.json"]
+    account_file = random.choice(account_list)
+    account_file = os.path.join(base_dir, "douyin_uploader", account_file)
+    logger.info(f"随机选取上传账号为,{account_file}")
     # 获取视频任务目录
     tasks_dir = utils.task_dir()
     task_folder = os.path.join(tasks_dir, task_id)

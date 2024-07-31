@@ -43,7 +43,7 @@ class SchedulerTasks:
                     task_obj: Task = await task_controller.get_by_task_id(task_id)
                     # 判断该任务是否发布成功状态了，如果没有才能进入发布流程
                     if task_obj.state != TaskState.PUBLISH_OK or task_obj.state != TaskState.PROCESSING:
-                        logger.info("存在生成视频待发布视频任务,task_id：", task_obj.task_id)
+                        logger.info(f"存在生成视频待发布视频任务,task_id：{task_obj.task_id}" )
                         # 刷新待发布状态
                         await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.PUBLISHING)
                         is_uploaded = await auto_upload_douyin(task_id)
