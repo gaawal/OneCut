@@ -3,6 +3,7 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : scheduler_job.py
+from datetime import datetime, timedelta
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -18,11 +19,14 @@ def register_scheduler_job(app):
     # scheduler.add_job(SchedulerTasks.log_tracemalloc_snapshot, 'interval', seconds=33)
     # scheduler.add_job(SchedulerTasks.show_most_common_types, 'interval', seconds=37)
     # 刷新微博热搜榜单
-    scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=15)
+    scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=15,
+                      next_run_time=datetime.now() + timedelta(seconds=60))
     # 获取微博热搜内容图片评论信息
-    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', seconds=241)
+    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', seconds=241,
+                      next_run_time=datetime.now() + timedelta(seconds=120))
     # 自动生成微博热搜视频的定时任务
-    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=301)
+    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=301,
+                      next_run_time=datetime.now() + timedelta(seconds=240))
     # 自动发布视频的定时任务
-    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', seconds=123)
+    #scheduler.add_job(SchedulerTasks.publish_videos, 'interval', seconds=123)
     scheduler.start()
