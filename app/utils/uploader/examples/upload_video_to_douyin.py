@@ -16,7 +16,7 @@ def get_video_title_and_script(draft_path):
         data = json.load(file)
         title = data.get('script_info', {}).get('video_title', '标题')
         script = data.get('script_info', {}).get('script', '内容')
-        video_tags = data.get('script_info', {}).get('video_tags', '内容')
+        video_tags = data.get('script_info', {}).get('video_tags', '热门')
         return title, script, video_tags
 
 
