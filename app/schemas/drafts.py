@@ -45,7 +45,7 @@ class Draft:
 
         }
 
-    def add_script_info(self, params, script: str, terms: List[str], title: str, video_tags: List[str], ):
+    def add_script_info(self, params: VideoParams, script: str, terms: List[str], title: str, video_tags: List[str], ):
         if params.video_category == "maikease":
             # 麦克阿瑟风格定制
             video_tags.insert(0, "麦克阿瑟")
@@ -56,7 +56,7 @@ class Draft:
             "video_tags": video_tags,
             "video_title": title
         }
-        self.draft["params"] = params
+        self.draft["params"] = params.dict()
 
     def add_material(self, material_type: str, material_info: Dict[str, Any]):
         if material_type in self.draft["materials"]:

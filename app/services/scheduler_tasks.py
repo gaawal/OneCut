@@ -5,6 +5,7 @@
 # @File : scheduler_tasks.py
 
 import json
+import random
 import traceback
 import tracemalloc
 from typing import List
@@ -112,10 +113,10 @@ class SchedulerTasks:
                 get_content_counts = 5
                 weibo_summary = generate_weibo_summary(weibo_article_data, get_content_counts)  # 假设需要获取5条评论
                 # 把微博热搜作为视频主题输入
-
+                choose_categorys = ['sad_script','maikease']
                 params = {"video_subject": weibo_summary,
                           "word_count": 300,
-                          "video_category": "maikease",
+                          "video_category": random.choice(choose_categorys),
                           "video_terms": [],
                           "video_aspect": "16:9",
                           "video_concat_mode":
