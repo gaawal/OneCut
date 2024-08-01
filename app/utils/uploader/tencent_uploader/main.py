@@ -187,7 +187,7 @@ class TencentVideo(object):
                 publish_buttion = page.locator('div.form-btns button:has-text("发表")')
                 if await publish_buttion.count():
                     await publish_buttion.click()
-                await page.wait_for_url("https://channels.weixin.qq.com/platform/post/list", timeout=1500)
+                await page.wait_for_url("https://channels.weixin.qq.com/platform/post/list", timeout=2500)
                 logger.success("  [Weixin]视频发布成功")
                 break
             except Exception as e:

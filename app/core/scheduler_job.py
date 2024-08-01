@@ -26,7 +26,7 @@ def register_scheduler_job(app):
                       next_run_time=datetime.now() + timedelta(seconds=120))
     # 自动生成微博热搜视频的定时任务
     scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=301,
-                      next_run_time=datetime.now() + timedelta(seconds=15))
+                      next_run_time=datetime.now() + timedelta(seconds=111))
     # 自动发布视频的定时任务
     scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=10,
                       next_run_time=datetime.now() + timedelta(seconds=35))
