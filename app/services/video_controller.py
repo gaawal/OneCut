@@ -183,7 +183,8 @@ async def start(task_id, params: VideoParams):
         # 将任务ID添加到发布队列
         await redis_instance.rpush("video_publish_queue", task_id)
         logger.success("视频自动生成完成，刷新微博内容状态为已自动采集，并将任务ID添加到发布队列")
-
+        # 打印当前待发布队列中的任务ID数组
+        await redis_instance.print_queue("video_publish_queue")
     return task_progress.dict()
 
 

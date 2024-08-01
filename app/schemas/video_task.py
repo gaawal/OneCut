@@ -2,7 +2,7 @@
 # @Time : 2024/7/14 10:50
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
-# @File : tasks.py
+# @File : task_model.py
 
 from pydantic import BaseModel
 from typing import Optional, Dict

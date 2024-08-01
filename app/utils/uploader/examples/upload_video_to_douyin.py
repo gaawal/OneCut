@@ -55,11 +55,8 @@ async def auto_upload_douyin(task_id):
         # 创建并上传视频
         app = DouYinVideo(title, video_file, tags, 0, account_file)
         await app.main()
+        return True
     else:
-        raise Exception(f"draft.json 或 final-1.mp4 在目录 {task_folder} 中不存在")
-    return True
+        logger.warning(f"draft.json 或 final-1.mp4 在目录 {task_folder} 中不存在")
+        return False
 
-
-if __name__ == '__main__':
-    task_id = "example_task_id"  # 示例任务 ID
-    asyncio.run(auto_upload_douyin(task_id))

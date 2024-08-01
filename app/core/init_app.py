@@ -44,9 +44,9 @@ def register_db(app: FastAPI, db_url=None):
     register_tortoise(
         app,
         # db_url='sqlite://db.sqlite3',
-        # modules={'models':['app.models', "aerich.models"]},
+        # modules={'models': ['app.models']},
         config=base_settings.TORTOISE_ORM,
-        generate_schemas=True,
+        generate_schemas=True,  # 应用启动时自动生成或更新数据库表。如果你的数据库已经存在，但表结构有所更改，确保你正确初始化了
     )
     logger.success("注册数据库ORM-Tortoise成功")
 

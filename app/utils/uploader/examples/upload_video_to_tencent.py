@@ -44,6 +44,8 @@ async def auto_upload_weixin(task_id):
         # 创建并上传视频
         app = TencentVideo(title, video_file, tags, 0, account_file, category)
         await app.main()
+        return True
+    return False
 
 
 if __name__ == '__main__':

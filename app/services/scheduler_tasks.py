@@ -19,7 +19,7 @@ from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
 from app.constant.video_const import TaskState, TaskDetailState
 from app.controllers.video_task import task_controller
 from app.manager.redis_manager import redis_taskmanager
-from app.models import Task
+from app.models import TaskModel, get_platform_status, update_platform_status
 from app.schemas.movies import HotSearchItem, VideoParams, WeiboArticleData
 from app.services import video_controller
 from app.services.factory import llm_generator
@@ -42,19 +42,40 @@ class SchedulerTasks:
             task_id = await redis_instance.lpop("video_publish_queue")
             try:
                 if task_id:
-                    task_obj: Task = await task_controller.get_by_task_id(task_id)
+                    task_obj: TaskModel = await task_controller.get_by_task_id(task_id)
                     # 判断该任务是否发布成功状态了，如果没有才能进入发布流程
                     if task_obj.state != TaskState.PUBLISH_OK or task_obj.state != TaskState.PROCESSING:
+                        # 打印当前待发布队列中的任务ID数组
+                        is_uploaded = False
+                        await redis_instance.print_queue("video_publish_queue")
                         logger.info(f"存在生成视频待发布视频任务,task_id：{task_obj.task_id}")
                         # 刷新待发布状态
                         await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.PUBLISHING)
-                        # if task_obj.detail_state != TaskDetailState.UPLOAD_WEIXIN_OK:
-                        #     is_uploaded = await auto_upload_weixin(task_id)
-                        #     await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.UPLOAD_WEIXIN_OK)
-                        if task_obj.detail_state != TaskDetailState.UPLOAD_DOUYIN_OK:
-                            is_uploaded = await auto_upload_douyin(task_id)
-                            await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.UPLOAD_DOUYIN_OK)
+                        # 获取平台状态
+                        logger.info(f"获取当前视频各平台发布状态")
+                        weixin_status = await get_platform_status(task_obj.task_id, "weixin")
+                        douyin_status = await get_platform_status(task_obj.task_id, "douyin")
+                        logger.info(f"Weixin 状态: {weixin_status}")
+                        logger.info(f"Douyin 状态: {douyin_status}")
+                        # if weixin_status != TaskDetailState.UPLOAD_OK:
+                        #     try:
+                        #         logger.info(f"发布视频至视频号")
+                        #         is_uploaded = await auto_upload_weixin(task_id)
+                        #         await update_platform_status(task_obj.task_id, "weixin", TaskDetailState.UPLOAD_OK)
+                        #         logger.success(f"发布视频至视频号完成，刷新成功状态")
+                        #         weixin_status = TaskDetailState.UPLOAD_OK
+                        #     except:
+                        #         weixin_status = TaskDetailState.UPLOAD_FAILED
+                        if douyin_status != TaskDetailState.UPLOAD_OK:
+                            try:
+                                logger.info(f"发布视频至抖音")
+                                is_uploaded = await auto_upload_douyin(task_id)
+                                await update_platform_status(task_obj.task_id, "douyin", TaskDetailState.UPLOAD_OK)
+                                logger.success(f"发布视频至抖音完成，刷新成功状态")
+                            except:
+                                is_uploaded = False
                         if is_uploaded:
+                            logger.info("所有平台视频发布成功，刷新发布状态为已完成！")
                             # 从 Redis 队列中删除任务ID
                             # 刷新发布成功状态
                             await save_task_state(task_id, TaskState.PUBLISH_OK, 100, TaskDetailState.PUBLISH_OK)
@@ -67,7 +88,7 @@ class SchedulerTasks:
             except Exception as e:
                 logger.error(traceback.format_exc())
                 # 刷新发布失败状态
-                await save_task_state(task_id, TaskState.PUBLIS_FAILED, 100, TaskDetailState.PUBLIS_FAILED)
+                await save_task_state(task_id, TaskState.PUBLISH_FAILED, 100, TaskDetailState.PUBLIS_FAILED)
 
     @staticmethod
     async def get_weibo_hotsearch():

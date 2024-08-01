@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from fastapi import FastAPI
+from loguru import logger
 
 from app.constant.video_const import TaskState
 
@@ -102,5 +103,14 @@ class RedisService(BaseState):
         """从任务队列中剔除key"""
         await self.redis.lrem(key, count, value)
 
+    async def get_list(self, key: str) -> List[str]:
+        """获取队列中的所有元素"""
+        queue_length = await self.redis.llen(key)
+        return await self.redis.lrange(key, 0, queue_length - 1)
+
+    async def print_queue(self, key: str):
+        """打印队列中的所有元素"""
+        queue_items = await self.get_list(key)
+        logger.info(f"当前待发布队列中的任务ID情况: {queue_items}")
 
 redis_instance = RedisService()

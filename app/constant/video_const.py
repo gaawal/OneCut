@@ -12,12 +12,12 @@ class TaskState:
     WAITING_PUBLISH = 'wait_publish'  # 待发布
     PUBLISHING = 'publishing'  # 发布中
     PUBLISH_OK = 'publish_ok'  # 已发布
-    PUBLIS_FAILED = 'publish_failed'  # 发布失败
+    PUBLISH_FAILED = 'publish_failed'  # 发布失败
 
 
 class TaskDetailState:
-    UPLOAD_DOUYIN_OK = "upload_douyin_ok"
-    UPLOAD_WEIXIN_OK = 'upload_weixin_ok'
+    UPLOAD_FAILED = 0
+    UPLOAD_OK = 1
     FAILED = 'failed'
     SUCCESS = 'success'
     GENERATING_SCRIPT = "generating_script"

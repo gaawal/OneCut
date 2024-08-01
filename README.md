@@ -59,7 +59,7 @@ pnpm dev
 4.数据库迁移，当你添加新的模型后，需要执行迁移命令
 在初始化 Aerich 之后，运行以下命令来初始化数据库：
 ```sh
-aerich init -t app.settings.config.TORTOISE_ORM
+aerich init -t app.settings.base_config.TORTOISE_ORM
 ```  
 在初始化 Aerich 之后，运行以下命令来初始化迁移数据库：
 ```angular2html
