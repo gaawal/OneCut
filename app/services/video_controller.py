@@ -35,6 +35,7 @@ async def start(task_id, params: VideoParams):
         task_id=task_id,
         progress=0,
         state=TaskState.PROCESSING,
+        detail_state=TaskDetailState.GENERATING_SCRIPT,
         draft_content={}
     )
     await task_controller.create(obj_in=task_in)

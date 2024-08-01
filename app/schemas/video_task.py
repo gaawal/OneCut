@@ -13,6 +13,7 @@ class TaskBase(BaseModel):
     task_id: str
     progress: int
     state: str
+    detail_state: Optional[Dict] = None
     draft_content: Optional[Dict] = None
 
 
