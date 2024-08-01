@@ -228,7 +228,8 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         2. 生成{amount}个用于搜索素材视频的搜索术语
         3. 为视频脚本生成一个标题
         4. 为视频生成4个核心话题关键词
-        5、必须按照Output Example的格式输出
+        5. 字数限制必须在{word_count + 50} 和 {word_count + 100}之间
+        6、必须按照Output Example的格式输出
 
     ## 视频脚本结构的约束：
         - 视频文案风格结构: {VIDEO_STYLE_MAP.get(video_category).get("structure")}
