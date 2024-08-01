@@ -143,7 +143,7 @@ class TencentVideo(object):
         page = await context.new_page()
         # 访问指定的 URL
         await page.goto("https://channels.weixin.qq.com/platform/post/create")
-        logger.info(f'[+]正在上传-------{self.title}.mp4')
+        logger.info(f'[Weixin]正在上传-------{self.title}.mp4')
         # 等待页面跳转到指定的 URL，没进入，则自动等待到超时
         await page.wait_for_url("https://channels.weixin.qq.com/platform/post/create")
         # await page.wait_for_selector('input[type="file"]', timeout=10000)
@@ -167,7 +167,7 @@ class TencentVideo(object):
         await self.click_publish(page)
 
         await context.storage_state(path=f"{self.account_file}")  # 保存cookie
-        logger.success('  [-]cookie更新完毕！')
+        logger.success('  [Weixin]cookie更新完毕！')
         await asyncio.sleep(2)  # 这里延迟是为了方便眼睛直观的观看
         # 关闭浏览器上下文和浏览器实例
         await context.close()
@@ -188,16 +188,16 @@ class TencentVideo(object):
                 if await publish_buttion.count():
                     await publish_buttion.click()
                 await page.wait_for_url("https://channels.weixin.qq.com/platform/post/list", timeout=1500)
-                logger.success("  [-]视频发布成功")
+                logger.success("  [Weixin]视频发布成功")
                 break
             except Exception as e:
                 current_url = page.url
                 if "https://channels.weixin.qq.com/platform/post/list" in current_url:
-                    logger.success("  [-]视频发布成功")
+                    logger.success("  [Weixin]视频发布成功")
                     break
                 else:
-                    logger.exception(f"  [-] Exception: {e}")
-                    logger.info("  [-] 视频正在发布中...")
+                    logger.exception(f"  [Weixin] Exception: {e}")
+                    logger.info("  [Weixin] 视频正在发布中...")
                     await asyncio.sleep(0.5)
 
     async def detect_upload_status(self, page):
@@ -210,15 +210,15 @@ class TencentVideo(object):
                     logger.info("  [-]视频上传完毕")
                     break
                 else:
-                    logger.info("  [-] 正在上传视频中...")
+                    logger.info("  [Weixin] 正在上传视频中...")
                     await asyncio.sleep(2)
                     # 出错了视频出错
                     if await page.locator('div.status-msg.error').count() and await page.locator(
                             'div.media-status-content div.tag-inner:has-text("删除")').count():
-                        logger.error("  [-] 发现上传出错了...准备重试")
+                        logger.error("  [Weixin] 发现上传出错了...准备重试")
                         await self.handle_upload_error(page)
             except:
-                logger.info("  [-] 正在上传视频中...")
+                logger.info("  [Weixin] 正在上传视频中...")
                 await asyncio.sleep(2)
 
     async def add_title_tags(self, page):

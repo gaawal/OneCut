@@ -30,7 +30,9 @@ from app.services.redis_service import redis_instance
 from app.services.video_controller import save_task_state
 from app.utils import utils
 from app.utils.uploader.examples.get_douyin_cookie import get_douoyin_cookies
+from app.utils.uploader.examples.get_tencent_cookie import get_tencent_cookie
 from app.utils.uploader.examples.upload_video_to_douyin import auto_upload_douyin
+from app.utils.uploader.examples.upload_video_to_tencent import auto_upload_weixin
 
 
 class SchedulerTasks:
@@ -43,10 +45,15 @@ class SchedulerTasks:
                     task_obj: Task = await task_controller.get_by_task_id(task_id)
                     # 判断该任务是否发布成功状态了，如果没有才能进入发布流程
                     if task_obj.state != TaskState.PUBLISH_OK or task_obj.state != TaskState.PROCESSING:
-                        logger.info(f"存在生成视频待发布视频任务,task_id：{task_obj.task_id}" )
+                        logger.info(f"存在生成视频待发布视频任务,task_id：{task_obj.task_id}")
                         # 刷新待发布状态
                         await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.PUBLISHING)
-                        is_uploaded = await auto_upload_douyin(task_id)
+                        if task_obj.detail_state != TaskDetailState.UPLOAD_WEIXIN_OK:
+                            is_uploaded = await auto_upload_weixin(task_id)
+                            await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.UPLOAD_WEIXIN_OK)
+                        if task_obj.detail_state != TaskDetailState.UPLOAD_DOUYIN_OK:
+                            is_uploaded = await auto_upload_douyin(task_id)
+                            await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.UPLOAD_DOUYIN_OK)
                         if is_uploaded:
                             # 从 Redis 队列中删除任务ID
                             # 刷新发布成功状态
@@ -113,7 +120,7 @@ class SchedulerTasks:
                 get_content_counts = 5
                 weibo_summary = generate_weibo_summary(weibo_article_data, get_content_counts)  # 假设需要获取5条评论
                 # 把微博热搜作为视频主题输入
-                choose_categorys = ['sad_script','maikease']
+                choose_categorys = ['sad_script', 'maikease']
                 params = {"video_subject": weibo_summary,
                           "word_count": 300,
                           "video_category": random.choice(choose_categorys),
@@ -180,7 +187,13 @@ class SchedulerTasks:
 
     @staticmethod
     def get_douoyin_cookies():
+        logger.info("检测抖音账号cookie")
         get_douoyin_cookies()
+
+    @staticmethod
+    def get_tencent_cookie():
+        logger.info("检测微信视频号cookie")
+        get_tencent_cookie()
 
     @staticmethod
     def log_memory_usage():

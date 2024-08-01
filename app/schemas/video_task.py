@@ -28,7 +28,3 @@ class TaskUpdate(TaskBase):
 
     def update_dict(self):
         return self.dict(exclude_unset=True)
-
-
-
-

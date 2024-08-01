@@ -26,10 +26,13 @@ def register_scheduler_job(app):
                       next_run_time=datetime.now() + timedelta(seconds=120))
     # 自动生成微博热搜视频的定时任务
     scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=301,
-                      next_run_time=datetime.now() + timedelta(seconds=15))
+                      next_run_time=datetime.now() + timedelta(seconds=111))
     # 自动发布视频的定时任务
-    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=13)
+    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=5,
+                      next_run_time=datetime.now() + timedelta(seconds=35))
     # 更新抖音cookies
     # scheduler.add_job(SchedulerTasks.get_douoyin_cookies, 'interval', seconds=5)
+    # 更新视频号cookies
+    # scheduler.add_job(SchedulerTasks.get_tencent_cookie, 'interval', seconds=5)
 
     scheduler.start()
