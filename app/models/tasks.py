@@ -15,8 +15,8 @@ class Task(BaseModel, TimestampMixin):
     created_at = fields.DatetimeField(auto_now_add=True, description="创建时间")
     updated_at = fields.DatetimeField(auto_now=True, description="更新时间")
     progress = fields.IntField(default=0, description="任务进度")
-    state = fields.CharField(max_length=20, description="任务状态")
-    detail_state = fields.CharField(max_length=20, description="任务详细状态")
+    state = fields.CharField(max_length=255, description="任务状态")
+    detail_state = fields.CharField(max_length=255, description="任务详细状态")
     draft_content = fields.JSONField(description="草稿内容")
 
     class Meta:

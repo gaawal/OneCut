@@ -69,6 +69,6 @@ ignore = [
     "F405",
 ]
 [tool.aerich]
-tortoise_orm = "app.settings.config.TORTOISE_ORM"
+tortoise_orm = "app.settings.base_config.TORTOISE_ORM"
 location = "./migrations"
 src_folder = "./."
