@@ -48,9 +48,9 @@ class SchedulerTasks:
                         logger.info(f"存在生成视频待发布视频任务,task_id：{task_obj.task_id}")
                         # 刷新待发布状态
                         await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.PUBLISHING)
-                        if task_obj.detail_state != TaskDetailState.UPLOAD_WEIXIN_OK:
-                            is_uploaded = await auto_upload_weixin(task_id)
-                            await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.UPLOAD_WEIXIN_OK)
+                        # if task_obj.detail_state != TaskDetailState.UPLOAD_WEIXIN_OK:
+                        #     is_uploaded = await auto_upload_weixin(task_id)
+                        #     await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.UPLOAD_WEIXIN_OK)
                         if task_obj.detail_state != TaskDetailState.UPLOAD_DOUYIN_OK:
                             is_uploaded = await auto_upload_douyin(task_id)
                             await save_task_state(task_id, TaskState.PUBLISHING, 100, TaskDetailState.UPLOAD_DOUYIN_OK)
@@ -119,8 +119,9 @@ class SchedulerTasks:
                 logger.info(f"启动自动生成视频任务：{weibo_artcle_title}")
                 get_content_counts = 5
                 weibo_summary = generate_weibo_summary(weibo_article_data, get_content_counts)  # 假设需要获取5条评论
+                # 随机选择发布的视频文案风格
+                choose_categorys = ['maikease']
                 # 把微博热搜作为视频主题输入
-                choose_categorys = ['sad_script', 'maikease']
                 params = {"video_subject": weibo_summary,
                           "word_count": 300,
                           "video_category": random.choice(choose_categorys),
