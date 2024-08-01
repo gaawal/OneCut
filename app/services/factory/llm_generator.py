@@ -243,7 +243,8 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         5. 仅返回脚本内容，仅返回一次，不要重复返回
         6. 每段开头不包含“配音”或类似提示
         7. 不提及提示或脚本本身的内容，不提及段落或行数
-        8. 根据视频主题的语言进行响应
+        8. 使用特殊标点符号，如百分比、比分、日期时间、货币等情况，不能用符号表达，需要用语言描述，如将比分从“7：9”改为“7比9”，以确保分割和匹配的准确性。
+        9. 根据视频主题的语言进行响应
 
     
     ## 视频搜索术语的约束:
@@ -287,7 +288,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - Video theme related information: {video_subject}
     - Language: {language}
     - Number of paragraphs: {paragraph_number}
-    - Word limit:Between {word_count+50} and {word_count + 100} words
+    - Word limit:Between {word_count + 50} and {word_count + 100} words
     """.strip()
     logger.info(prompt)
 
