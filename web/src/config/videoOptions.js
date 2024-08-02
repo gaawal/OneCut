@@ -31,6 +31,7 @@ import benefitTransferImg from '@/assets/icon/style/benefits.png'
 import opinionSharingImg from '@/assets/icon/style/opinion_sharing.png'
 import knowledgeSharingImg from '@/assets/icon/style/knowledgeSharingImg.png'
 import commonEndingImg from '@/assets/icon/style/commonEndingImg.png'
+import Maikease from '@/assets/icon/inspire/Maikease.png'
 
 // 工具栏图标
 import HotSearchIcon from '@/assets/icon/tools/HotSearchIcon.png'
@@ -49,6 +50,12 @@ const scriptLanguageOptions = [
 
 // 新的文案风格选项
 const videoStyleOptions = [
+  {
+    label: '麦克阿瑟',
+    value: 'maikea',
+    description: '不是文案想不起，而是麦克阿瑟体更有性价比',
+    img: Maikease,
+  },
   {
     label: '观点分享',
     value: 'opinion_sharing',

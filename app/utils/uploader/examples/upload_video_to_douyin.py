@@ -27,7 +27,7 @@ async def auto_upload_douyin(task_id):
     base_dir = Path(BASE_DIR)
     account_list = ["account-1.json", "account-2.json"]
     account = random.choice(account_list)
-    logger.info(f"随机选取上传账号为,{account}")
+    logger.info(f"随机选取上传账号为{account}")
     account_file = os.path.join(base_dir, "douyin_uploader", account)
 
     # 获取视频任务目录

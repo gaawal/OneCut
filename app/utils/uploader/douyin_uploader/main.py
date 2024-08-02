@@ -19,12 +19,14 @@ async def cookie_auth(account_file):
         page = await context.new_page()
         # 访问指定的 URL
         await page.goto("https://creator.douyin.com/creator-micro/content/upload")
-        try:
-            await page.wait_for_selector("div.boards-more h3:text('抖音排行榜')", timeout=5000)  # 等待5秒
-            logger.error(f'等待5秒 cookie 失效')
+        # 2024.06.17 抖音创作者中心改版
+        # 等待5秒钟
+        await page.wait_for_timeout(5000)
+        if await page.get_by_text('手机号登录').count():
+            print("[+]   [Douyin] 等待5秒 cookie 失效")
             return False
-        except:
-            logger.success(f'cookie 有效')
+        else:
+            print("[+]   [Douyin] cookie 有效")
             return True
 
 
@@ -139,7 +141,7 @@ class DouYinVideo(object):
         for index, tag in enumerate(self.tags, start=1):
             await page.type(css_selector, "#" + tag)
             await page.press(css_selector, "Space")
-        logger.info(f'总共添加{len(self.tags)}个话题')
+        logger.info(f'  [Douyin] 总共添加{len(self.tags)}个话题')
 
         while True:
             # 判断重新上传按钮是否存在，如果不存在，代表视频正在上传，则等待
@@ -147,7 +149,7 @@ class DouYinVideo(object):
                 #  新版：定位重新上传
                 number = await page.locator('div label+div:has-text("重新上传")').count()
                 if number > 0:
-                    logger.success("  [Douyin]视频上传完毕")
+                    logger.info("  [Douyin]视频上传完毕")
                     break
                 else:
                     logger.info("  [Douyin] 正在上传视频中...")

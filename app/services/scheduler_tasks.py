@@ -75,7 +75,7 @@ class SchedulerTasks:
                             except:
                                 is_uploaded = False
                         if is_uploaded:
-                            logger.info("所有平台视频发布成功，刷新发布状态为已完成！")
+                            logger.success("所有平台视频都发布成功，任务已完成！")
                             # 从 Redis 队列中删除任务ID
                             # 刷新发布成功状态
                             await save_task_state(task_id, TaskState.PUBLISH_OK, 100, TaskDetailState.PUBLISH_OK)
@@ -123,7 +123,7 @@ class SchedulerTasks:
 
     @staticmethod
     async def generate_video_by_weibo_hotspot():
-        logger.info("Generating video by weibo hotspot check begin")
+        logger.info("扫描微博热搜生成视频任务启动...")
         # 当前生成的视频数量 不能全部生成
         generate_counts = 0
         # 每次定时任务计划生成几个视频
@@ -205,7 +205,7 @@ class SchedulerTasks:
                 except Exception as e:
                     logger.error("生成视频失败")
                     logger.error(f"{traceback.format_exc()}")
-        logger.info("Generating video by weibo hotspot check over")
+        logger.info("扫描微博热搜生成视频任务结束")
 
     @staticmethod
     def get_douoyin_cookies():

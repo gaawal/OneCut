@@ -239,7 +239,7 @@ async def generate_final_video(task_id, video_title, params, combined_video_path
 
     for i, combined_video in enumerate(combined_video_path):
         final_video = path.join(utils.task_dir(task_id), f"final-{i + 1}.mp4")
-        logger.info(f"\n\n## generating final video: {i + 1} => {final_video}")
+        logger.info(f"\n\n## 生成最终视频: {i + 1} => {final_video}")
 
         video_generator.generate_video(task_id=task_id, title=video_title, video_path=combined_video,
                                        images_path=images_files,

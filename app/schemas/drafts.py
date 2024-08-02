@@ -49,7 +49,7 @@ class Draft:
         if params.video_category == "maikease":
             # 麦克阿瑟风格定制
             video_tags.insert(0, "麦克阿瑟")
-            title = '麦克阿瑟纪录片' + title
+            title = '【麦克阿瑟纪录片】' + title
         self.draft["script_info"] = {
             "video_script": script,
             "video_terms": terms,

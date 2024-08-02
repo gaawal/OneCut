@@ -19,20 +19,20 @@ def register_scheduler_job(app):
     # scheduler.add_job(SchedulerTasks.log_tracemalloc_snapshot, 'interval', seconds=33)
     # scheduler.add_job(SchedulerTasks.show_most_common_types, 'interval', seconds=37)
     # 刷新微博热搜榜单
-    scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=15,
-                      next_run_time=datetime.now() + timedelta(seconds=60))
+    scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=15)
     # 获取微博热搜内容图片评论信息
-    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', seconds=241,
-                      next_run_time=datetime.now() + timedelta(seconds=120))
-    # 自动生成微博热搜视频的定时任务
+    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', seconds=241)
+    # # 自动生成微博热搜视频的定时任务
     scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=301,
                       next_run_time=datetime.now() + timedelta(seconds=111))
     # 自动发布视频的定时任务
-    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=10,
-                      next_run_time=datetime.now() + timedelta(seconds=35))
+    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=2,
+                      next_run_time=datetime.now() + timedelta(seconds=15))
     # 更新抖音cookies
-    # scheduler.add_job(SchedulerTasks.get_douoyin_cookies, 'interval', seconds=5)
+    # scheduler.add_job(SchedulerTasks.get_douoyin_cookies, 'interval', minutes=3,
+    #                   next_run_time=datetime.now() + timedelta(seconds=15))
     # 更新视频号cookies
-    # scheduler.add_job(SchedulerTasks.get_tencent_cookie, 'interval', seconds=5)
+    # scheduler.add_job(SchedulerTasks.get_tencent_cookie, 'interval', inutes=3,
+    #                                         next_run_time=datetime.now() + timedelta(seconds=15))
 
     scheduler.start()

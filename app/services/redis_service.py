@@ -111,6 +111,6 @@ class RedisService(BaseState):
     async def print_queue(self, key: str):
         """打印队列中的所有元素"""
         queue_items = await self.get_list(key)
-        logger.info(f"当前待发布队列中的任务ID情况: {queue_items}")
+        logger.info(f"当前待发布视频任务有: {queue_items}")
 
 redis_instance = RedisService()

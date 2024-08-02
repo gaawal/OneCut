@@ -18,7 +18,7 @@ async def auto_upload_weixin(task_id):
     base_dir = Path(BASE_DIR)
     account_list = ["account.json"]
     account = random.choice(account_list)
-    logger.info(f"随机选取上传账号为,{account}")
+    logger.info(f"随机选取上传账号为{account}")
     account_file = os.path.join(base_dir, "tencent_uploader", account)
 
     # 获取视频任务目录

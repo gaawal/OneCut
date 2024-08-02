@@ -185,11 +185,11 @@ def generate_video(task_id, title, video_path, images_path, audio_path, bgm_path
     video_width, video_height = aspect.to_resolution()
 
     logger.info(f"start, video size: {video_width} x {video_height}")
-    logger.info(f"  ① video: {video_path}")
-    logger.info(f"  ② audio: {audio_path}")
-    logger.info(f"  ③ bgm: {bgm_path}")
-    logger.info(f"  ④ subtitle: {subtitle_path}")
-    logger.info(f"  ⑤ output: {output_file}")
+    logger.info(f"  ① 视频文件: {video_path}")
+    logger.info(f"  ② 人声文件: {audio_path}")
+    logger.info(f"  ③ 背景音乐: {bgm_path}")
+    logger.info(f"  ④ 字幕文件: {subtitle_path}")
+    logger.info(f"  ⑤ 目标输出视频: {output_file}")
     output_dir = os.path.dirname(output_file)
 
     font_path = get_font_path(params)

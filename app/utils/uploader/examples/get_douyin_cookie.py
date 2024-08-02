@@ -1,12 +1,20 @@
 import asyncio
+import os
+import random
 from pathlib import Path
+
+from loguru import logger
 
 from app.utils.uploader.conf import BASE_DIR
 from app.utils.uploader.douyin_uploader.main import douyin_setup
 
 
 def get_douoyin_cookies():
-    account_file = Path(BASE_DIR / "douyin_uploader" / "account.json")
+    base_dir = Path(BASE_DIR)
+    account_list = ["account-2.json"]
+    account = random.choice(account_list)
+    logger.info(f"随机选取上传账号为{account}")
+    account_file = os.path.join(base_dir, "douyin_uploader", account)
     cookie_setup = asyncio.run(douyin_setup(str(account_file), handle=True))
 if __name__ == '__main__':
     get_douoyin_cookies()
