@@ -336,7 +336,6 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         raise RuntimeError("Failed to generate video script and terms after maximum retries.")
 
     try:
-        print("final_response", final_response)
         response_json = json.loads(final_response)
         logger.info(f"Got final response,{response_json}")
         video_script = format_response(response_json["video_script"])
