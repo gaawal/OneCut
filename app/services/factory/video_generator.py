@@ -15,13 +15,15 @@ from app.schemas.movies import VideoAspect, VideoConcatMode
 from app.services.factory.cover_generator import create_title_clip
 from app.utils import utils
 from app.utils.utils import get_font_path
+
 # 获取CPU核心数
 cpu_count = multiprocessing.cpu_count()
 
-# 假设我们开始时设置线程池大小为CPU核心数的2倍
+# 设置线程池大小为CPU核心数的2倍
 thread_pool_size = cpu_count * 2
 executor = ThreadPoolExecutor(max_workers=thread_pool_size)  # 使用线程池执行异步任务
 logger.info(f"设置线程池大小为CPU核心数的2倍:{thread_pool_size}")
+
 async def create_video_clip_async(video_path):
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(executor, VideoFileClip, video_path)
