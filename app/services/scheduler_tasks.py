@@ -175,8 +175,8 @@ class SchedulerTasks:
                 # 取其中第一个未生成热门视频的热搜话题进行生成文案
                 # 获取微博数据内容条数 影响ai分析微博内容
                 logger.info(f"启动自动生成视频任务：{weibo_artcle_title}")
-                get_content_counts = 5
-                weibo_summary = generate_weibo_summary(weibo_article_data, get_content_counts)  # 假设需要获取5条评论
+
+                weibo_summary = generate_weibo_summary(weibo_article_data)  # 假设需要获取5条评论
                 # 随机选择发布的视频文案风格
                 choose_categorys = ['maikease']
                 # 把微博热搜作为视频主题输入

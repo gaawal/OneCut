@@ -40,9 +40,8 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
             await save_weibo_article_and_update_data(body.weibo_title, weibo_article_data)
 
             logger.success(f"微博热搜话题 {body.weibo_title} 保存redis成功.")
-        # 获取微博数据内容条数 影响ai分析微博内容
-        get_content_counts = 5
-        weibo_summary = generate_weibo_summary(weibo_article_data, get_content_counts)  # 假设需要获取5条评论
+
+        weibo_summary = generate_weibo_summary(weibo_article_data)  # 假设需要获取5条评论
         # 把微博热搜作为视频主题输入
         body.video_subject = weibo_summary
     video_script, video_terms, video_title, video_tags = llm_generator.generate_script_and_terms(

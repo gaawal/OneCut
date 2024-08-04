@@ -162,13 +162,15 @@ async def fetch_hot_article(hot_url: str) -> WeiboArticleData:
     return weibo_article_data
 
 
-def generate_weibo_summary(data: WeiboArticleData, num_comments):
+def generate_weibo_summary(data: WeiboArticleData):
+    # 获取微博数据内容条数 影响ai分析微博内容
+    num_comments = 10
     introduction = data.introduction if hasattr(data, 'introduction') else None
     articles = data.articles
     summary = ""
     if introduction:
         summary += introduction + "\n\n"
-    summary += "主题相关信息：\n"
+    summary += "视频话题相关网友评论：\n"
     for i, article in enumerate(articles[:num_comments]):
         summary += f"{i + 1}.{article.comment}\n"
     return summary
@@ -220,7 +222,7 @@ async def main():
     hot_url = 'https://s.weibo.com/weibo?q=%23%E5%86%85%E9%A9%AC%E5%B0%94%23'
     weibo_article_data = await fetch_hot_article(hot_url)
 
-    print(generate_weibo_summary(weibo_article_data, 10))
+    print(generate_weibo_summary(weibo_article_data))
 
 
 if __name__ == '__main__':

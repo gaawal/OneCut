@@ -12,11 +12,11 @@ export const useVideoStore = defineStore('video', {
     weiboMid: '',
     weiboTitle: '',
     continueScript: '',
-    wordCount: 300,
+    wordCount: 350,
     videoTerms: [],
     videoTags: [],
     videoTitle: '',
-    videoCategory: 'generic',
+    videoCategory: 'maikease',
     inspirationKeyword: '', //视频灵感关键词语句
     selectedInspiration: {}, //当前选中视频灵感类型
     scriptLanguage: 'auto-detect',
