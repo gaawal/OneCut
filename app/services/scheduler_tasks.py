@@ -235,7 +235,7 @@ class SchedulerTasks:
                     body.auto_generate = True
                     await redis_instance.update_task(task_id)
                     await redis_taskmanager.add_task(video_controller.start, task_id=task_id, params=body)
-                    logger.info(f"自动生成视频任务已创建: {utils.to_json(task)}\ntask_id is {task_id} ")
+                    logger.info(f"自动生成视频任务已创建,task_id:{task_id} ")
                     generate_counts += 1
                     if generate_counts >= target_generate_max:
                         break

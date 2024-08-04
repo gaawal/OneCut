@@ -112,7 +112,7 @@ async def start(task_id, params: VideoParams):
                                                                              audio_duration, params.video_clip_duration,
                                                                              draft,
                                                                              utils.task_dir(task_id))
-            logger.info(f"视频素材文件为：{downloaded_videos}")
+            logger.info(f"视频素材文件数量为{len(downloaded_videos)}条")
             if not subtitle_path:
                 await save_task_state(task_id, TaskState.FAILED, 50, TaskFailureReason.FAILED_GENERATING_SUBTITLE,
                                       draft, TaskFailureReason.FAILED_GENERATING_SUBTITLE)
