@@ -26,7 +26,7 @@ def register_scheduler_job(app):
     scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=301,
                       next_run_time=datetime.now() + timedelta(seconds=111))
     # 发布视频的账号  随机选择进行发布，同一个task不可多个账号发布同个平台
-    account_list = ["account-mama.json", "account-ameng.json", "account-chenxu.json"]
+    account_list = ["account-mama.json", "account-ameng.json"]
     # 自动发布视频的定时任务
     scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=1,
                       next_run_time=datetime.now() + timedelta(seconds=25), args=[account_list])

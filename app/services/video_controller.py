@@ -203,7 +203,7 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
         index = i + 1
         combined_video = path.join(utils.task_dir(task_id), f"combined-{index}.mp4")
         logger.info(f"\n\n## combining video: {index} => {combined_video}")
-        video_generator.combine_videos(
+        await video_generator.combine_videos(
             combined_video_path=combined_video,
             video_paths=downloaded_videos,
             audio_file=audio_file,
@@ -221,7 +221,7 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
         combined_video_path.append(combined_video)
 
         # 更新草稿
-        duration = video_generator.get_duration(combined_video)
+        duration = await video_generator.get_duration(combined_video)
 
         start_time += duration
 
@@ -241,7 +241,7 @@ async def generate_final_video(task_id, video_title, params, combined_video_path
         final_video = path.join(utils.task_dir(task_id), f"final-{i + 1}.mp4")
         logger.info(f"\n\n## 生成最终视频: {i + 1} => {final_video}")
 
-        video_generator.generate_video(task_id=task_id, title=video_title, video_path=combined_video,
+        await video_generator.generate_video(task_id=task_id, title=video_title, video_path=combined_video,
                                        images_path=images_files,
                                        audio_path=audio_file,
                                        bgm_path=bgm_file,

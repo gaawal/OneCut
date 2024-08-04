@@ -236,6 +236,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         - 请根参考我的例子生成类似文案风格生成视频脚本
 
     ## 视频脚本的约束:
+        1. 生成脚本字数严格按照要求，可以多但是不可以少
         2. 不得提及此提示
         3. 直接切入主题，不要以“不必要的欢迎词”开始，一些AI痕迹明显的词汇，比如首先，其次，然而，总的来说，综上所诉等词汇杜绝使用
         4. 不包含任何markdown或格式，不使用标题
@@ -276,7 +277,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - 根据视频主题的语言进行响应,比如中文
      
     ## video_script文案字数限制
-        1、生成文案字数范围 {word_count}字-{word_count + 100}字，不可小于{word_count}字
+        1、生成文案字数范围 {word_count+50}字-{word_count + 100}字，不可小于{word_count}字
         2、如果总字数不够要求的，可以按照以下要求进行调整
          - 增加内容细节：在保持原有风格和结构的基础上，增加更多的细节描述或情境展开，以填充字数。
          - 重复或强调：在不影响整体风格和内容的前提下，适当重复某些关键点或强调某些细节，以增加字数。
@@ -292,7 +293,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - Video theme related information: {video_subject}
     - Language: {language}
     - Number of paragraphs: {paragraph_number}
-    - Words Limits： {word_count} and {word_count} words
+    - Words Limits： {word_count+50} and {word_count+100} words
     """.strip()
     logger.info(prompt)
 

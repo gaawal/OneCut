@@ -14,7 +14,7 @@ from app.utils import utils
 from app.utils.utils import get_font_path
 
 
-def get_duration(video_path):
+async def get_duration(video_path):
     try:
         with VideoFileClip(video_path) as video:
             return video.duration
@@ -47,7 +47,7 @@ def resize_clip(clip, video_width, video_height):
     return clip
 
 
-def combine_videos(
+async def combine_videos(
         combined_video_path,
         video_paths,
         audio_file,
@@ -179,7 +179,7 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     return result, height
 
 
-def generate_video(task_id, title, video_path, images_path, audio_path, bgm_path, subtitle_path, output_file, params,
+async def generate_video(task_id, title, video_path, images_path, audio_path, bgm_path, subtitle_path, output_file, params,
                    draft):
     aspect = VideoAspect(params.video_aspect)
     video_width, video_height = aspect.to_resolution()

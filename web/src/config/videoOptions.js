@@ -52,7 +52,7 @@ const scriptLanguageOptions = [
 const videoStyleOptions = [
   {
     label: '麦克阿瑟',
-    value: 'maikea',
+    value: 'maikease',
     description: '不是文案想不起，而是麦克阿瑟体更有性价比',
     img: Maikease,
   },
