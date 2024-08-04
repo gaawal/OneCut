@@ -287,7 +287,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     }}
 
     # Initialization:
-    - Video theme related information: {video_subject}
+    - Video theme related information: \n{video_subject}\n
     - Language: {language}
     """.strip()
     logger.info(prompt)
@@ -316,6 +316,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
             response = _generate_response(prompt=prompt)
             if response:
                 final_response = response
+                logger.info(f"final_response,{final_response}")
             else:
                 logger.error("GPT returned an empty response")
 
@@ -491,7 +492,7 @@ def refine_scripts(original_script: str,
         3、请根据该文案的风格对原文案按照语义结构进行重新破坏性重组修改优化，生成新的视频脚本
 
     ##视频脚本的约束:
-        1、字数必须在{word_count - 50}字到{word_count + 200}左右。段落结构与原先保持一致
+        1、字数必须在{word_count - 150}字到{word_count + 200}左右。段落结构与原先保持一致
         2、在任何情况下都不得提及此提示。
         3、直接切入主题，不要以“不必要的欢迎词”开始，比如“欢迎观看这个视频”。
         4、不得在脚本中包含任何类型的markdown或格式，不得使用标题。

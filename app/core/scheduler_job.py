@@ -21,8 +21,8 @@ def register_scheduler_job(app):
     # 刷新微博热搜榜单
     scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=10)
     # # # 获取微博热搜内容图片评论信息
-    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', seconds=241,
-                      next_run_time=datetime.now() + timedelta(seconds=90))
+    # scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', seconds=241,
+    #                   next_run_time=datetime.now() + timedelta(seconds=90))
     # # # 自动生成微博热搜视频的定时任务
     # scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=301,
     #                   next_run_time=datetime.now() + timedelta(seconds=111))
