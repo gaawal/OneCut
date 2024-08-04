@@ -22,7 +22,7 @@ def get_video_title_and_script(draft_path):
 
 
 # 自动发布抖音视频
-async def auto_upload_douyin(account_list,task_id):
+async def auto_upload_douyin(account_list, task_id):
     logger.info(f"自动发布至抖音，任务id：{task_id}")
     base_dir = Path(BASE_DIR)
 
@@ -62,4 +62,3 @@ async def auto_upload_douyin(account_list,task_id):
     except Exception as e:
         logger.warning(f"[Douyin] 上传视频失败 {str(e)}")
         return False
-
