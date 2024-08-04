@@ -1,23 +1,36 @@
 import asyncio
 import json
 import os.path
+import random
 import traceback
 from datetime import datetime
+from pathlib import Path
 from typing import List, Tuple
 
 from loguru import logger
 from playwright.async_api import async_playwright
-import random
 
-from app.constant.video_const import CollectStatus
-from app.services.redis_service import redis_instance
 from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
+from app.constant.video_const import CollectStatus
 from app.schemas.movies import WeiboArticleData, WeiboArticle
+from app.services.hotspot.get_weibo_cookie import get_weibo_cookies
+from app.services.hotspot.main import weibo_setup
+from app.services.redis_service import redis_instance
 from app.utils import utils
+from app.utils.uploader.conf import BASE_DIR
 from app.utils.utils import generate_md5_id
 
 
 async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path: str) -> Tuple[str, List[WeiboArticle]]:
+    base_dir = Path(BASE_DIR)
+    cookie_file = 'WeiboCookie.json'
+    cookie_file = os.path.join(base_dir, "weibo_uploader", cookie_file)
+    if not await weibo_setup(cookie_file, handle=False):
+        logger.warning("微博cookie已失效，需要重新扫码登陆")
+        if await get_weibo_cookies():
+            logger.success("微博cookie已获取成功")
+        else:
+            raise RuntimeError("微博cookies设置失败，无法获取数据，任务退出")
     logger.info(f"开始采集微博热搜链接： {url}")
     article_max = 20
     current_time = datetime.now()
@@ -27,7 +40,8 @@ async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path:
         context = await browser.new_context(
             viewport={"width": 1920, "height": 1080},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            record_video_size={"width": 1920, "height": 1080}
+            record_video_size={"width": 1920, "height": 1080},
+            storage_state=f"{cookie_file}"
         )
         await context.add_init_script(path="libs/stealth.min.js")
         page = await context.new_page()
