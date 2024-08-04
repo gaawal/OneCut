@@ -37,9 +37,44 @@ from app.utils.uploader.examples.upload_video_to_tencent import auto_upload_weix
 
 class SchedulerTasks:
     @staticmethod
-    async def publish_videos():
+    async def clear_tasks():
+        """清理所有任务"""
+        clear_list = ['202408040801-0439bfaa-424f-414d-ae58-29fa8088b3ce',
+                      '202408040808-e1058211-0ea0-49a4-ab07-f6243be1c556',
+                      '202408040716-8f83f77c-207f-4af8-be3c-236fd5d1d04d',
+                      '202408040721-ec157aeb-397c-4e08-abbd-37f3dc62f534',
+                      '202408040726-18fc1cb9-0f6f-4276-baef-d0bb3cec428b',
+                      '202408040731-1bd8c9f9-461f-452d-af4e-59ae31194d0a',
+                      '202408040741-867eb80f-479d-4414-8a19-be9d8118b650',
+                      '202408040756-a28459ec-a15a-4b34-b19d-99cde1942c65']
+        key = 'video_publish_queue'
+        for _ in clear_list:
+            task_id = await redis_instance.lpop(key)
+            logger.info(f"清理任务id: {task_id}")
+
+    @staticmethod
+    async def enqueue_tasks():
+        tasks_list = [
+            '202408040741-867eb80f-479d-4414-8a19-be9d8118b650',
+            '202408040756-a28459ec-a15a-4b34-b19d-99cde1942c65',
+            '202408040801-0439bfaa-424f-414d-ae58-29fa8088b3ce',
+            '202408040808-e1058211-0ea0-49a4-ab07-f6243be1c556', ]
+        key = 'video_publish_queue'
+        queue_items = await redis_instance.get_list(key)
+        logger.info(f"当前待发布视频任务有: {queue_items}")
+
+        for task_id in tasks_list:
+            if task_id not in queue_items:
+                await redis_instance.rpush(key, task_id)
+                logger.info(f"手工加入发布任务成功,task_id={task_id}")
+        queue_items = await redis_instance.get_list(key)
+        logger.info(f"当前待发布视频任务有: {queue_items}")
+
+    @staticmethod
+    async def publish_videos(account_list):
         while True:
             task_id = await redis_instance.lpop("video_publish_queue")
+            logger.info("发布视频任务检测开始")
             try:
                 if task_id:
                     task_obj: TaskModel = await task_controller.get_by_task_id(task_id)
@@ -69,10 +104,11 @@ class SchedulerTasks:
                         if douyin_status != TaskDetailState.UPLOAD_OK:
                             try:
                                 logger.info(f"发布视频至抖音")
-                                is_uploaded = await auto_upload_douyin(task_id)
-                                await update_platform_status(task_obj.task_id, "douyin", TaskDetailState.UPLOAD_OK)
-                                logger.success(f"发布视频至抖音完成，刷新成功状态")
-                            except:
+                                is_uploaded = await auto_upload_douyin(account_list, task_id)
+                                if is_uploaded:
+                                    await update_platform_status(task_obj.task_id, "douyin", TaskDetailState.UPLOAD_OK)
+                                    logger.success(f"发布视频至抖音完成，刷新成功状态")
+                            except Exception as e:
                                 is_uploaded = False
                         if is_uploaded:
                             logger.success("所有平台视频都发布成功，任务已完成！")
@@ -84,6 +120,7 @@ class SchedulerTasks:
                     else:
                         logger.info("存在已发布成功或发布中的视频任务,不需要重新发布task_id：", task_id)
                 else:
+                    logger.info("发布视频任务检测结束")
                     break
             except Exception as e:
                 logger.error(traceback.format_exc())
@@ -98,7 +135,7 @@ class SchedulerTasks:
             for i, hotsearch in enumerate(hotsearch_data):
                 # 如果已经采集过了，更新采集状态
                 if await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.title)):
-                    hotsearch.collect_status = True
+                    hotsearch.collect_status = 1
                     hotsearch_data[i] = hotsearch
             await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_SEARCH,
                                      json.dumps([item.dict() for item in hotsearch_data], ensure_ascii=False),
@@ -114,7 +151,7 @@ class SchedulerTasks:
                     title = item.get('title')
                     url = item.get('url')
                     if not await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(title)):
-                        logger.info(f"Hot article {title} need to fetched")
+                        logger.info(f"微博热搜 {title} 需要采集信息")
                         hot_article_data = await fetch_hot_article(url)
                         await save_weibo_article_and_update_data(title, hot_article_data)
                         break
@@ -208,9 +245,10 @@ class SchedulerTasks:
         logger.info("扫描微博热搜生成视频任务结束")
 
     @staticmethod
-    def get_douoyin_cookies():
+    def get_douoyin_cookies(account_list):
+
         logger.info("检测抖音账号cookie")
-        get_douoyin_cookies()
+        get_douoyin_cookies(account_list)
 
     @staticmethod
     def get_tencent_cookie():

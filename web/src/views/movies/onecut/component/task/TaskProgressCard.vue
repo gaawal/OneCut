@@ -71,7 +71,7 @@ const currentStepTitle = computed(() => {
 watch(progressPercentage, async (newPercentage) => {
   if (newPercentage === 100) {
     try {
-      const response = await axios.get(`/api/v1/video/stream_video`, {
+      const response = await axios.get(`/api/v1/video/stream-video`, {
         headers: { token: getToken() },
         params: { task_id: videoStore.videoTaskId },
         responseType: 'blob',

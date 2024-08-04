@@ -39,7 +39,7 @@ async def get_weibo_hotsearch() -> List[HotSearchItem]:
                     url=url
                 )
                 hotsearch_data.append(hotsearch_item)
-            logger.success("Weibo data saved redis successfully.")
+            logger.success("刷新微博热搜排行榜成功.")
         else:
             logger.error("Failed to retrieve data.")
     except Exception as e:

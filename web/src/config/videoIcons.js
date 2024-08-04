@@ -18,7 +18,12 @@ import CancelIcon from '@/assets/icon/tools/CancelIcon.png'
 import AIRefinementIcon from '@/assets/icon/tools/AIRefinementIcon.png'
 import AIContinueIcon from '@/assets/icon/tools/AIContinueIcon.png'
 import InspirationIcon from '@/assets/icon/tools/InspirationIcon.png'
+import PlayIcon from '@/assets/icon/tools/PlayIcon.png'
 
+import Weixin from '@/assets/icon/inspire/Weixin.png'
+import ET from '@/assets/icon/inspire/ET.png'
+import Douyin from '@/assets/icon/inspire/Douyin.png'
+import BiliBili from '@/assets/icon/inspire/BiliBili.png'
 import XiaohongshuIcon from '@/assets/icon/inspire/XiaohongshuIcon.png'
 import ShafaIcon from '@/assets/icon/inspire/ShafaIcon.png'
 import BoyIcon from '@/assets/icon/inspire/BoyIcon.png'
@@ -33,7 +38,6 @@ import History from '@/assets/icon/inspire/History.png'
 import Heal from '@/assets/icon/inspire/Heal.png'
 import Maikease from '@/assets/icon/inspire/Maikease.png'
 import Book from '@/assets/icon/inspire/Book.png'
-import ET from '@/assets/icon/inspire/ET.png'
 
 import CollectIcon from '@/assets/icon/tools/CollectIcon.png'
 
@@ -73,4 +77,8 @@ export {
   Book,
   ET,
   CollectIcon,
+  PlayIcon,
+  Weixin,
+  Douyin,
+  BiliBili,
 }

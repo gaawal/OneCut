@@ -168,7 +168,13 @@ def voice_dir(sub_dir: str = ""):
     if not os.path.exists(d):
         os.makedirs(d)
     return d
-
+def image_dir(sub_dir: str = ""):
+    d = resource_dir(f"image")
+    if sub_dir:
+        d = os.path.join(d, sub_dir)
+    if not os.path.exists(d):
+        os.makedirs(d)
+    return d
 
 def public_dir(sub_dir: str = ""):
     d = resource_dir(f"public")

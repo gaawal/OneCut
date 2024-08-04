@@ -118,7 +118,7 @@ async def get_hot_spot(request: Request):
         if hotsearch_data:
             for i, hotsearch in enumerate(hotsearch_data):
                 if await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.title)):
-                    hotsearch.collect_status = True
+                    hotsearch.collect_status = 1
             hotsearch_data = [item.dict() for item in hotsearch_data]
             await redis_instance.set(
                 RedisKeyPrefix.WEIBO_HOT_SEARCH,

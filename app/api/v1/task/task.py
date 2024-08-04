@@ -6,6 +6,7 @@
 
 
 from fastapi import APIRouter, HTTPException, Request
+from tortoise.expressions import Q
 
 from app.controllers.video_task import task_controller
 from app.core.ctx import CTX_USER_ID
@@ -15,20 +16,28 @@ from app.schemas.movies import TaskCreateRequest, TaskIdRequest, TaskUpdateReque
 router = APIRouter()
 
 
-@router.post("/list", summary="查看任务列表")
-async def list_tasks(request: Request, body: TaskListRequest):
-    """
-    查看任务列表
+@router.post("/list", summary="查看视频任务列表")
+async def list_tasks(request: TaskListRequest):
+    q = Q()
+    order = []
 
-    - **page**: 页码
-    - **page_size**: 每页数量
-    """
-    user_id = CTX_USER_ID.get()
-    q = {'user_id': user_id}
-    total, tasks = await task_controller.list(page=body.page, page_size=body.page_size, search=q)
+    if request.query:
+        q &= Q(draft_content__script_info__video_title__icontains=request.query)
+
+    if request.taskStatus:
+        q &= Q(state=request.taskStatus)
+
+    if request.publishStatus:
+        q &= Q(platform_status__contains=request.publishStatus)
+
+    if request.sort:
+        sort_order = '-' if request.sort == 'desc' else ''
+        order.append(f"{sort_order}created_at")
+
+    total, tasks = await task_controller.list(page=request.page, page_size=request.page_size, search=q, order=order)
     data = [await task.to_dict() for task in tasks]
 
-    return SuccessExtra(data=data, total=total, page=body.page, page_size=body.page_size)
+    return SuccessExtra(data=data, total=total, page=request.page, page_size=request.page_size)
 
 
 @router.post("/get", summary="查看任务")

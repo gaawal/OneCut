@@ -9,7 +9,9 @@ export const useTaskStore = defineStore('task', {
     loadingTaskDetail: false,
     taskCreationState: '',
     taskUpdateState: '',
-    taskDeletionState: '',
+    page: 1,
+    total: 100,
+    page_size: 50,
   }),
   getters: {
     taskCount: (state) => state.tasks.length,
@@ -23,8 +25,11 @@ export const useTaskStore = defineStore('task', {
           page,
           page_size: pageSize,
         })
-        if (response.data.code === 1) {
-          this.tasks = response.data.data.list
+        if (response.code === 200) {
+          this.tasks = response.data
+          this.page = response.page
+          this.total = response.total
+          this.page_size = response.page_size
         } else {
           console.error('Failed to fetch tasks:', response.data.msg)
         }

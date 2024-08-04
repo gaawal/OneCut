@@ -9,9 +9,9 @@ from app.utils.uploader.conf import BASE_DIR
 from app.utils.uploader.douyin_uploader.main import douyin_setup
 
 
-def get_douoyin_cookies():
+def get_douoyin_cookies(account_list):
     base_dir = Path(BASE_DIR)
-    account_list = ["account-2.json"]
+
     account = random.choice(account_list)
     logger.info(f"随机选取上传账号为{account}")
     account_file = os.path.join(base_dir, "douyin_uploader", account)

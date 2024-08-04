@@ -228,16 +228,14 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         2. 生成{amount}个用于搜索素材视频的搜索术语
         3. 为视频脚本生成一个标题
         4. 为视频生成4个核心话题关键词
-        5. 字数限制必须在{word_count + 50} 和 {word_count + 100}之间
-        6、必须按照Output Example的格式输出
-
+        5、必须按照Output Example的格式输出
+   
     ## 视频脚本结构的约束：
         - 视频文案风格结构: {VIDEO_STYLE_MAP.get(video_category).get("structure")}
         - 比如这个例子: "{VIDEO_STYLE_MAP.get(video_category).get("example")}"
         - 请根参考我的例子生成类似文案风格生成视频脚本
 
     ## 视频脚本的约束:
-        1. 脚本应为{paragraph_number}段，每段用换行隔开，每段不少于200字，要求视频文案时长大于一分钟
         2. 不得提及此提示
         3. 直接切入主题，不要以“不必要的欢迎词”开始，一些AI痕迹明显的词汇，比如首先，其次，然而，总的来说，综上所诉等词汇杜绝使用
         4. 不包含任何markdown或格式，不使用标题
@@ -276,7 +274,12 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - 生成优化后的搜索关键词，以JSON格式输出到video_tags字段
     - 确保每个关键词尽可能简洁并具有搜索价值
     - 根据视频主题的语言进行响应,比如中文
-    
+     
+    ## video_script文案字数限制
+        1、生成文案字数范围 {word_count}字-{word_count + 100}字，不可小于{word_count}字
+        2、如果总字数不够要求的，可以按照以下要求进行调整
+         - 增加内容细节：在保持原有风格和结构的基础上，增加更多的细节描述或情境展开，以填充字数。
+         - 重复或强调：在不影响整体风格和内容的前提下，适当重复某些关键点或强调某些细节，以增加字数。
     ## Output Example:
     {{
         "video_script": "Generated video script here...",
@@ -289,7 +292,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - Video theme related information: {video_subject}
     - Language: {language}
     - Number of paragraphs: {paragraph_number}
-    - Word limit:Between {word_count + 50} and {word_count + 100} words
+    - Words Limits： {word_count} and {word_count} words
     """.strip()
     logger.info(prompt)
 

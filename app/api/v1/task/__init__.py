@@ -6,7 +6,7 @@
 
 from fastapi import APIRouter
 
-from .video_task import router
+from .task import router
 
 task_router = APIRouter()
 task_router.include_router(router, tags=["视频任务模块"])

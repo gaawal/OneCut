@@ -355,11 +355,13 @@ class BgmUploadResponse(BaseResponse):
             },
         }
 
-
 class TaskListRequest(BaseModel):
     page: int
     page_size: int
-    user_id: Optional[int] = None
+    query: Optional[str] = None
+    sort: Optional[str] = None
+    publishStatus: Optional[str] = None
+    taskStatus: Optional[str] = None
 
 
 class TaskIdRequest(BaseModel):

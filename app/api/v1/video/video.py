@@ -191,7 +191,7 @@ async def download_video(_: Request, file_path: str):
                         media_type=f'video/{extension[1:]}')
 
 
-@router.get("/stream_video", summary="返回生成的视频文件")
+@router.get("/stream-video", summary="返回生成的视频文件")
 async def stream_video(task_id: str = Query(...)):
     # 假设视频文件保存在一个以 task_id 命名的目录下
     video_dir = os.path.join(utils.task_dir(), task_id)

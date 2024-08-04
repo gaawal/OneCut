@@ -17,7 +17,7 @@ from app.utils.utils import generate_md5_id
 
 
 async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path: str) -> Tuple[str, List[WeiboArticle]]:
-    logger.info(f"Fetching article content url is {url}")
+    logger.info(f"开始采集微博热搜链接： {url}")
     article_max = 20
     current_time = datetime.now()
     formatted_time_str = current_time.strftime("%Y%m%d%H%M")
@@ -176,7 +176,7 @@ async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cac
             hot_data = json.loads(hot_data)
             for i, item in enumerate(hot_data):
                 if weibo_title == item.get('title'):
-                    logger.info("刷新已采集状态")
+                    logger.info("微博热搜刷新已采集状态")
                     hot_data[i]["collect_status"] = True
             await redis_instance.set(
                 RedisKeyPrefix.WEIBO_HOT_SEARCH,
