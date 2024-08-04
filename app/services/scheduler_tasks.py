@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from loguru import logger
 
 from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
-from app.constant.video_const import TaskState, TaskDetailState
+from app.constant.video_const import TaskState, TaskDetailState, CollectStatus
 from app.controllers.video_task import task_controller
 from app.manager.redis_manager import redis_taskmanager
 from app.models import TaskModel, get_platform_status, update_platform_status
@@ -135,7 +135,7 @@ class SchedulerTasks:
             for i, hotsearch in enumerate(hotsearch_data):
                 # 如果已经采集过了，更新采集状态
                 if await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.title)):
-                    hotsearch.collect_status = 1
+                    hotsearch.collect_status = CollectStatus.COLLECT_OK
                     hotsearch_data[i] = hotsearch
             await redis_instance.set(RedisKeyPrefix.WEIBO_HOT_SEARCH,
                                      json.dumps([item.dict() for item in hotsearch_data], ensure_ascii=False),

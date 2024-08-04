@@ -2,7 +2,10 @@ PUNCTUATIONS = [
     "?", ",", ".", "、", ";", ":", "!", "…",
     "？", "，", "。", "、", "；", "：", "！", "...",
 ]
-
+class CollectStatus:
+    COLLECT_OK = 1
+    COLLECTING = 2
+    COLLECT_NOK = 0
 
 class TaskState:
     FAILED = 'error' # 错误

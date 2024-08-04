@@ -11,6 +11,7 @@ from fastapi import APIRouter, Request
 from loguru import logger
 
 from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
+from app.constant.video_const import CollectStatus
 from app.schemas import Success
 from app.schemas.movies import VideoScriptResponse, VideoScriptRequest, HotSearchItem, WeiboArticle, WeiboArticleData
 from app.services.factory import llm_generator
@@ -118,7 +119,7 @@ async def get_hot_spot(request: Request):
         if hotsearch_data:
             for i, hotsearch in enumerate(hotsearch_data):
                 if await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(hotsearch.title)):
-                    hotsearch.collect_status = 1
+                    hotsearch.collect_status = CollectStatus.COLLECT_OK
             hotsearch_data = [item.dict() for item in hotsearch_data]
             await redis_instance.set(
                 RedisKeyPrefix.WEIBO_HOT_SEARCH,

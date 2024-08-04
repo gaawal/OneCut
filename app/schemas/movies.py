@@ -404,4 +404,4 @@ class HotSearchItem(BaseModel):
     title: str
     hot: Optional[int] = None
     url: str
-    collect_status: Optional[bool] = False
+    collect_status: Optional[int] = 0

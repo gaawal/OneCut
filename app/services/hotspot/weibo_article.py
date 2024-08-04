@@ -9,6 +9,7 @@ from loguru import logger
 from playwright.async_api import async_playwright
 import random
 
+from app.constant.video_const import CollectStatus
 from app.services.redis_service import redis_instance
 from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
 from app.schemas.movies import WeiboArticleData, WeiboArticle
@@ -177,7 +178,7 @@ async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cac
             for i, item in enumerate(hot_data):
                 if weibo_title == item.get('title'):
                     logger.info("微博热搜刷新已采集状态")
-                    hot_data[i]["collect_status"] = True
+                    hot_data[i]["collect_status"] = CollectStatus.COLLECT_OK
             await redis_instance.set(
                 RedisKeyPrefix.WEIBO_HOT_SEARCH,
                 json.dumps(hot_data, ensure_ascii=False),

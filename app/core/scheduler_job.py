@@ -25,9 +25,10 @@ def register_scheduler_job(app):
     # # # 自动生成微博热搜视频的定时任务
     scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=301,
                       next_run_time=datetime.now() + timedelta(seconds=111))
-    account_list = ["account-1.json"]
+    # 发布视频的账号  随机选择进行发布，同一个task不可多个账号发布同个平台
+    account_list = ["account-mama.json", "account-ameng.json", "account-chenxu.json"]
     # 自动发布视频的定时任务
-    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=2,
+    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=1,
                       next_run_time=datetime.now() + timedelta(seconds=25), args=[account_list])
     # # 自动填入发布定时任务
     # scheduler.add_job(SchedulerTasks.enqueue_tasks, CronTrigger(hour=8, minute=50),
@@ -36,7 +37,7 @@ def register_scheduler_job(app):
     # scheduler.add_job(SchedulerTasks.clear_tasks, CronTrigger(hour=8, minute=49),
     #                   next_run_time=datetime.now() + timedelta(seconds=15))
     # 更新抖音cookies
-    # account_list = ["account-51.json"]
+    # account_list = ["account-chenxu.json"]
     # scheduler.add_job(SchedulerTasks.get_douoyin_cookies, 'interval', minutes=3,
     #                   next_run_time=datetime.now() + timedelta(seconds=15), args=[account_list])
     # 更新视频号cookies
