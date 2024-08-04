@@ -1,6 +1,8 @@
 import asyncio
+import multiprocessing
 import random
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from PIL import Image, ImageFont
 from loguru import logger
@@ -13,27 +15,32 @@ from app.schemas.movies import VideoAspect, VideoConcatMode
 from app.services.factory.cover_generator import create_title_clip
 from app.utils import utils
 from app.utils.utils import get_font_path
+# 获取CPU核心数
+cpu_count = multiprocessing.cpu_count()
 
+# 假设我们开始时设置线程池大小为CPU核心数的2倍
+thread_pool_size = cpu_count * 2
+executor = ThreadPoolExecutor(max_workers=thread_pool_size)  # 使用线程池执行异步任务
+logger.info(f"设置线程池大小为CPU核心数的2倍:{thread_pool_size}")
 async def create_video_clip_async(video_path):
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, VideoFileClip, video_path)
+    return await loop.run_in_executor(executor, VideoFileClip, video_path)
 
 async def create_audio_clip_async(audio_path):
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, AudioFileClip, audio_path)
+    return await loop.run_in_executor(executor, AudioFileClip, audio_path)
+
 async def subclip_async(clip, start_time, end_time):
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, clip.subclip, start_time, end_time)
+    return await loop.run_in_executor(executor, clip.subclip, start_time, end_time)
+
 async def resize_clip_async(clip, video_width, video_height):
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, resize_clip, clip, video_width, video_height)
-
+    return await loop.run_in_executor(executor, resize_clip, clip, video_width, video_height)
 
 async def write_videofile_async(video_clip, filename, **kwargs):
     loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, lambda: video_clip.write_videofile(filename, **kwargs))
-
-
+    await loop.run_in_executor(executor, lambda: video_clip.write_videofile(filename, **kwargs))
 
 async def get_duration(video_path):
     try:
@@ -42,7 +49,6 @@ async def get_duration(video_path):
     except Exception as e:
         logger.error(f"Failed to get duration for video {video_path}: {str(e)}")
         return 0
-
 
 def resize_clip(clip, video_width, video_height):
     clip_w, clip_h = clip.size
@@ -66,7 +72,6 @@ def resize_clip(clip, video_width, video_height):
             clip = CompositeVideoClip([background.set_duration(clip.duration), clip_resized.set_position("center")])
         logger.info(f"调整视频分辨率为:{video_width} x {video_height}, 原始素材分辨率为:{clip_w} x {clip_h}")
     return clip
-
 
 async def combine_videos(
         combined_video_path,
@@ -157,8 +162,6 @@ async def combine_videos(
     logger.success(f"Total time for combine_videos: {time.time() - start_time:.2f} seconds")
     return combined_video_path
 
-
-
 def wrap_text(text, max_width, font="Arial", fontsize=60):
     font = ImageFont.truetype(font, fontsize)
 
@@ -209,7 +212,6 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     result = "\n".join(_wrapped_lines_).strip()
     height = len(_wrapped_lines_) * height
     return result, height
-
 
 async def generate_video(task_id, title, video_path, images_path, audio_path, bgm_path, subtitle_path, output_file,
                          params, draft):
@@ -292,10 +294,10 @@ async def generate_video(task_id, title, video_path, images_path, audio_path, bg
     logger.success(f"Total time for generate_video: {time.time() - start_time:.2f} seconds")
 
     loop = asyncio.get_event_loop()
-    frame = await loop.run_in_executor(None, lambda: VideoFileClip(output_file).get_frame(0))
+    frame = await loop.run_in_executor(executor, lambda: VideoFileClip(output_file).get_frame(0))
     cover_image_path = os.path.join(utils.task_dir(), task_id, "cover.png")
     image = Image.fromarray(frame)
-    await loop.run_in_executor(None, image.save, cover_image_path)
+    await loop.run_in_executor(executor, image.save, cover_image_path)
 
     logger.success("cover image saved", cover_image_path)
     draft.add_material("cover", {"path": cover_image_path,
@@ -303,11 +305,12 @@ async def generate_video(task_id, title, video_path, images_path, audio_path, bg
                                  "text": title
                                  }
                        )
+
 async def add_image_clips(image_paths, video_width, video_height, clip_duration):
     image_clips = []
     loop = asyncio.get_event_loop()
     for image_path in image_paths:
-        img_clip = await loop.run_in_executor(None, ImageClip, image_path)
+        img_clip = await loop.run_in_executor(executor, ImageClip, image_path)
         img_clip = img_clip.resize(height=video_height * 0.9)
         img_clip = img_clip.set_position(("center", "center"))
         img_clip = img_clip.set_duration(clip_duration).fadeout(1).resize(lambda t: 1 + 0.03 * t)
