@@ -20,8 +20,9 @@ class RedisTaskManager:
         if not cls._instance:
             cls._instance = super(RedisTaskManager, cls).__new__(cls, *args, **kwargs)
         return cls._instance
+
     def __init__(self):
-        self.max_concurrent_tasks = multiprocessing.cpu_count()  # 根据CPU核心数设置最大并发任务数
+        self.max_concurrent_tasks = 2  # 根据CPU核心数设置最大并发任务数
         logger.info(f"CPU最大核心数是：{self.max_concurrent_tasks}")
         self.current_tasks = 0
         self.lock = asyncio.Lock()

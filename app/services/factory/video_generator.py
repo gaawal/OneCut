@@ -132,7 +132,6 @@ async def combine_videos(
         video_concat_mode=VideoConcatMode.random,
         max_clip_duration=5,
         images_files=[],
-        threads=10
 ):
     start_time = datetime.now()
     start_timestamp = time.time()
@@ -141,6 +140,9 @@ async def combine_videos(
     audio_clip = await create_audio_clip_async(audio_file)
     audio_duration = audio_clip.duration
     logger.info(f"预计视频总时长 {audio_duration}（秒）")
+    if audio_duration < 60:
+        audio_duration = 60.1
+        logger.info(f"调整视频总时长为 {audio_duration}（秒）")
     req_dur = audio_duration / len(video_paths)
     req_dur = max_clip_duration
     logger.info(f"单个视频素材片段最大时长 {req_dur}（秒）")
