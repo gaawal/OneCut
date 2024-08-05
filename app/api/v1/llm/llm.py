@@ -44,13 +44,14 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
         weibo_summary = generate_weibo_summary(weibo_article_data)  # 假设需要获取5条评论
         # 把微博热搜作为视频主题输入
         body.video_subject = weibo_summary
-    video_script, video_terms, video_title, video_tags = llm_generator.generate_script_and_terms(
+    video_script, video_terms, video_title, video_tags = await llm_generator.generate_script_and_terms_async(
         video_subject=body.video_subject,
         language=body.video_language,
         paragraph_number=body.paragraph_number,
         video_category=body.video_category,
         amount=body.amount,
         word_count=body.word_count)
+
     response = {
         "video_title": video_title,
         "video_script": video_script,

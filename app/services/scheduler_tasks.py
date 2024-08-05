@@ -164,7 +164,7 @@ class SchedulerTasks:
         # 当前生成的视频数量 不能全部生成
         generate_counts = 0
         # 每次定时任务计划生成几个视频
-        target_generate_max = 2
+        target_generate_max = 1
         # 获取已存在的微博热搜列表
         weibo_artcle_list: List[str] = await redis_instance.get_keys(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format("*"))
         for weibo_artcle_title in weibo_artcle_list:

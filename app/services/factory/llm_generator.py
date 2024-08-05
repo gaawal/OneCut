@@ -3,10 +3,12 @@
 # @Author : JiahuaLInk
 # @Email : 840132699@qq.com
 # @File : llm_generator.py.py
-
-
+import asyncio
+import multiprocessing
 import re
 import json
+from concurrent.futures import ThreadPoolExecutor
+
 from loguru import logger
 from openai import OpenAI
 from openai import AzureOpenAI
@@ -16,16 +18,41 @@ from app.constant.video_const import VIDEO_STYLE_MAP, VIDEO_INSPIRED
 from app.settings import movies_config
 
 _max_retries = 5
+# 获取CPU核心数
+cpu_count = multiprocessing.cpu_count()
+
+# 设置线程池大小为CPU核心数的2倍
+thread_pool_size = cpu_count * 2
+executor = ThreadPoolExecutor(max_workers=thread_pool_size)  # 使用线程池执行异步任务
+
+# 创建一个信号量对象来限制同时打开的文件数
+semaphore = asyncio.Semaphore(50)
 
 
-def generate_video_script_and_terms(params):
+async def generate_script_and_terms_async(video_subject, language, paragraph_number, video_category, amount,
+                                          word_count):
+    loop = asyncio.get_event_loop()
+    async with semaphore:
+        return await loop.run_in_executor(
+            executor,
+            generate_script_and_terms,
+            video_subject,
+            language,
+            paragraph_number,
+            video_category,
+            amount,
+            word_count
+        )
+
+
+async def generate_video_script_and_terms(params):
     logger.info("\n\n## generating video script")
     video_script = params.video_script.strip()
     video_terms = params.video_terms
     video_title = params.video_subject
     video_tags = params.video_tags
     if not video_script:
-        video_script, video_terms, video_title, video_tags = generate_script_and_terms(
+        video_script, video_terms, video_title, video_tags = await generate_script_and_terms_async(
             video_subject=params.video_subject,
             language=params.video_language,
             paragraph_number=params.paragraph_number,
@@ -40,7 +67,6 @@ def generate_video_script_and_terms(params):
 def _generate_response(prompt: str) -> str:
     content = ""
     llm_provider = movies_config.app.get("llm_provider", "openai")
-    logger.info(f"llm provider: {llm_provider}")
     if llm_provider == "g4f":
         model_name = movies_config.app.get("g4f_model_name", "")
         if not model_name:
@@ -229,6 +255,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         3. 为视频脚本生成一个标题
         4. 为视频生成4个核心话题关键词
         5、必须按照Output Example的格式输出
+        6.必须以{{}}格式输出,方便我json.loads转为字典
     ## 视频脚本字数的约束
         - 字数要求：确保视频脚本的字数必须大于{word_count + 50}，但不要不超过{word_count + 150}字。
         
@@ -247,6 +274,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         7. 不提及提示或脚本本身的内容，不提及段落或行数
         8. 使用特殊标点符号，如百分比、比分、日期时间、货币等情况，不能用符号表达，需要用语言描述，如将比分从“7：9”改为“7比9”，以确保分割和匹配的准确性。
         9. 根据视频主题的语言进行响应
+        
 
     
     ## 视频搜索术语的约束:

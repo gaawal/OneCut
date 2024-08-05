@@ -33,34 +33,33 @@ def get_ffmpeg_params():
     system = platform.system().lower()
     if system == "darwin":  # macOS
         return [
-            '-c:v', 'h264_videotoolbox',  # 使用Apple硬件加速
-            '-preset', 'ultrafast',
-            '-b:v', '1000k',
-            '-profile:v', 'baseline',
-            '-movflags', 'faststart'
+            '-c:v', 'h264_videotoolbox',  # 使用macOS的硬件加速
+            '-preset', 'fast',            # 编码速度快，质量和压缩效率较平衡
+            '-b:v', '4000k',              # 目标比特率4000kbps，较高质量
+            '-profile:v', 'high',         # 使用高质量配置文件
+            '-movflags', 'faststart'      # 优化文件以便快速启动播放
         ]
     elif system == "windows":
-        # 检查是否有NVIDIA GPU
         return [
-            '-c:v', 'h264_nvenc',  # 使用NVIDIA硬件加速
-            '-preset', 'p5',
-            '-b:v', '1000k',
+            '-c:v', 'h264_nvenc',         # 使用NVIDIA硬件加速
+            '-preset', 'fast',
+            '-b:v', '4000k',
+            '-profile:v', 'high',
             '-movflags', 'faststart'
         ]
     elif system == "linux":
-        # 检查是否有NVIDIA GPU
         return [
-            '-c:v', 'h264_nvenc',  # 使用NVIDIA硬件加速
-            '-preset', 'p5',
-            '-b:v', '1000k',
+            '-c:v', 'h264_nvenc',         # 使用NVIDIA硬件加速
+            '-preset', 'fast',
+            '-b:v', '4000k',
+            '-profile:v', 'high',
             '-movflags', 'faststart'
         ]
     else:
-        # 默认使用libx264编码器
         return [
-            '-c:v', 'libx264',
-            '-preset', 'ultrafast',
-            '-crf', '23',
+            '-c:v', 'libx264',            # 使用软件编码
+            '-preset', 'fast',
+            '-crf', '20',                 # 固定速率因子20，较高质量
             '-movflags', 'faststart'
         ]
 async def get_duration(video_path):

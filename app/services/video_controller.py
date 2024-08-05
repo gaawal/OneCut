@@ -55,7 +55,7 @@ async def start(task_id, params: VideoParams):
     try:
         if not os.path.exists(draft_file):
             await save_task_state(task_id, TaskState.PROCESSING, 5, TaskDetailState.GENERATING_SCRIPT, draft)
-            video_script, video_terms, video_title, video_tags = llm_generator.generate_video_script_and_terms(params)
+            video_script, video_terms, video_title, video_tags = await llm_generator.generate_video_script_and_terms(params)
             if not all([video_script, video_terms, video_title]):
                 await save_task_state(task_id, TaskState.FAILED, 5, TaskFailureReason.FAILED_GENERATING_SCRIPT, draft,
                                       TaskFailureReason.FAILED_GENERATING_SCRIPT)

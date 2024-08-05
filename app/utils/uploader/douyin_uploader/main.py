@@ -184,6 +184,7 @@ class DouYinVideo(object):
         if self.publish_date != 0:
             await self.set_schedule_time_douyin(page, self.publish_date)
         await asyncio.sleep(1.5)
+        publish_attempt = 0
         # 判断视频是否发布成功
         while True:
             # 判断视频是否发布成功
@@ -191,18 +192,27 @@ class DouYinVideo(object):
                 publish_button = page.get_by_role('button', name="发布", exact=True)
                 if await publish_button.count():
                     await publish_button.click()
-                    pass
+                    # 检查是否有提示上传次数达到上限
+                    if await page.locator('span.semi-toast-content-text:has-text("今天投稿次数已达到上限")').count():
+                        logger.warning("[Douyin] 达到上传次数上限，退出发布流程。")
+                        await context.close()
+                        await browser.close()
+                        return False
+
                 await page.wait_for_url("https://creator.douyin.com/creator-micro/content/manage?enter_from=publish",
                                         timeout=1500)  # 如果自动跳转到作品页面，则代表发布成功
                 logger.success("  [Douyin]视频发布成功")
                 upload_ok = True
                 break
             except:
-
                 logger.info("  [Douyin] 视频正在发布中...")
+                publish_attempt += 1
                 await page.screenshot(full_page=True)
                 await asyncio.sleep(0.5)
-
+                if publish_attempt > 5:
+                    logger.warning("  [Douyin] 发布超时...")
+                    upload_ok = False
+                    break
         await context.storage_state(path=self.account_file)  # 保存cookie
         logger.success('  [Douyin]cookie更新完毕！')
         await asyncio.sleep(2)  # 这里延迟是为了方便眼睛直观的观看
