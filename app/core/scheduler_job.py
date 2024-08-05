@@ -24,10 +24,10 @@ def register_scheduler_job(app):
     scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', seconds=241,
                       next_run_time=datetime.now() + timedelta(seconds=90))
     # # # 自动生成微博热搜视频的定时任务
-    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', seconds=240,
+    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=10,
                       next_run_time=datetime.now() + timedelta(seconds=111))
     # 发布视频的账号  随机选择进行发布，同一个task不可多个账号发布同个平台
-    account_list = ["account-mama.json"]
+    account_list = ["account-jiahua.json"]
     # 自动发布视频的定时任务
     scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=1,
                       next_run_time=datetime.now() + timedelta(seconds=25), args=[account_list])

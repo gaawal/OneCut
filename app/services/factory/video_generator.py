@@ -1,8 +1,10 @@
+import platform
 import asyncio
 import multiprocessing
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 
 from PIL import Image, ImageFont
 from loguru import logger
@@ -24,26 +26,43 @@ thread_pool_size = cpu_count * 2
 executor = ThreadPoolExecutor(max_workers=thread_pool_size)  # 使用线程池执行异步任务
 logger.info(f"设置线程池大小为CPU核心数的2倍:{thread_pool_size}")
 
-async def create_video_clip_async(video_path):
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(executor, VideoFileClip, video_path)
+# 创建一个信号量对象来限制同时打开的文件数
+semaphore = asyncio.Semaphore(50)
 
-async def create_audio_clip_async(audio_path):
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(executor, AudioFileClip, audio_path)
-
-async def subclip_async(clip, start_time, end_time):
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(executor, clip.subclip, start_time, end_time)
-
-async def resize_clip_async(clip, video_width, video_height):
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(executor, resize_clip, clip, video_width, video_height)
-
-async def write_videofile_async(video_clip, filename, **kwargs):
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(executor, lambda: video_clip.write_videofile(filename, **kwargs))
-
+def get_ffmpeg_params():
+    system = platform.system().lower()
+    if system == "darwin":  # macOS
+        return [
+            '-c:v', 'h264_videotoolbox',  # 使用Apple硬件加速
+            '-preset', 'ultrafast',
+            '-b:v', '1000k',
+            '-profile:v', 'baseline',
+            '-movflags', 'faststart'
+        ]
+    elif system == "windows":
+        # 检查是否有NVIDIA GPU
+        return [
+            '-c:v', 'h264_nvenc',  # 使用NVIDIA硬件加速
+            '-preset', 'p5',
+            '-b:v', '1000k',
+            '-movflags', 'faststart'
+        ]
+    elif system == "linux":
+        # 检查是否有NVIDIA GPU
+        return [
+            '-c:v', 'h264_nvenc',  # 使用NVIDIA硬件加速
+            '-preset', 'p5',
+            '-b:v', '1000k',
+            '-movflags', 'faststart'
+        ]
+    else:
+        # 默认使用libx264编码器
+        return [
+            '-c:v', 'libx264',
+            '-preset', 'ultrafast',
+            '-crf', '23',
+            '-movflags', 'faststart'
+        ]
 async def get_duration(video_path):
     try:
         with VideoFileClip(video_path) as video:
@@ -52,6 +71,36 @@ async def get_duration(video_path):
         logger.error(f"Failed to get duration for video {video_path}: {str(e)}")
         return 0
 
+async def create_video_clip_async(video_path):
+    async with semaphore:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(executor, VideoFileClip, video_path)
+
+async def create_audio_clip_async(audio_path):
+    async with semaphore:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(executor, AudioFileClip, audio_path)
+
+async def subclip_async(clip, start_time, end_time):
+    async with semaphore:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(executor, clip.subclip, start_time, end_time)
+
+async def resize_clip_async(clip, video_width, video_height):
+    async with semaphore:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(executor, resize_clip, clip, video_width, video_height)
+
+async def write_videofile_async(video_clip, filename, **kwargs):
+    ffmpeg_params = get_ffmpeg_params()
+    async with semaphore:
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(executor, lambda: video_clip.write_videofile(
+            filename,
+            codec='libx264',
+            ffmpeg_params=ffmpeg_params,
+            **kwargs
+        ))
 def resize_clip(clip, video_width, video_height):
     clip_w, clip_h = clip.size
     if clip_w != video_width or clip_h != video_height:
@@ -75,6 +124,7 @@ def resize_clip(clip, video_width, video_height):
         logger.info(f"调整视频分辨率为:{video_width} x {video_height}, 原始素材分辨率为:{clip_w} x {clip_h}")
     return clip
 
+
 async def combine_videos(
         combined_video_path,
         video_paths,
@@ -85,7 +135,10 @@ async def combine_videos(
         images_files=[],
         threads=10
 ):
-    start_time = time.time()
+    start_time = datetime.now()
+    start_timestamp = time.time()
+    logger.info(f"开始合并视频任务: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
     audio_clip = await create_audio_clip_async(audio_file)
     audio_duration = audio_clip.duration
     logger.info(f"预计视频总时长 {audio_duration}（秒）")
@@ -121,7 +174,7 @@ async def combine_videos(
             start_time = end_time
             if video_concat_mode == VideoConcatMode.sequential:
                 break
-    logger.info(f"Raw clips prepared in {time.time() - raw_clips_start_time:.2f} seconds")
+    logger.info(f"原始片段准备耗时: {time.time() - raw_clips_start_time:.2f} 秒")
 
     if video_concat_mode == VideoConcatMode.random:
         random.shuffle(raw_clips)
@@ -129,7 +182,7 @@ async def combine_videos(
     resize_start_time = time.time()
     resized_clips = await asyncio.gather(
         *(resize_clip_async(clip, video_width, video_height) for clip in raw_clips))
-    logger.info(f"Resized clips in {time.time() - resize_start_time:.2f} seconds")
+    logger.info(f"调整视频片段尺寸耗时: {time.time() - resize_start_time:.2f} 秒")
 
     if images_files:
         image_clips = await add_image_clips(images_files, video_width, video_height, clip_duration=max_clip_duration)
@@ -154,14 +207,22 @@ async def combine_videos(
     combined_start_time = time.time()
     video_clip = concatenate_videoclips(clips)
     video_clip = video_clip.set_fps(30)
-    logger.info(f"Combined video clip in {time.time() - combined_start_time:.2f} seconds")
+    logger.info(f"合并视频片段耗时: {time.time() - combined_start_time:.2f} 秒")
 
     write_start_time = time.time()
     await write_videofile_async(video_clip, filename=combined_video_path,
                                 logger=None, temp_audiofile_path=output_dir, audio_codec="aac", fps=30)
+    for clip in raw_clips:
+        clip.close()
+    for clip in resized_clips:
+        clip.close()
     video_clip.close()
-    logger.success(f"Written video file in {time.time() - write_start_time:.2f} seconds")
-    logger.success(f"Total time for combine_videos: {time.time() - start_time:.2f} seconds")
+    logger.success(f"写入视频文件耗时: {time.time() - write_start_time:.2f} 秒")
+    logger.success(f"合并视频总耗时: {time.time() - start_timestamp:.2f} 秒")
+    # 确保所有打开的资源都关闭
+    audio_clip.close()
+
+
     return combined_video_path
 
 def wrap_text(text, max_width, font="Arial", fontsize=60):
@@ -217,11 +278,14 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
 
 async def generate_video(task_id, title, video_path, images_path, audio_path, bgm_path, subtitle_path, output_file,
                          params, draft):
-    start_time = time.time()
+    start_time = datetime.now()
+    start_timestamp = time.time()
+    logger.info(f"开始生成视频任务: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
     aspect = VideoAspect(params.video_aspect)
     video_width, video_height = aspect.to_resolution()
 
-    logger.info(f"start, video size: {video_width} x {video_height}")
+    logger.info(f"开始生成视频，视频尺寸: {video_width} x {video_height}")
     logger.info(f"  ① 视频文件: {video_path}")
     logger.info(f"  ② 人声文件: {audio_path}")
     logger.info(f"  ③ 背景音乐: {bgm_path}")
@@ -292,8 +356,8 @@ async def generate_video(task_id, title, video_path, images_path, audio_path, bg
     await write_videofile_async(final_clip, filename=output_file, audio_codec="aac", temp_audiofile_path=output_dir,
                                 logger=None, fps=30)
     final_clip.close()
-    logger.success(f"Written video file in {time.time() - write_start_time:.2f} seconds")
-    logger.success(f"Total time for generate_video: {time.time() - start_time:.2f} seconds")
+    logger.success(f"写入视频文件耗时: {time.time() - write_start_time:.2f} 秒")
+    logger.success(f"生成视频总耗时: {time.time() - start_timestamp:.2f} 秒")
 
     loop = asyncio.get_event_loop()
     frame = await loop.run_in_executor(executor, lambda: VideoFileClip(output_file).get_frame(0))
@@ -301,7 +365,7 @@ async def generate_video(task_id, title, video_path, images_path, audio_path, bg
     image = Image.fromarray(frame)
     await loop.run_in_executor(executor, image.save, cover_image_path)
 
-    logger.success("cover image saved", cover_image_path)
+    logger.success("封面图片已保存", cover_image_path)
     draft.add_material("cover", {"path": cover_image_path,
                                  "cover_mode": cover_mode,
                                  "text": title

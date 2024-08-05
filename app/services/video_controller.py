@@ -176,7 +176,7 @@ async def start(task_id, params: VideoParams):
 
     end_time = time.time()
     minutes, seconds = calculate_duration(start_time, end_time)
-    logger.info(f"生成时长为：{minutes} 分钟 {seconds} 秒")
+    logger.success(f"视频任务生成耗时为：{minutes} 分钟 {seconds} 秒")
     if params.auto_generate:
         # 如果是自动生成视频的，你要把对应微博数据的生成状态改为True 防止定时任务重新生成该文章视频
         await update_weibo_generated_state(params.weibo_title)

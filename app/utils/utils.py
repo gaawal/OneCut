@@ -139,7 +139,7 @@ def get_font_path(params):
         if os.name == "nt":
             font_path = font_path.replace("\\", "/")
 
-        logger.info(f"using font: {font_path}")
+        logger.info(f"使用字体: {font_path}")
     return font_path
 
 
