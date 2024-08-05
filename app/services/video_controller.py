@@ -211,7 +211,7 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
             video_concat_mode=video_concat_mode,
             max_clip_duration=params.video_clip_duration,
             images_files=images_files,
-            threads=params.n_threads)
+            )
 
         _progress += progress_increment
         task_progress.combined_videos.append(combined_video)

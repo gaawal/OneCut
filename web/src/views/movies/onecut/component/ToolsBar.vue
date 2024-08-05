@@ -296,7 +296,6 @@ const handleGenerateVideo = async () => {
     font_size: videoStore.subtitleSize,
     stroke_color: videoStore.subtitleBorderColor,
     stroke_width: videoStore.subtitleStrokeWidth,
-    n_threads: 8,
     paragraph_number: 1,
     amount: 5,
     weibo_mid: videoStore.weiboMid,

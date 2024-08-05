@@ -84,7 +84,7 @@ class VideoParams(BaseModel):
     stroke_color: Optional[str] = "#000000"
     stroke_width: float = 1.5
     font_opacity: float = 1
-    n_threads: Optional[int] = 2
+
     paragraph_number: Optional[int] = 1
     amount: Optional[int] = 5
     fps: Optional[int] = 30

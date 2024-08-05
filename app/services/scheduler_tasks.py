@@ -205,7 +205,6 @@ class SchedulerTasks:
                           "font_size": 65,
                           "stroke_color": "#1e1e1b",
                           "stroke_width": 1.5,
-                          "n_threads": 8,
                           "paragraph_number": 4,
                           "amount": 5,
                           "weibo_mid": weibo_article_data.weibo_mid,
