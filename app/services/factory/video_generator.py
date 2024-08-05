@@ -399,3 +399,10 @@ async def add_image_clips(image_paths, video_width, video_height, clip_duration)
         image_clips.append(img_clip)
 
     return image_clips
+async def get_duration(video_path):
+    try:
+        with VideoFileClip(video_path) as video:
+            return video.duration
+    except Exception as e:
+        logger.error(f"Failed to get duration for video {video_path}: {str(e)}")
+        return 0
