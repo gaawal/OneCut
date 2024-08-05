@@ -267,15 +267,12 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         1. 生成脚本字数按照上方字数要求。
         2. 不得提及此提示
         3. 直接切入主题，不要以“不必要的欢迎词”开始，一些AI痕迹明显的词汇，比如首先，其次，然而，总的来说，综上所诉等词汇杜绝使用
-        4. 不包含任何markdown或格式比如```json之类的，不使用标题
+        4. 不包含任何markdown或格式，不使用标题
         5. 仅返回脚本内容，仅返回一次，不要重复返回
         6. 每段开头不包含“配音”或类似提示
         7. 不提及提示或脚本本身的内容，不提及段落或行数
         8. 使用特殊标点符号，如百分比、比分、日期时间、货币等情况，不能用符号表达，需要用语言描述，如将比分从“7：9”改为“7比9”，以确保分割和匹配的准确性。
         9. 根据视频主题的语言进行响应
-        
-
-    
     ## 视频搜索术语的约束:
         - 你是一名搜索优化助手
         - 分析给定的视频主题，生成有效的搜索关键词（英文），用于在Pixabay上寻找相关的图片和视频素材
@@ -285,7 +282,6 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         - 如适用，建议类别
         - 考虑使用同义词和相关词
         - 生成优化后的搜索关键词，必须以JSON格式输出到video_terms字段
-
     ## 标题的约束:
         1. 生成反映视频脚本主要内容的标题，不使用“揭秘：xxx”开头
         2. 参考以下任一法则生成标题:
@@ -304,7 +300,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - 生成优化后的搜索关键词，以JSON格式输出到video_tags字段
     - 确保每个关键词尽可能简洁并具有搜索价值
     - 根据视频主题的语言进行响应,比如中文
-     
+    
     ## Output Example:
     {{
         "video_script": "Generated video script here...",
