@@ -255,7 +255,6 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
         3. 为视频脚本生成一个标题
         4. 为视频生成4个核心话题关键词
         5、必须按照Output Example的格式输出
-        6.必须以{{}}格式输出,方便我json.loads转为字典
     ## 视频脚本字数的约束
         - 字数要求：确保视频脚本的字数必须大于{word_count + 50}，但不要不超过{word_count + 150}字。
         
