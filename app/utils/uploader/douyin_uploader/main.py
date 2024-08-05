@@ -197,7 +197,7 @@ class DouYinVideo(object):
                         logger.warning("[Douyin] 达到上传次数上限，退出发布流程。")
                         await context.close()
                         await browser.close()
-                        return False
+                        raise Exception("[Douyin] 达到上传次数上限，退出发布流程。")
 
                 await page.wait_for_url("https://creator.douyin.com/creator-micro/content/manage?enter_from=publish",
                                         timeout=1500)  # 如果自动跳转到作品页面，则代表发布成功

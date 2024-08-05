@@ -29,19 +29,20 @@ logger.info(f"设置线程池大小为CPU核心数的2倍:{thread_pool_size}")
 # 创建一个信号量对象来限制同时打开的文件数
 semaphore = asyncio.Semaphore(50)
 
+
 def get_ffmpeg_params():
     system = platform.system().lower()
     if system == "darwin":  # macOS
         return [
             '-c:v', 'h264_videotoolbox',  # 使用macOS的硬件加速
-            '-preset', 'fast',            # 编码速度快，质量和压缩效率较平衡
-            '-b:v', '4000k',              # 目标比特率4000kbps，较高质量
-            '-profile:v', 'high',         # 使用高质量配置文件
-            '-movflags', 'faststart'      # 优化文件以便快速启动播放
+            '-preset', 'fast',  # 编码速度快，质量和压缩效率较平衡
+            '-b:v', '4000k',  # 目标比特率4000kbps，较高质量
+            '-profile:v', 'high',  # 使用高质量配置文件
+            '-movflags', 'faststart'  # 优化文件以便快速启动播放
         ]
     elif system == "windows":
         return [
-            '-c:v', 'h264_nvenc',         # 使用NVIDIA硬件加速
+            '-c:v', 'h264_nvenc',  # 使用NVIDIA硬件加速
             '-preset', 'fast',
             '-b:v', '4000k',
             '-profile:v', 'high',
@@ -49,7 +50,7 @@ def get_ffmpeg_params():
         ]
     elif system == "linux":
         return [
-            '-c:v', 'h264_nvenc',         # 使用NVIDIA硬件加速
+            '-c:v', 'h264_nvenc',  # 使用NVIDIA硬件加速
             '-preset', 'fast',
             '-b:v', '4000k',
             '-profile:v', 'high',
@@ -57,38 +58,36 @@ def get_ffmpeg_params():
         ]
     else:
         return [
-            '-c:v', 'libx264',            # 使用软件编码
+            '-c:v', 'libx264',  # 使用软件编码
             '-preset', 'fast',
-            '-crf', '20',                 # 固定速率因子20，较高质量
+            '-crf', '20',  # 固定速率因子20，较高质量
             '-movflags', 'faststart'
         ]
-async def get_duration(video_path):
-    try:
-        with VideoFileClip(video_path) as video:
-            return video.duration
-    except Exception as e:
-        logger.error(f"Failed to get duration for video {video_path}: {str(e)}")
-        return 0
+
 
 async def create_video_clip_async(video_path):
     async with semaphore:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(executor, VideoFileClip, video_path)
 
+
 async def create_audio_clip_async(audio_path):
     async with semaphore:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(executor, AudioFileClip, audio_path)
+
 
 async def subclip_async(clip, start_time, end_time):
     async with semaphore:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(executor, clip.subclip, start_time, end_time)
 
+
 async def resize_clip_async(clip, video_width, video_height):
     async with semaphore:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(executor, resize_clip, clip, video_width, video_height)
+
 
 async def write_videofile_async(video_clip, filename, **kwargs):
     ffmpeg_params = get_ffmpeg_params()
@@ -100,6 +99,8 @@ async def write_videofile_async(video_clip, filename, **kwargs):
             ffmpeg_params=ffmpeg_params,
             **kwargs
         ))
+
+
 def resize_clip(clip, video_width, video_height):
     clip_w, clip_h = clip.size
     if clip_w != video_width or clip_h != video_height:
@@ -213,18 +214,20 @@ async def combine_videos(
     write_start_time = time.time()
     await write_videofile_async(video_clip, filename=combined_video_path,
                                 logger=None, temp_audiofile_path=output_dir, audio_codec="aac", fps=30)
+
+    # 确保所有打开的资源都关闭
     for clip in raw_clips:
         clip.close()
     for clip in resized_clips:
         clip.close()
     video_clip.close()
-    logger.success(f"写入视频文件耗时: {time.time() - write_start_time:.2f} 秒")
-    logger.success(f"合并视频总耗时: {time.time() - start_timestamp:.2f} 秒")
-    # 确保所有打开的资源都关闭
     audio_clip.close()
 
+    logger.success(f"写入视频文件耗时: {time.time() - write_start_time:.2f} 秒")
+    logger.success(f"合并视频总耗时: {time.time() - start_timestamp:.2f} 秒")
 
     return combined_video_path
+
 
 def wrap_text(text, max_width, font="Arial", fontsize=60):
     font = ImageFont.truetype(font, fontsize)
@@ -276,6 +279,7 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     result = "\n".join(_wrapped_lines_).strip()
     height = len(_wrapped_lines_) * height
     return result, height
+
 
 async def generate_video(task_id, title, video_path, images_path, audio_path, bgm_path, subtitle_path, output_file,
                          params, draft):
@@ -360,6 +364,16 @@ async def generate_video(task_id, title, video_path, images_path, audio_path, bg
     logger.success(f"写入视频文件耗时: {time.time() - write_start_time:.2f} 秒")
     logger.success(f"生成视频总耗时: {time.time() - start_timestamp:.2f} 秒")
 
+    # 确保所有打开的资源都关闭
+    video_clip.close()
+    audio_clip.close()
+    if 'bgm_clip' in locals():
+        bgm_clip.close()
+    if 'text_clips' in locals():
+        for clip in text_clips:
+            clip.close()
+    final_clip.close()
+
     loop = asyncio.get_event_loop()
     frame = await loop.run_in_executor(executor, lambda: VideoFileClip(output_file).get_frame(0))
     cover_image_path = os.path.join(utils.task_dir(), task_id, "cover.png")
@@ -372,6 +386,7 @@ async def generate_video(task_id, title, video_path, images_path, audio_path, bg
                                  "text": title
                                  }
                        )
+
 
 async def add_image_clips(image_paths, video_width, video_height, clip_duration):
     image_clips = []
