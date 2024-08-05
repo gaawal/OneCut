@@ -111,14 +111,14 @@ class SchedulerTasks:
                                     logger.success(f"发布视频至抖音完成，刷新成功状态")
                             except Exception as e:
                                 is_uploaded = False
-                                logger.info(f"发布任务重新加入队列")
-                                queue_items = await redis_instance.get_list(video_publish_queue)
-                                logger.info(f"当前待发布视频任务有: {queue_items}")
-                                if task_id not in queue_items:
-                                    await redis_instance.rpush(video_publish_queue, task_id)
-                                    logger.info(f"手工加入发布任务成功,task_id={task_id}")
-                                    queue_items = await redis_instance.get_list(video_publish_queue)
-                                    logger.info(f"当前待发布视频任务有: {queue_items}")
+                                # logger.info(f"发布任务重新加入队列")
+                                # queue_items = await redis_instance.get_list(video_publish_queue)
+                                # logger.info(f"当前待发布视频任务有: {queue_items}")
+                                # if task_id not in queue_items:
+                                #     await redis_instance.rpush(video_publish_queue, task_id)
+                                #     logger.info(f"手工加入发布任务成功,task_id={task_id}")
+                                #     queue_items = await redis_instance.get_list(video_publish_queue)
+                                #     logger.info(f"当前待发布视频任务有: {queue_items}")
                         if is_uploaded:
                             logger.success("所有平台视频都发布成功，任务已完成！")
                             # 从 Redis 队列中删除任务ID
