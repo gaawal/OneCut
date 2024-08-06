@@ -13,12 +13,10 @@ from app.utils.uploader.utils.constant import TencentZoneTypes
 from app.utils.uploader.utils.files_times import generate_schedule_time_next_day, get_title_and_hashtags
 
 
-async def auto_upload_weixin(task_id):
-    logger.info(f"自动发布至视频号，任务id：{task_id}")
+async def auto_upload_weixin(task_id,account):
+    logger.info(f"自动发布至视频号，任务id：{task_id},账号：{account}")
     base_dir = Path(BASE_DIR)
-    account_list = ["account.json"]
-    account = random.choice(account_list)
-    logger.info(f"随机选取上传账号为{account}")
+
     account_file = os.path.join(base_dir, "tencent_uploader", account)
 
     # 获取视频任务目录

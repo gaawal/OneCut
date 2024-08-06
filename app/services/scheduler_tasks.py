@@ -31,11 +31,18 @@ from app.services.video_controller import save_task_state
 from app.utils import utils
 from app.utils.uploader.examples.get_douyin_cookie import get_douoyin_cookies
 from app.utils.uploader.examples.get_tencent_cookie import get_tencent_cookie
+from app.utils.uploader.examples.get_xigua_cookie import get_xigua_cookies
 from app.utils.uploader.examples.upload_video_to_douyin import auto_upload_douyin
 from app.utils.uploader.examples.upload_video_to_tencent import auto_upload_weixin
+from app.utils.uploader.examples.upload_video_to_xigua import auto_upload_xigua
 
 
 class SchedulerTasks:
+    @staticmethod
+    def get_xigua_cookies(account_list):
+        logger.info("检测西瓜账号cookie")
+        get_xigua_cookies(account_list)
+
     @staticmethod
     async def clear_tasks():
         """清理所有任务"""
@@ -54,11 +61,7 @@ class SchedulerTasks:
 
     @staticmethod
     async def enqueue_tasks():
-        tasks_list = [
-            '202408040741-867eb80f-479d-4414-8a19-be9d8118b650',
-            '202408040756-a28459ec-a15a-4b34-b19d-99cde1942c65',
-            '202408040801-0439bfaa-424f-414d-ae58-29fa8088b3ce',
-            '202408040808-e1058211-0ea0-49a4-ab07-f6243be1c556', ]
+        tasks_list = []
         key = 'video_publish_queue'
         queue_items = await redis_instance.get_list(key)
         logger.info(f"当前待发布视频任务有: {queue_items}")
@@ -91,35 +94,53 @@ class SchedulerTasks:
                         logger.info(f"获取当前视频各平台发布状态")
                         weixin_status = await get_platform_status(task_obj.task_id, "weixin")
                         douyin_status = await get_platform_status(task_obj.task_id, "douyin")
+                        xigua_status = await get_platform_status(task_obj.task_id, "xigua")
                         logger.info(f"Weixin 状态: {weixin_status}")
                         logger.info(f"Douyin 状态: {douyin_status}")
-                        # if weixin_status != TaskDetailState.UPLOAD_OK:
-                        #     try:
-                        #         logger.info(f"发布视频至视频号")
-                        #         is_uploaded = await auto_upload_weixin(task_id)
-                        #         await update_platform_status(task_obj.task_id, "weixin", TaskDetailState.UPLOAD_OK)
-                        #         logger.success(f"发布视频至视频号完成，刷新成功状态")
-                        #         weixin_status = TaskDetailState.UPLOAD_OK
-                        #     except:
-                        #         weixin_status = TaskDetailState.UPLOAD_FAILED
-                        if douyin_status != TaskDetailState.UPLOAD_OK:
+                        account = random.choice(account_list)
+                        account_name:str = account.get('account_name')
+                        platform:list = account.get('platform')
+                        logger.info(f"随机选取上传账号为{account_name},需要发布的平台:{platform}")
+                        if weixin_status != TaskDetailState.UPLOAD_OK and 'weixin' in platform:
+                            try:
+                                logger.info(f"发布视频至视频号")
+                                is_uploaded = await auto_upload_weixin(task_id,account_name)
+                                await update_platform_status(task_obj.task_id, "weixin", TaskDetailState.UPLOAD_OK)
+                                logger.success(f"发布视频至视频号完成，刷新成功状态")
+                                weixin_status = TaskDetailState.UPLOAD_OK
+                            except:
+                                weixin_status = TaskDetailState.UPLOAD_FAILED
+                        if douyin_status != TaskDetailState.UPLOAD_OK and 'douyin' in platform:
                             try:
                                 logger.info(f"发布视频至抖音")
-                                is_uploaded = await auto_upload_douyin(account_list, task_id)
-                                if is_uploaded:
-                                    await update_platform_status(task_obj.task_id, "douyin", TaskDetailState.UPLOAD_OK)
-                                    logger.success(f"发布视频至抖音完成，刷新成功状态")
+                                is_uploaded = await auto_upload_douyin(task_id,account_name)
                             except Exception as e:
                                 is_uploaded = False
-                                # logger.info(f"发布任务重新加入队列")
-                                # queue_items = await redis_instance.get_list(video_publish_queue)
-                                # logger.info(f"当前待发布视频任务有: {queue_items}")
-                                # if task_id not in queue_items:
-                                #     await redis_instance.rpush(video_publish_queue, task_id)
-                                #     logger.info(f"手工加入发布任务成功,task_id={task_id}")
-                                #     queue_items = await redis_instance.get_list(video_publish_queue)
-                                #     logger.info(f"当前待发布视频任务有: {queue_items}")
+                                logger.info(f"发布存在异常，发布任务重新加入队列")
+                                queue_items = await redis_instance.get_list(video_publish_queue)
+                                if task_id not in queue_items:
+                                    await redis_instance.rpush(video_publish_queue, task_id)
+                                    logger.info(f"手工加入发布任务成功,task_id={task_id}")
+                                    queue_items = await redis_instance.get_list(video_publish_queue)
+                                    logger.info(f"当前待发布视频任务有: {queue_items}")
+
+                        if xigua_status != TaskDetailState.UPLOAD_OK and 'xigua' in platform:
+                            try:
+                                logger.info(f"发布视频至西瓜")
+
+                                is_uploaded = await auto_upload_xigua(task_id,account_name)
+                            except Exception as e:
+                                is_uploaded = False
+                                logger.info(f"发布存在异常，发布任务重新加入队列")
+                                queue_items = await redis_instance.get_list(video_publish_queue)
+                                if task_id not in queue_items:
+                                    await redis_instance.rpush(video_publish_queue, task_id)
+                                    logger.info(f"手工加入发布任务成功,task_id={task_id}")
+                                    queue_items = await redis_instance.get_list(video_publish_queue)
+                                    logger.info(f"当前待发布视频任务有: {queue_items}")
                         if is_uploaded:
+                            await update_platform_status(task_obj.task_id, "douyin", TaskDetailState.UPLOAD_OK)
+                            logger.success(f"发布视频至抖音完成，刷新成功状态")
                             logger.success("所有平台视频都发布成功，任务已完成！")
                             # 从 Redis 队列中删除任务ID
                             # 刷新发布成功状态
