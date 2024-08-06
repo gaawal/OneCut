@@ -17,9 +17,11 @@ def get_video_title_and_script(draft_path):
         title = data.get('script_info', {}).get('video_title', '标题')
         script = data.get('script_info', {}).get('script', '内容')
         video_tags = data.get('script_info', {}).get('video_tags', '热门')
-        return title, script, video_tags
+        return title.replace("【麦克阿瑟纪录片】", ""), script, video_tags
+
+
 # 自动发布抖音视频
-async def auto_upload_xigua(task_id,account_name):
+async def auto_upload_xigua(task_id, account_name):
     logger.info(f"自动发布至抖音，任务id：{task_id}")
     base_dir = Path(BASE_DIR)
     logger.info(f"随机选取上传账号为{account_name}")
@@ -48,7 +50,7 @@ async def auto_upload_xigua(task_id,account_name):
             # 设置cookie
             await xigua_setup(account_file, handle=False)
             # 创建并上传视频
-            app = XiguaVideo(title, video_file, tags,cover_image, 0, account_file)
+            app = XiguaVideo(title, video_file, tags, cover_image, 0, account_file)
             return await app.main()
         else:
             raise Exception(f"draft.json 或 final-1.mp4 在目录 {task_folder} 中不存在")
@@ -56,4 +58,3 @@ async def auto_upload_xigua(task_id,account_name):
     except Exception as e:
         logger.warning(f"[Xigua] 上传视频失败 {str(e)}")
         raise Exception(f"[Xigua] 上传视频失败 {str(e)}")
-

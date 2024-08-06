@@ -198,7 +198,7 @@ class XiguaVideo(object):
                 if await publish_button.count():
                     await publish_button.click()
                     pass
-                await page.wait_for_url("https://studio.ixigua.com/content",
+                await page.wait_for_url("https://studio.ixigua.com/content**",
                                         timeout=1500)  # 如果自动跳转到作品页面，则代表发布成功
                 logger.success("  [-]视频发布成功")
                 break

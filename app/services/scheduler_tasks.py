@@ -98,13 +98,13 @@ class SchedulerTasks:
                         logger.info(f"Weixin 状态: {weixin_status}")
                         logger.info(f"Douyin 状态: {douyin_status}")
                         account = random.choice(account_list)
-                        account_name:str = account.get('account_name')
-                        platform:list = account.get('platform')
+                        account_name: str = account.get('account_name')
+                        platform: list = account.get('platform')
                         logger.info(f"随机选取上传账号为{account_name},需要发布的平台:{platform}")
                         if weixin_status != TaskDetailState.UPLOAD_OK and 'weixin' in platform:
                             try:
                                 logger.info(f"发布视频至视频号")
-                                is_uploaded = await auto_upload_weixin(task_id,account_name)
+                                is_uploaded = await auto_upload_weixin(task_id, account_name)
                                 await update_platform_status(task_obj.task_id, "weixin", TaskDetailState.UPLOAD_OK)
                                 logger.success(f"发布视频至视频号完成，刷新成功状态")
                                 weixin_status = TaskDetailState.UPLOAD_OK
@@ -113,7 +113,7 @@ class SchedulerTasks:
                         if douyin_status != TaskDetailState.UPLOAD_OK and 'douyin' in platform:
                             try:
                                 logger.info(f"发布视频至抖音")
-                                is_uploaded = await auto_upload_douyin(task_id,account_name)
+                                is_uploaded = await auto_upload_douyin(task_id, account_name)
                             except Exception as e:
                                 is_uploaded = False
                                 logger.info(f"发布存在异常，发布任务重新加入队列")
@@ -128,7 +128,7 @@ class SchedulerTasks:
                             try:
                                 logger.info(f"发布视频至西瓜")
 
-                                is_uploaded = await auto_upload_xigua(task_id,account_name)
+                                is_uploaded = await auto_upload_xigua(task_id, account_name)
                             except Exception as e:
                                 is_uploaded = False
                                 logger.info(f"发布存在异常，发布任务重新加入队列")
