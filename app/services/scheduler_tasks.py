@@ -240,7 +240,7 @@ class SchedulerTasks:
                           "weibo_mid": weibo_article_data.weibo_mid,
                           "weibo_title": weibo_artcle_title.replace("weibo_hot_article:", "")}
                 body = VideoParams(**params)
-                logger.info(f"开始自动生成文案")
+                logger.info(f"开始自动生成文案,热门话题内容 {weibo_summary}")
                 video_script, video_terms, video_title, video_tags = llm_generator.generate_script_and_terms(
                     video_subject=body.video_subject,
                     language=body.video_language,

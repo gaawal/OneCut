@@ -85,7 +85,8 @@ class XiguaVideo(object):
         logger.info('视频出错了，重新上传中')
         await page.locator('div.progress-div [class^="upload-btn-input"]').set_input_files(self.file_path)
 
-    async def upload(self, playwright: Playwright) -> None:
+    async def upload(self, playwright: Playwright) -> bool:
+        upload_ok = False
         # 使用 Chromium 浏览器启动一个浏览器实例
         if self.local_executable_path:
             browser = await playwright.chromium.launch(headless=True, executable_path=self.local_executable_path)
@@ -165,8 +166,7 @@ class XiguaVideo(object):
         await confirm_button_red.wait_for()
         await confirm_button_red.click()
         await asyncio.sleep(2)
-
-
+        publish_attempt = 0
         while True:
             # 判断重新上传按钮是否存在，如果不存在，代表视频正在上传，则等待
             try:
@@ -174,23 +174,27 @@ class XiguaVideo(object):
                 number = await page.locator('text=上传成功').count()
                 if number > 0:
                     logger.success("  [Xigua]视频上传完毕")
+                    upload_ok = True
                     break
                 else:
                     logger.info("  [Xigua] 正在上传视频中...")
                     await asyncio.sleep(2)
-
+                    publish_attempt += 1
                     if await page.locator('text=上传失败').count():
                         logger.error("  [Xigua] 发现上传出错了... 准备重试")
                         await self.handle_upload_error(page)
             except:
                 logger.info("  [Xigua] 正在上传视频中...")
+                publish_attempt += 1
                 await asyncio.sleep(2)
-
+                if publish_attempt > 10:
+                    raise Exception(" [Xigua] 发布超时...")
 
         if self.publish_date != 0:
             await self.set_schedule_time_xigua(page, self.publish_date)
         await asyncio.sleep(1.5)
         # 判断视频是否发布成功
+
         while True:
             # 判断视频是否发布成功
             try:
@@ -213,9 +217,13 @@ class XiguaVideo(object):
         # 关闭浏览器上下文和浏览器实例
         await context.close()
         await browser.close()
-
+        return upload_ok
     async def main(self):
-        async with async_playwright() as playwright:
-            await self.upload(playwright)
+        try:
+            async with async_playwright() as playwright:
+                return await self.upload(playwright)
+        except Exception as e:
+            logger.warning(f"  [Douyin] 发布出现异常,{str(e)}")
+            return False
 
 

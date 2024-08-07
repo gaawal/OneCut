@@ -88,7 +88,6 @@ class DouYinVideo(object):
         await page.locator('div.progress-div [class^="upload-btn-input"]').set_input_files(self.file_path)
 
     async def upload(self, playwright: Playwright) -> bool:
-        upload_ok = False
         # 使用 Chromium 浏览器启动一个浏览器实例
         if self.local_executable_path:
             browser = await playwright.chromium.launch(headless=True, executable_path=self.local_executable_path)
@@ -209,19 +208,20 @@ class DouYinVideo(object):
                 publish_attempt += 1
                 await page.screenshot(full_page=True)
                 await asyncio.sleep(0.5)
-                if publish_attempt > 5:
-                    logger.warning("  [Douyin] 发布超时...")
-                    upload_ok = False
-                    break
+                if publish_attempt > 10:
+                    raise Exception(" [Douyin] 发布超时...")
         await context.storage_state(path=self.account_file)  # 保存cookie
         logger.success('  [Douyin]cookie更新完毕！')
         await asyncio.sleep(2)  # 这里延迟是为了方便眼睛直观的观看
         # 关闭浏览器上下文和浏览器实例
         await context.close()
         await browser.close()
-
         return upload_ok
 
     async def main(self):
-        async with async_playwright() as playwright:
-            await self.upload(playwright)
+        try:
+            async with async_playwright() as playwright:
+                return await self.upload(playwright)
+        except Exception as e:
+            logger.warning(f" [Douyin] 发布出现异常,{str(e)}")
+            return False
