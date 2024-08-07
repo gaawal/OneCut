@@ -166,7 +166,7 @@ class XiguaVideo(object):
         await confirm_button_red.wait_for()
         await confirm_button_red.click()
         await asyncio.sleep(2)
-        publish_attempt = 0
+
         while True:
             # 判断重新上传按钮是否存在，如果不存在，代表视频正在上传，则等待
             try:
@@ -179,22 +179,19 @@ class XiguaVideo(object):
                 else:
                     logger.info("  [Xigua] 正在上传视频中...")
                     await asyncio.sleep(2)
-                    publish_attempt += 1
                     if await page.locator('text=上传失败').count():
                         logger.error("  [Xigua] 发现上传出错了... 准备重试")
                         await self.handle_upload_error(page)
             except:
                 logger.info("  [Xigua] 正在上传视频中...")
-                publish_attempt += 1
                 await asyncio.sleep(2)
-                if publish_attempt > 10:
-                    raise Exception(" [Xigua] 发布超时...")
+
 
         if self.publish_date != 0:
             await self.set_schedule_time_xigua(page, self.publish_date)
         await asyncio.sleep(1.5)
         # 判断视频是否发布成功
-
+        publish_attempt = 0
         while True:
             # 判断视频是否发布成功
             try:
@@ -208,8 +205,11 @@ class XiguaVideo(object):
                 break
             except:
                 logger.info("  [Xigua] 视频正在发布中...")
+                publish_attempt += 1
                 await page.screenshot(full_page=True)
                 await asyncio.sleep(0.5)
+                if publish_attempt > 10:
+                    raise Exception(" [Xigua] 发布超时...")
 
         await context.storage_state(path=self.account_file)  # 保存cookie
         logger.success('  [Xigua]cookie更新完毕！')
