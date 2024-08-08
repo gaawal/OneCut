@@ -1,9 +1,0 @@
-import asyncio
-from pathlib import Path
-
-from app.utils.uploader.conf import BASE_DIR
-from app.utils.uploader.tk_uploader.main_chrome import tiktok_setup
-
-if __name__ == '__main__':
-    account_file = Path(BASE_DIR / "tk_uploader" / "account.json")
-    cookie_setup = asyncio.run(tiktok_setup(str(account_file), handle=True))

@@ -96,7 +96,7 @@ async def start(task_id, params: VideoParams):
                                                                        sub_maker)
 
             images_files = await images_generator.get_images_files(params=params)
-            if not images_files:
+            if params.weibo_title and not images_files:
                 logger.warning(f'没有微博图片素材资源，不进行视频生成')
                 return
             await save_task_state(task_id, TaskState.PROCESSING, 50, TaskDetailState.DOWNLOADING_VIDEOS, draft)
