@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
 
 from loguru import logger
-from playwright.async_api import Playwright, async_playwright
+from playwright.async_api import async_playwright
 import os
-import asyncio
 
-from app.utils.uploader.conf import LOCAL_CHROME_PATH
 from app.utils.uploader.utils.base_social_media import set_init_script
 
 

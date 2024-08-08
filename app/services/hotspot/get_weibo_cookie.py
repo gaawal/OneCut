@@ -1,13 +1,9 @@
-import asyncio
 import os
-import random
 from pathlib import Path
 
-from loguru import logger
 
 from app.services.hotspot.main import weibo_setup
 from app.utils.uploader.conf import BASE_DIR
-from app.utils.uploader.douyin_uploader.main import douyin_setup
 
 
 async def get_weibo_cookies():
