@@ -38,10 +38,7 @@ from app.utils.uploader.examples.upload_video_to_xigua import auto_upload_xigua
 
 
 class SchedulerTasks:
-    @staticmethod
-    def get_xigua_cookies(account_list):
-        logger.info("检测西瓜账号cookie")
-        get_xigua_cookies(account_list)
+
 
     @staticmethod
     async def clear_tasks():
