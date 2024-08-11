@@ -73,14 +73,12 @@ class VideoSplitter:
         for i in range(0, len(samples), frame_length):
             frame = samples[i:i + frame_length].tobytes()
             if len(frame) < frame_length * 2:
-                logger.debug(f"跳过不完整的帧: {i}")
                 continue
             timestamp = i / sample_rate
             if self.vad.is_speech(frame, sample_rate):
                 if not is_speech:
                     start_time = timestamp
                     is_speech = True
-                    logger.debug(f"检测到人声开始: {start_time:.2f}秒")
             else:
                 if is_speech:
                     end_time = timestamp
@@ -148,7 +146,7 @@ class VideoSplitter:
             segment = video.subclip(start, end)
             if not self.include_audio:
                 segment = segment.without_audio()
-            segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac")
+            segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac",logger=None)
             logger.info(f"视频片段: {segment_path}, 时长: {end - start:.2f}秒, 时间段: {start:.2f}秒 - {end:.2f}秒")
             segment_paths.append(str(segment_path))
             os.remove(audio_path)
@@ -224,5 +222,5 @@ class VideoSplitter:
         if video.duration > self.max_video_length:
             os.remove(video_path)
 
-        logger.success("视频智能分割处理完成")
+        logger.success("视频片段智能分割处理完成")
         return saved_segments

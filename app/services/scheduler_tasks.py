@@ -52,14 +52,7 @@ class SchedulerTasks:
     @staticmethod
     async def clear_tasks():
         """清理所有任务"""
-        clear_list = ['202408040801-0439bfaa-424f-414d-ae58-29fa8088b3ce',
-                      '202408040808-e1058211-0ea0-49a4-ab07-f6243be1c556',
-                      '202408040716-8f83f77c-207f-4af8-be3c-236fd5d1d04d',
-                      '202408040721-ec157aeb-397c-4e08-abbd-37f3dc62f534',
-                      '202408040726-18fc1cb9-0f6f-4276-baef-d0bb3cec428b',
-                      '202408040731-1bd8c9f9-461f-452d-af4e-59ae31194d0a',
-                      '202408040741-867eb80f-479d-4414-8a19-be9d8118b650',
-                      '202408040756-a28459ec-a15a-4b34-b19d-99cde1942c65']
+        clear_list = []
         key = 'video_publish_queue'
         for _ in clear_list:
             task_id = await redis_instance.lpop(key)
@@ -216,6 +209,7 @@ class SchedulerTasks:
                         weibo_article_data: WeiboArticleData = await fetch_hot_article(weibo_article_data, weibo_mid,
                                                                                        target_url)
                         await save_weibo_article_and_update_data(title, weibo_article_data,CollectStatus.COLLECT_OK)
+                        logger.success(f"采集微博热搜图片评论素材成功！话题：{title} ")
                         break
         except Exception as e:
             logger.error(f"{traceback.format_exc()}")
@@ -233,7 +227,7 @@ class SchedulerTasks:
             weibo_article_cache = await redis_instance.get(weibo_artcle_title)
             weibo_article_data = WeiboArticleData(**json.loads(weibo_article_cache))
             # 检查是否有 'is_generated' 属性且其值为 False
-            if hasattr(weibo_article_data, "is_generated") and not getattr(weibo_article_data, "is_generated"):
+            if hasattr(weibo_article_data, "is_generated") and not getattr(weibo_article_data, "is_generated") and weibo_article_data.articles:
                 # 取其中第一个未生成热门视频的热搜话题进行生成文案
                 # 获取微博数据内容条数 影响ai分析微博内容
                 logger.info(f"启动自动生成视频任务：{weibo_artcle_title}")

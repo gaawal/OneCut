@@ -359,7 +359,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
 
     try:
         response_json = json.loads(final_response)
-        logger.info(f"Got final response,{response_json}")
+        # logger.info(f"Got final response,{response_json}")
         video_script = format_response(response_json["video_script"])
         video_terms = response_json["video_terms"]
         video_title = response_json["title"]
@@ -489,7 +489,7 @@ def generate_script_and_terms_by_inpire(video_inspire: str, video_inspire_keywor
 
     try:
         response_json = json.loads(final_response)
-        logger.info(f"Got final response,{response_json}")
+        # logger.info(f"Got final response,{response_json}")
         video_script = format_response(response_json["video_script"])
         video_terms = response_json["video_terms"]
         video_title = response_json["title"]

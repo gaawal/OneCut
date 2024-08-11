@@ -21,36 +21,27 @@ def register_scheduler_job(app):
     # 刷新微博热搜榜单
     scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=15)
     # 获取微博热搜内容图片评论视频等素材
-    # scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=3,
-    #                   next_run_time=datetime.now() + timedelta(seconds=25))
+    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=6,
+                      next_run_time=datetime.now() + timedelta(seconds=301))
     # 自动生成微博热搜视频的定时任务
-    # scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=3,
-    #                   next_run_time=datetime.now() + timedelta(seconds=45))
+    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=10,
+                      next_run_time=datetime.now() + timedelta(seconds=121))
     # 发布视频的账号  随机选择进行发布，同一个task不可多个账号发布同个平台
     account_list = [
         {"account_name": "account-jiahua.json",
          "platform": ["douyin"],
          },
-        {"account_name": "account-gougouzai.json",
-         "platform": ["xigua"],
-         },
-        {"account_name": "account-jiajia.json",
-         "platform": ["xigua"],
-         },
-        {"account_name": "account-ameng.json",
-         "platform": ["xigua"],
-         },
-        {"account_name": "account-chao.json",
-         "platform": ["xigua"],
-         },
         {"account_name": "account-mama.json",
+         "platform": ["douyin"],
+         },
+        {"account_name": "account-zhuzhu.json",
          "platform": ["douyin"],
          },
     ]
 
     # # 自动发布视频的定时任务
-    # scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=1,
-    #                   next_run_time=datetime.now() + timedelta(seconds=25), args=[account_list])
+    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=1,
+                      next_run_time=datetime.now() + timedelta(seconds=25), args=[account_list])
     # # 自动填入发布定时任务
     scheduler.add_job(SchedulerTasks.enqueue_tasks, CronTrigger(hour=8, minute=50),
                       next_run_time=datetime.now() + timedelta(seconds=20))
@@ -58,9 +49,9 @@ def register_scheduler_job(app):
     # scheduler.add_job(SchedulerTasks.clear_tasks, CronTrigger(hour=8, minute=49),
     #                   next_run_time=datetime.now() + timedelta(seconds=15))
     # 更新抖音cookies
-    # account_list = ["account-ameng.json", "account-chao.json", "account-jiahua.json", "account-mama.json", "account-zhuzhu.json"]
-    # scheduler.add_job(SchedulerTasks.get_douoyin_cookies, CronTrigger(hour=8, minute=49),
-    #                   next_run_time=datetime.now() + timedelta(seconds=15), args=[account_list])
+    account_list = ["account-jiahua.json","account-zhuzhu.json"]
+    scheduler.add_job(SchedulerTasks.get_douoyin_cookies, CronTrigger(hour=8, minute=49),
+                      next_run_time=datetime.now() + timedelta(seconds=15), args=[account_list])
     # 更新西瓜cookies
     # account_list = ["account-ameng.json"]
     # scheduler.add_job(SchedulerTasks.get_xigua_cookies, CronTrigger(hour=8, minute=49),

@@ -163,11 +163,21 @@ async def combine_videos(
         first_split_clip = await create_video_clip_async(split_video_file)
         first_split_clip = await subclip_async(first_split_clip, 0, min(MIN_DURATION, first_split_clip.duration))
 
-        # 调整分辨率以适应目标视频
-        first_split_clip = resize_clip(first_split_clip, video_width, video_height)
+        # 处理分辨率不同的情况，使用画中画效果
+        split_clip_w, split_clip_h = first_split_clip.size
+        if split_clip_w != video_width or split_clip_h != video_height:
+            # 背景模糊处理
+            logger.info("# 处理分辨率不同的情况，使用画中画效果")
+            background_clip = first_split_clip.resize(newsize=(video_width, video_height))
+            background_clip = apply_blur(background_clip, blur_radius=70)
+            # 缩放原始片段高度一致
+            first_split_clip = first_split_clip.resize(height=video_height)
+            first_split_clip = first_split_clip.set_position(("center", "center"))
+            first_split_clip = CompositeVideoClip([background_clip, first_split_clip])
+
         clips.append(first_split_clip)
         video_duration += first_split_clip.duration
-        logger.info(f"添加 split_video_paths 的第一个片段前 5 秒，当前视频时长 {video_duration:.2f} 秒")
+        logger.info(f"添加 split_video_paths 的第一个片段前 {MIN_DURATION} 秒，当前视频时长 {video_duration:.2f} 秒")
 
     # Step 2: 处理其他 video_paths 的视频片段
     raw_clips = []
@@ -199,14 +209,22 @@ async def combine_videos(
 
     if split_video_paths:
         split_clips = []
-        for split_video_path in split_video_paths[:]:  # 跳过第一个片段，因为它已经被添加
+        for split_video_path in split_video_paths[1:]:  # 跳过第一个片段，因为它已经被添加
             split_clip = await create_video_clip_async(split_video_path)
             split_clip = resize_clip(split_clip, video_width, video_height)
+            # 如果分辨率不同，也应用模糊背景处理
+            if split_clip.size != (video_width, video_height):
+                background_clip = split_clip.resize(newsize=(video_width, video_height))
+                background_clip = apply_blur(background_clip, blur_radius=70)
+                split_clip = split_clip.resize(height=video_height)
+                split_clip = split_clip.set_position(("center", "center"))
+                split_clip = CompositeVideoClip([background_clip, split_clip])
+
             split_clips.append(split_clip)
 
         combined_clips = []
         for clip in raw_clips:
-            if split_clips and random.random() > 0.6:  # 50% 概率插入 split_clip
+            if split_clips and random.random() > 0.6:  # 60% 概率插入 split_clip
                 combined_clips.append(split_clips.pop(0))
             combined_clips.append(clip)
         raw_clips = combined_clips
@@ -269,8 +287,7 @@ def apply_blur(clip, blur_radius=70):
 
 
 async def generate_video(task_id, title, combined_video_path, images_path, audio_path, bgm_path, subtitle_path,
-                         output_file,
-                         params, draft, split_video_paths=None):
+                         output_file, params, draft, split_video_paths=None):
     start_time = datetime.now()
     start_timestamp = time.time()
     logger.info(f"开始生成视频任务: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -288,16 +305,16 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
 
     font_path = get_font_path(params)
 
+    # 生成 title_clip
     cover_mode = "video_frame"
     random_bg = True
     title_clip = create_title_clip(params, title, video_width, video_height, images_path, font_path,
                                    video_path=combined_video_path,
                                    cover_mode=cover_mode, random_bg=random_bg)
 
-    def create_text_clip(subtitle_item):
-        phrase = subtitle_item[1]
+    def create_text_clip(text, duration, start_time):
         max_width = video_width * 0.9
-        wrapped_txt, txt_height = wrap_text(phrase, max_width=max_width, font=font_path, fontsize=params.font_size)
+        wrapped_txt, txt_height = wrap_text(text, max_width=max_width, font=font_path, fontsize=params.font_size)
 
         _clip = TextClip(
             wrapped_txt,
@@ -309,12 +326,8 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
             stroke_width=params.stroke_width,
             print_cmd=False,
         )
-
-        duration = subtitle_item[0][1] - subtitle_item[0][0]
-        _clip = _clip.set_start(subtitle_item[0][0])
-        _clip = _clip.set_end(subtitle_item[0][1])
+        _clip = _clip.set_start(start_time)
         _clip = _clip.set_duration(duration)
-
         if params.subtitle_position == "bottom":
             _clip = _clip.set_position(("center", video_height * 0.95 - _clip.h))
         elif params.subtitle_position == "top":
@@ -324,7 +337,7 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
 
         return _clip
 
-    # 加载combine_videos生成的视频
+    # 加载 combine_videos 生成的视频
     combined_video_clip = await create_video_clip_async(combined_video_path)
 
     audio_clip = await create_audio_clip_async(audio_path)
@@ -333,7 +346,7 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
     # 先合成音频、字幕和视频
     if subtitle_path and os.path.exists(subtitle_path):
         sub = SubtitlesClip(subtitles=subtitle_path, encoding="utf-8")
-        text_clips = [create_text_clip(item) for item in sub.subtitles]
+        text_clips = [create_text_clip(item[1], item[0][1] - item[0][0], item[0][0]) for item in sub.subtitles]
         combined_video_clip = CompositeVideoClip([combined_video_clip, *text_clips])
 
     if bgm_path:
@@ -347,7 +360,7 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
 
     combined_video_clip = combined_video_clip.set_audio(audio_clip)
 
-    # 再在前面拼接split_video_paths中的第一个视频片段
+    # 再在前面拼接 split_video_paths 中的第一个视频片段
     if split_video_paths:
         split_video_file = split_video_paths[0]
         split_clip = await create_video_clip_async(split_video_file)
@@ -365,21 +378,26 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
             split_clip = split_clip.resize(height=video_height)
             split_clip = split_clip.set_position(("center", "center"))
             split_clip = CompositeVideoClip([background_clip, split_clip])
+
         # 设置前面片段的音量与后续一致
         split_clip = split_clip.volumex(params.voice_volume)
 
+        # 在前面的视频片段上添加标题文本
+        title_text_clip = create_text_clip(title, split_clip.duration, 0)
+        split_clip = CompositeVideoClip([split_clip, title_text_clip])
+
         # 在前面的片段上应用声音淡出效果
-        fadeout_duration = 3  # 3秒的声音淡出效果
+        fadeout_duration = 1  # 1秒的声音淡出效果
         split_clip = split_clip.audio_fadeout(fadeout_duration)
 
         # 拼接前面的视频片段
-        logger.info(" # 拼接前面的视频片段split_clip")
+        logger.info(" # 拼接前面的视频片段 split_clip")
         final_clip = concatenate_videoclips([split_clip, combined_video_clip])
         logger.info(f"在视频开头拼接 split_video_paths 中的第一个视频片段，时长 {split_clip.duration} 秒")
     else:
         final_clip = combined_video_clip
 
-    # 最后再拼接title_clip
+    # 最后再拼接 title_clip
     final_clip = concatenate_videoclips([title_clip, final_clip])
 
     write_start_time = time.time()
@@ -392,8 +410,11 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
     # 确保所有打开的资源都关闭
     combined_video_clip.close()
     audio_clip.close()
+    title_clip.close()
     if 'bgm_clip' in locals():
         bgm_clip.close()
+    if 'split_clip' in locals():
+        split_clip.close()
     if 'text_clips' in locals():
         for clip in text_clips:
             clip.close()
@@ -408,9 +429,7 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
     logger.success("封面图片已保存", cover_image_path)
     draft.add_material("cover", {"path": cover_image_path,
                                  "cover_mode": cover_mode,
-                                 "text": title
-                                 }
-                       )
+                                 "text": title})
 
 
 async def add_image_clips(image_paths, video_width, video_height, clip_duration):
