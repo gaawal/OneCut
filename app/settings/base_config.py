@@ -62,8 +62,8 @@ class BaseSettings(BaseSettings):
     _redis_db = movies_config.app.get("redis_db", 0)
     _redis_password = movies_config.app.get("redis_password", None)
 
-    _enable_redis = movies_config.app.get("enable_redis", False)
-    _max_concurrent_tasks = movies_config.app.get("max_concurrent_tasks", 5)
+    _enable_redis:bool = movies_config.app.get("enable_redis", False)
+    max_concurrent_tasks:int = movies_config.app.get("max_concurrent_tasks", 5)
     REDIS_URL: str = f"redis://:{_redis_password}@{_redis_host}:{_redis_port}/{_redis_db}"
 
 

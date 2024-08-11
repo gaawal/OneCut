@@ -164,35 +164,15 @@ async def combine_videos(
     clips = []
     video_duration = 0
 
-    # Step 1: 添加 split_video_paths 中第一个片段的前 5 秒
-    if split_video_paths:
-        MIN_DURATION = 15
-        split_video_file = split_video_paths[0]
-        first_split_clip = await create_video_clip_async(split_video_file)
-        first_split_clip = await subclip_async(first_split_clip, 0, min(MIN_DURATION, first_split_clip.duration))
-
-        # 处理分辨率不同的情况，使用画中画效果
-        split_clip_w, split_clip_h = first_split_clip.size
-        if split_clip_w != video_width or split_clip_h != video_height:
-            # 背景模糊处理
-            logger.info("# 处理分辨率不同的情况，使用画中画效果")
-            background_clip = first_split_clip.resize(newsize=(video_width, video_height))
-            background_clip = apply_blur(background_clip, blur_radius=70)
-            # 缩放原始片段高度一致
-            first_split_clip = first_split_clip.resize(height=video_height)
-            first_split_clip = first_split_clip.set_position(("center", "center"))
-            first_split_clip = CompositeVideoClip([background_clip, first_split_clip])
-
-        clips.append(first_split_clip)
-        video_duration += first_split_clip.duration
-        logger.info(f"添加微博视频片段前 {MIN_DURATION} 秒，当前片段时长 {video_duration:.2f} 秒")
-
-    # Step 2: 处理其他 video_paths 的视频片段
+    # Step 1: 处理 split_video_paths 中的片段
     raw_clips = []
-    raw_clips_start_time = time.time()
-    for video_path in video_paths:
-        cache_dir = utils.cache_videos_dir()
-        video_file = os.path.join(cache_dir, f"{video_path}")
+    for split_video_file in split_video_paths:
+        split_clip = await create_video_clip_async(split_video_file)
+        split_clip = await subclip_async(split_clip, 0, min(req_dur, split_clip.duration))
+        raw_clips.append(split_clip)
+
+    # Step 2: 处理 video_paths 中的片段
+    for video_file in video_paths:
         clip = await create_video_clip_async(video_file)
         clip = clip.without_audio()
         clip_duration = clip.duration
@@ -201,57 +181,44 @@ async def combine_videos(
         while start_time < clip_duration:
             end_time = min(start_time + max_clip_duration, clip_duration)
             split_clip = await subclip_async(clip, start_time, end_time)
-
-            # 调整分辨率以适应目标视频
-            split_clip = resize_clip(split_clip, video_width, video_height)
-
             raw_clips.append(split_clip)
             start_time = end_time
             if video_concat_mode == VideoConcatMode.sequential:
                 break
-    logger.info(f"原始片段准备耗时: {time.time() - raw_clips_start_time:.2f} 秒")
 
-    # Step 3: 随机混合 raw_clips，并插入 split_video_paths 的片段
-    if video_concat_mode == VideoConcatMode.random:
-        random.shuffle(raw_clips)
+    logger.info(f"原始片段准备耗时: {time.time() - start_timestamp:.2f} 秒")
 
-    if split_video_paths:
-        split_clips = []
-        for split_video_path in split_video_paths[1:]:  # 跳过第一个片段，因为它已经被添加
-            split_clip = await create_video_clip_async(split_video_path)
-            split_clip = resize_clip(split_clip, video_width, video_height)
-            # 如果分辨率不同，也应用模糊背景处理
-            if split_clip.size != (video_width, video_height):
-                background_clip = split_clip.resize(newsize=(video_width, video_height))
-                background_clip = apply_blur(background_clip, blur_radius=70)
-                split_clip = split_clip.resize(height=video_height)
-                split_clip = split_clip.set_position(("center", "center"))
-                split_clip = CompositeVideoClip([background_clip, split_clip])
-
-            split_clips.append(split_clip)
-
-        combined_clips = []
-        for clip in raw_clips:
-            if split_clips and random.random() > 0.6:  # 60% 概率插入 split_clip
-                combined_clips.append(split_clips.pop(0))
-            combined_clips.append(clip)
-        raw_clips = combined_clips
-
-    # Step 4: 叠加图片素材（如果当前片段不是 split_video_paths 的视频）
+    # Step 3: 处理图片素材，创建图片片段
+    image_clips = []
     if images_files:
         image_clips = await add_image_clips(images_files, video_width, video_height, clip_duration=max_clip_duration)
-        composite_clips = []
-        for i, clip in enumerate(raw_clips):
-            if isinstance(clip, ImageClip):
-                continue  # 不在 split_video_paths 片段上叠加图片
-            img_clip = image_clips[i % len(image_clips)]
-            composite_clip = CompositeVideoClip([clip, img_clip])
-            composite_clips.append(composite_clip)
-        raw_clips = composite_clips
 
-    # Step 5: 合并片段直到总时长达到音频时长
+    # Step 4: 将 split_video_paths 片段和 image_clips 随机混合
+    all_clips = raw_clips + image_clips
+    if video_concat_mode == VideoConcatMode.random:
+        random.shuffle(all_clips)
+
+    # Step 5: 对所有片段进行调整分辨率和背景模糊处理
+    processed_clips = []
+    for clip in all_clips:
+        if isinstance(clip, ImageClip):
+            processed_clips.append(clip)
+        else:
+            clip_w, clip_h = clip.size
+            if clip_w != video_width or clip_h != video_height:
+                # 背景模糊处理
+                logger.info("# 处理分辨率不同的情况，使用画中画效果")
+                background_clip = clip.resize(newsize=(video_width, video_height))
+                background_clip = apply_blur(background_clip, blur_radius=70)
+                # 缩放原始片段高度一致
+                clip = clip.resize(height=video_height)
+                clip = clip.set_position(("center", "center"))
+                clip = CompositeVideoClip([background_clip, clip])
+            processed_clips.append(clip)
+
+    # Step 6: 合并片段直到总时长达到音频时长
     while video_duration < audio_duration:
-        for clip in raw_clips:
+        for clip in processed_clips:
             if (audio_duration - video_duration) < clip.duration:
                 clip = await subclip_async(clip, 0, (audio_duration - video_duration))
             elif req_dur < clip.duration:
@@ -282,6 +249,9 @@ async def combine_videos(
     logger.success(f"合并视频总耗时: {time.time() - start_timestamp:.2f} 秒")
 
     return combined_video_path
+
+
+
 
 
 def apply_blur(clip, blur_radius=70):
