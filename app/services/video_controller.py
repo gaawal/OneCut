@@ -11,7 +11,7 @@ from app.schemas.drafts import Draft
 from app.schemas.movies import VideoParams, VideoConcatMode, TaskProgress
 from app.services.factory import llm_generator, material_generator, subtitle_generator, video_generator, \
     voice_generator, images_generator, audio_generator
-from app.services.hotspot.weibo_article import update_weibo_generated_state
+from app.utils.crawler.weibo_crawler.weibo_article import update_weibo_generated_state
 from app.utils import utils
 from app.utils.utils import calculate_duration
 from app.services.redis_service import redis_instance
@@ -55,7 +55,8 @@ async def start(task_id, params: VideoParams):
     try:
         if not os.path.exists(draft_file):
             await save_task_state(task_id, TaskState.PROCESSING, 5, TaskDetailState.GENERATING_SCRIPT, draft)
-            video_script, video_terms, video_title, video_tags = await llm_generator.generate_video_script_and_terms(params)
+            video_script, video_terms, video_title, video_tags = await llm_generator.generate_video_script_and_terms(
+                params)
             if not all([video_script, video_terms, video_title]):
                 await save_task_state(task_id, TaskState.FAILED, 5, TaskFailureReason.FAILED_GENERATING_SCRIPT, draft,
                                       TaskFailureReason.FAILED_GENERATING_SCRIPT)
@@ -113,6 +114,12 @@ async def start(task_id, params: VideoParams):
                                                                              draft,
                                                                              utils.task_dir(task_id))
             logger.info(f"视频素材文件数量为{len(downloaded_videos)}条")
+
+            weibo_split_videos = []
+            if params.weibo_title:
+                logger.info("微博话题模式，视频素材片段取自下载的微博视频")
+                weibo_split_videos = await material_generator.get_weibo_split_videos(params.weibo_title, audio_duration,
+                                                                                     params.video_clip_duration)
             if not subtitle_path:
                 await save_task_state(task_id, TaskState.FAILED, 50, TaskFailureReason.FAILED_GENERATING_SUBTITLE,
                                       draft, TaskFailureReason.FAILED_GENERATING_SUBTITLE)
@@ -126,6 +133,7 @@ async def start(task_id, params: VideoParams):
             task_progress.bgm_file = subtitle_path
             task_progress.subtitle_file = subtitle_path
             task_progress.downloaded_videos = downloaded_videos
+            task_progress.weibo_split_videos = weibo_split_videos
             await save_task_state(task_id, TaskState.PROCESSING, 60, TaskDetailState.VIDEO_DOWNLOAD_COMPLETE, draft,
                                   task_progress.dict())
 
@@ -137,6 +145,7 @@ async def start(task_id, params: VideoParams):
             draft.save_to_file(utils.task_dir(task_id))
         await save_task_state(task_id, TaskState.PROCESSING, 70, TaskDetailState.COMBINING_VIDEOS, draft)
         combined_video_path = await combine_videos(task_id, params, task_progress.downloaded_videos,
+                                                   task_progress.weibo_split_videos,
                                                    task_progress.audio_file, task_progress.images_files, task_progress,
                                                    draft)
         if not combined_video_path:
@@ -146,7 +155,8 @@ async def start(task_id, params: VideoParams):
         task_progress.combined_videos = combined_video_path
         await save_task_state(task_id, TaskState.PROCESSING, 80, TaskDetailState.COMBINED_VIDEOS_COMPLETE, draft,
                               task_progress.dict())
-        final_video_path = await generate_final_video(task_id, video_title, params, combined_video_path, images_files,
+        final_video_path = await generate_final_video(task_id, video_title, params, combined_video_path,
+                                                      task_progress.weibo_split_videos, images_files,
                                                       task_progress.audio_file,
                                                       bgm_path, subtitle_path, task_progress, draft)
         if not final_video_path:
@@ -188,7 +198,8 @@ async def start(task_id, params: VideoParams):
     return task_progress.dict()
 
 
-async def combine_videos(task_id, params, downloaded_videos, audio_file, images_files, task_progress,
+async def combine_videos(task_id, params, downloaded_videos, weibo_split_videos, audio_file, images_files,
+                         task_progress,
                          draft):
     combined_video_path = []
     video_concat_mode = params.video_concat_mode
@@ -206,12 +217,13 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
         await video_generator.combine_videos(
             combined_video_path=combined_video,
             video_paths=downloaded_videos,
+            split_video_paths=weibo_split_videos,
             audio_file=audio_file,
             video_aspect=params.video_aspect,
             video_concat_mode=video_concat_mode,
             max_clip_duration=params.video_clip_duration,
             images_files=images_files,
-            )
+        )
 
         _progress += progress_increment
         task_progress.combined_videos.append(combined_video)
@@ -230,7 +242,8 @@ async def combine_videos(task_id, params, downloaded_videos, audio_file, images_
     return combined_video_path
 
 
-async def generate_final_video(task_id, video_title, params, combined_video_path, images_files, audio_file, bgm_file,
+async def generate_final_video(task_id, video_title, params, combined_video_path, split_video_paths, images_files,
+                               audio_file, bgm_file,
                                subtitle_path,
                                task_progress,
                                draft):
@@ -241,11 +254,15 @@ async def generate_final_video(task_id, video_title, params, combined_video_path
         final_video = path.join(utils.task_dir(task_id), f"final-{i + 1}.mp4")
         logger.info(f"\n\n## 生成最终视频: {i + 1} => {final_video}")
 
-        await video_generator.generate_video(task_id=task_id, title=video_title, video_path=combined_video,
-                                       images_path=images_files,
-                                       audio_path=audio_file,
-                                       bgm_path=bgm_file,
-                                       subtitle_path=subtitle_path, output_file=final_video, params=params, draft=draft)
+        await video_generator.generate_video(task_id=task_id, title=video_title, combined_video_path=combined_video,
+                                             images_path=images_files,
+                                             audio_path=audio_file,
+                                             bgm_path=bgm_file,
+                                             subtitle_path=subtitle_path,
+                                             output_file=final_video,
+                                             params=params,
+                                             draft=draft,
+                                             split_video_paths=split_video_paths)
         _progress += 1
         await save_task_state(task_id, TaskState.PROCESSING, _progress, TaskDetailState.GENERATING_FINAL_VIDEO, draft)
         _progress += 50 / len(combined_video_path) / 2

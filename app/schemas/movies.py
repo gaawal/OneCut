@@ -143,6 +143,7 @@ class TaskProgress(BaseModel):
     audio_duration: Optional[int] = 0
     subtitle_file: Optional[str] = None
     downloaded_videos: Optional[List[str]] = None
+    weibo_split_videos: Optional[List[str]] = None
     combined_videos: Optional[List[str]] = []
     final_videos: Optional[List[str]] = []
     other_details: Optional[Dict[str, Any]] = None
@@ -395,6 +396,8 @@ class WeiboArticleData(BaseModel):
     url: Optional[str] = ""
     introduction: Optional[str] = ""
     articles: List[WeiboArticle] = []
+    videos: List[str] = []
+    split_videos: List[str] = []
     is_generated: Optional[bool] = False # 是否自动生成视频了
 
 

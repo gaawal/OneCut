@@ -1,17 +1,20 @@
+import asyncio
+import json
 import os
 import random
 import traceback
-import aiohttp
-import asyncio
+from typing import List
 from urllib.parse import urlencode
 
+import aiohttp
 import requests
-from typing import List
 from loguru import logger
 
+from app.constant.redis_const import RedisKeyPrefix
 from app.schemas.drafts import Draft
+from app.schemas.movies import VideoAspect, VideoConcatMode, MaterialInfo, WeiboArticleData
+from app.services.redis_service import redis_instance
 from app.settings import movies_config
-from app.schemas.movies import VideoAspect, VideoConcatMode, MaterialInfo
 from app.utils import utils
 
 # 确保 proxy 参数是字符串类型
@@ -257,3 +260,29 @@ def get_local_videos(audio_duration, video_clip_duration):
     except ValueError:
         selected_videos = []
     return selected_videos
+
+
+async def get_weibo_split_videos(weibo_title, audio_duration, video_clip_duration):
+    logger.info(f"{weibo_title} => 获取缓存中微博视频分割片段")
+    if cached_data := await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title)):
+        weibo_article_cache = json.loads(cached_data)
+        weibo_article_cache = WeiboArticleData(**weibo_article_cache)
+        split_videos = weibo_article_cache.split_videos
+
+        # 计算需要的视频片段总个数乘以2，多取几个
+        video_counts = audio_duration // video_clip_duration + 5
+
+        # 处理视频片段数量
+        if len(split_videos) > 5:
+            # 随机选择所需数量的视频文件（最多5个）
+            selected_videos = random.sample(split_videos, 5)
+        else:
+            # 如果视频片段少于或等于5个，打乱顺序后返回全部
+            random.shuffle(split_videos)
+            selected_videos = split_videos
+
+        logger.info(f"获取到微博视频分割片段为\n{selected_videos}")
+        return selected_videos
+    else:
+        logger.warning("未能获取到微博视频分割片段")
+        return []

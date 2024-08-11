@@ -12,29 +12,35 @@ from typing import List
 
 import objgraph
 import psutil
-from fastapi import FastAPI
 from loguru import logger
 
 from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
-from app.constant.video_const import TaskState, TaskDetailState, CollectStatus
+from app.constant.video_const import TaskState, TaskDetailState, CollectStatus, VIDEO_STYLE_MAP
 from app.controllers.video_task import task_controller
 from app.manager.redis_manager import redis_taskmanager
 from app.models import TaskModel, get_platform_status, update_platform_status
 from app.schemas.movies import HotSearchItem, VideoParams, WeiboArticleData
 from app.services import video_controller
-from app.services.factory import llm_generator
-from app.services.hotspot.weibo_article import fetch_hot_article, save_weibo_article_and_update_data, \
+from app.services.factory import llm_generator, video_splitter
+from app.services.factory.video_splitter import VideoSplitter
+from app.utils.crawler.weibo_crawler.weibo_article import fetch_hot_article, save_weibo_article_and_update_data, \
     generate_weibo_summary
-from app.services.hotspot.weibo_hotsearch import get_weibo_hotsearch
+
+from app.utils.crawler.weibo_crawler.weibo_hotsearch import get_weibo_hotsearch
 from app.services.redis_service import redis_instance
 from app.services.video_controller import save_task_state
 from app.utils import utils
+from app.utils.crawler.weibo_crawler.weibo_video import WeiboCrawler
 from app.utils.uploader.examples.get_douyin_cookie import get_douoyin_cookies
 from app.utils.uploader.examples.get_tencent_cookie import get_tencent_cookie
 from app.utils.uploader.examples.get_xigua_cookie import get_xigua_cookies
 from app.utils.uploader.examples.upload_video_to_douyin import auto_upload_douyin
 from app.utils.uploader.examples.upload_video_to_tencent import auto_upload_weixin
 from app.utils.uploader.examples.upload_video_to_xigua import auto_upload_xigua
+from app.utils.utils import generate_md5_id
+
+video_splitter = VideoSplitter()
+weibo_crawler = WeiboCrawler()
 
 
 class SchedulerTasks:
@@ -173,6 +179,7 @@ class SchedulerTasks:
 
     @staticmethod
     async def get_weibo_articles_to_cache():
+        """获取微博热搜评论、图片、视频素材等"""
         try:
             cached_data = await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_SEARCH)  # 使用 await 关键字调用异步方法
             if cached_data:
@@ -181,12 +188,37 @@ class SchedulerTasks:
                     title = item.get('title')
                     url = item.get('url')
                     if not await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(title)):
-                        logger.info(f"微博热搜 {title} 需要采集信息")
-                        hot_article_data = await fetch_hot_article(url)
-                        await save_weibo_article_and_update_data(title, hot_article_data)
+                        weibo_mid = generate_md5_id(url)
+                        target_url = f'{url}'
+                        weibo_article_data = WeiboArticleData(
+                            weibo_mid=weibo_mid,
+                            url=target_url,
+                        )
+                        logger.info(f"微博热搜需要采集信息：{title} ")
+                        # 采集微博热搜视频
+                        logger.info(f"采集微博热搜视频：{title} ")
+                        weibo_video_paths = await weibo_crawler.collect_videos(title, weibo_mid)
+                        if weibo_video_paths:
+                            logger.success(f"微博热搜视频采集成功：{weibo_video_paths} ")
+                            weibo_article_data.videos = weibo_video_paths
+                            await save_weibo_article_and_update_data(title, weibo_article_data,CollectStatus.COLLECTING)
+                            for video_path in weibo_video_paths:
+                                logger.info(f"微博热搜视频开始智能分割片段：{video_path} ")
+                                saved_paths = await video_splitter.process_video(video_path)
+                                if saved_paths:
+                                    logger.info(f"保存智能分割片段结果：{saved_paths} ")
+                                    weibo_article_data.split_videos.extend(saved_paths)
+                            await save_weibo_article_and_update_data(title, weibo_article_data,CollectStatus.COLLECTING)
+                        else:
+                            logger.warning(f"微博热搜视频采集结果为空：{title}")
+                        await save_weibo_article_and_update_data(title, weibo_article_data)
+                        logger.info(f"采集微博热搜图片评论素材：{title} ")
+                        weibo_article_data: WeiboArticleData = await fetch_hot_article(weibo_article_data, weibo_mid,
+                                                                                       target_url)
+                        await save_weibo_article_and_update_data(title, weibo_article_data,CollectStatus.COLLECT_OK)
                         break
         except Exception as e:
-            logger.error(f"{str(e)}")
+            logger.error(f"{traceback.format_exc()}")
 
     @staticmethod
     async def generate_video_by_weibo_hotspot():
@@ -208,7 +240,7 @@ class SchedulerTasks:
 
                 weibo_summary = generate_weibo_summary(weibo_article_data)  # 假设需要获取5条评论
                 # 随机选择发布的视频文案风格
-                choose_categorys = ['maikease']
+                choose_categorys = list(VIDEO_STYLE_MAP.keys())
                 # 把微博热搜作为视频主题输入
                 params = {"video_subject": weibo_summary,
                           "word_count": 300,

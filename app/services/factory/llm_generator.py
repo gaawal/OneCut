@@ -313,6 +313,7 @@ def generate_script_and_terms(video_subject: str, language: str = "", paragraph_
     - Video theme related information: \n{video_subject}\n
     - Language: {language}
     """.strip()
+    logger.info(prompt)
     def format_response(response):
         # Clean the script
         response = response.replace("*", "")

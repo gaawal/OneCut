@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
 
 from loguru import logger
-from playwright.async_api import Playwright, async_playwright
+from playwright.async_api import async_playwright
 import os
-import asyncio
 
-from app.utils.uploader.conf import LOCAL_CHROME_PATH
 from app.utils.uploader.utils.base_social_media import set_init_script
 
 
@@ -21,7 +18,7 @@ async def cookie_auth(account_file):
         await page.goto("https://weibo.com/")
         #
         await page.wait_for_timeout(5000)
-        if await page.get_by_text('扫描二维码登录').count():
+        if await page.get_by_text('立即登录').count() or await page.get_by_text('扫描二维码登录').count():
             logger.warning("[+]   [Weibo] cookie 失效，需要扫描二维码登录")
             return False
         else:
@@ -54,6 +51,3 @@ async def weibo_cookie_gen(account_file):
         await page.pause()
         # 点击调试器的继续，保存cookie
         await context.storage_state(path=account_file)
-
-
-

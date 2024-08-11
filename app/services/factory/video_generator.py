@@ -1,12 +1,14 @@
-import platform
 import asyncio
 import multiprocessing
+import platform
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
+import numpy as np
 from PIL import Image, ImageFont
+from PIL import ImageFilter
 from loguru import logger
 from moviepy.editor import *
 from moviepy.editor import ImageClip
@@ -128,6 +130,7 @@ def resize_clip(clip, video_width, video_height):
 async def combine_videos(
         combined_video_path,
         video_paths,
+        split_video_paths,
         audio_file,
         video_aspect=VideoAspect.portrait,
         video_concat_mode=VideoConcatMode.random,
@@ -142,9 +145,8 @@ async def combine_videos(
     audio_duration = audio_clip.duration
     logger.info(f"预计视频总时长 {audio_duration}（秒）")
     if audio_duration < 60:
-        audio_duration = 60.1
+        audio_duration = 60.2
         logger.info(f"调整视频总时长为 {audio_duration}（秒）")
-    req_dur = audio_duration / len(video_paths)
     req_dur = max_clip_duration
     logger.info(f"单个视频素材片段最大时长 {req_dur}（秒）")
     output_dir = os.path.dirname(combined_video_path)
@@ -154,6 +156,20 @@ async def combine_videos(
     clips = []
     video_duration = 0
 
+    # Step 1: 添加 split_video_paths 中第一个片段的前 5 秒
+    if split_video_paths:
+        MIN_DURATION = 15
+        split_video_file = split_video_paths[0]
+        first_split_clip = await create_video_clip_async(split_video_file)
+        first_split_clip = await subclip_async(first_split_clip, 0, min(MIN_DURATION, first_split_clip.duration))
+
+        # 调整分辨率以适应目标视频
+        first_split_clip = resize_clip(first_split_clip, video_width, video_height)
+        clips.append(first_split_clip)
+        video_duration += first_split_clip.duration
+        logger.info(f"添加 split_video_paths 的第一个片段前 5 秒，当前视频时长 {video_duration:.2f} 秒")
+
+    # Step 2: 处理其他 video_paths 的视频片段
     raw_clips = []
     raw_clips_start_time = time.time()
     for video_path in video_paths:
@@ -167,36 +183,49 @@ async def combine_videos(
         while start_time < clip_duration:
             end_time = min(start_time + max_clip_duration, clip_duration)
             split_clip = await subclip_async(clip, start_time, end_time)
-            # Check clip resolution
-            if (split_clip.w == video_width) and (split_clip.h == video_height):
-                raw_clips.append(split_clip)
-            else:
-                logger.info(
-                    f"Skipping clip with resolution {split_clip.w}x{split_clip.h}, expected {video_width}x{video_height}")
+
+            # 调整分辨率以适应目标视频
+            split_clip = resize_clip(split_clip, video_width, video_height)
+
+            raw_clips.append(split_clip)
             start_time = end_time
             if video_concat_mode == VideoConcatMode.sequential:
                 break
     logger.info(f"原始片段准备耗时: {time.time() - raw_clips_start_time:.2f} 秒")
 
+    # Step 3: 随机混合 raw_clips，并插入 split_video_paths 的片段
     if video_concat_mode == VideoConcatMode.random:
         random.shuffle(raw_clips)
 
-    resize_start_time = time.time()
-    resized_clips = await asyncio.gather(
-        *(resize_clip_async(clip, video_width, video_height) for clip in raw_clips))
-    logger.info(f"调整视频片段尺寸耗时: {time.time() - resize_start_time:.2f} 秒")
+    if split_video_paths:
+        split_clips = []
+        for split_video_path in split_video_paths[:]:  # 跳过第一个片段，因为它已经被添加
+            split_clip = await create_video_clip_async(split_video_path)
+            split_clip = resize_clip(split_clip, video_width, video_height)
+            split_clips.append(split_clip)
 
+        combined_clips = []
+        for clip in raw_clips:
+            if split_clips and random.random() > 0.6:  # 50% 概率插入 split_clip
+                combined_clips.append(split_clips.pop(0))
+            combined_clips.append(clip)
+        raw_clips = combined_clips
+
+    # Step 4: 叠加图片素材（如果当前片段不是 split_video_paths 的视频）
     if images_files:
         image_clips = await add_image_clips(images_files, video_width, video_height, clip_duration=max_clip_duration)
         composite_clips = []
-        for i, clip in enumerate(resized_clips):
+        for i, clip in enumerate(raw_clips):
+            if isinstance(clip, ImageClip):
+                continue  # 不在 split_video_paths 片段上叠加图片
             img_clip = image_clips[i % len(image_clips)]
             composite_clip = CompositeVideoClip([clip, img_clip])
             composite_clips.append(composite_clip)
-        resized_clips = composite_clips
+        raw_clips = composite_clips
 
+    # Step 5: 合并片段直到总时长达到音频时长
     while video_duration < audio_duration:
-        for clip in resized_clips:
+        for clip in raw_clips:
             if (audio_duration - video_duration) < clip.duration:
                 clip = await subclip_async(clip, 0, (audio_duration - video_duration))
             elif req_dur < clip.duration:
@@ -218,7 +247,7 @@ async def combine_videos(
     # 确保所有打开的资源都关闭
     for clip in raw_clips:
         clip.close()
-    for clip in resized_clips:
+    for clip in clips:
         clip.close()
     video_clip.close()
     audio_clip.close()
@@ -227,6 +256,183 @@ async def combine_videos(
     logger.success(f"合并视频总耗时: {time.time() - start_timestamp:.2f} 秒")
 
     return combined_video_path
+
+
+def apply_blur(clip, blur_radius=70):
+    def blur_frame(get_frame, t):
+        frame = get_frame(t)
+        pil_image = Image.fromarray(frame)
+        blurred_image = pil_image.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+        return np.array(blurred_image)
+
+    return clip.fl(blur_frame)
+
+
+async def generate_video(task_id, title, combined_video_path, images_path, audio_path, bgm_path, subtitle_path,
+                         output_file,
+                         params, draft, split_video_paths=None):
+    start_time = datetime.now()
+    start_timestamp = time.time()
+    logger.info(f"开始生成视频任务: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    aspect = VideoAspect(params.video_aspect)
+    video_width, video_height = aspect.to_resolution()
+
+    logger.info(f"开始生成视频，视频尺寸: {video_width} x {video_height}")
+    logger.info(f"  ① 合成视频文件: {combined_video_path}")
+    logger.info(f"  ② 人声文件: {audio_path}")
+    logger.info(f"  ③ 背景音乐: {bgm_path}")
+    logger.info(f"  ④ 字幕文件: {subtitle_path}")
+    logger.info(f"  ⑤ 目标输出视频: {output_file}")
+    output_dir = os.path.dirname(output_file)
+
+    font_path = get_font_path(params)
+
+    cover_mode = "video_frame"
+    random_bg = True
+    title_clip = create_title_clip(params, title, video_width, video_height, images_path, font_path,
+                                   video_path=combined_video_path,
+                                   cover_mode=cover_mode, random_bg=random_bg)
+
+    def create_text_clip(subtitle_item):
+        phrase = subtitle_item[1]
+        max_width = video_width * 0.9
+        wrapped_txt, txt_height = wrap_text(phrase, max_width=max_width, font=font_path, fontsize=params.font_size)
+
+        _clip = TextClip(
+            wrapped_txt,
+            font=font_path,
+            fontsize=params.font_size,
+            color=params.text_fore_color,
+            bg_color=params.text_background_color,
+            stroke_color=params.stroke_color,
+            stroke_width=params.stroke_width,
+            print_cmd=False,
+        )
+
+        duration = subtitle_item[0][1] - subtitle_item[0][0]
+        _clip = _clip.set_start(subtitle_item[0][0])
+        _clip = _clip.set_end(subtitle_item[0][1])
+        _clip = _clip.set_duration(duration)
+
+        if params.subtitle_position == "bottom":
+            _clip = _clip.set_position(("center", video_height * 0.95 - _clip.h))
+        elif params.subtitle_position == "top":
+            _clip = _clip.set_position(("center", video_height * 0.1))
+        else:
+            _clip = _clip.set_position(("center", "center"))
+
+        return _clip
+
+    # 加载combine_videos生成的视频
+    combined_video_clip = await create_video_clip_async(combined_video_path)
+
+    audio_clip = await create_audio_clip_async(audio_path)
+    audio_clip = audio_clip.volumex(params.voice_volume)
+
+    # 先合成音频、字幕和视频
+    if subtitle_path and os.path.exists(subtitle_path):
+        sub = SubtitlesClip(subtitles=subtitle_path, encoding="utf-8")
+        text_clips = [create_text_clip(item) for item in sub.subtitles]
+        combined_video_clip = CompositeVideoClip([combined_video_clip, *text_clips])
+
+    if bgm_path:
+        try:
+            bgm_clip = await create_audio_clip_async(bgm_path)
+            bgm_clip = bgm_clip.volumex(params.bgm_volume).audio_fadeout(3)
+            bgm_clip = afx.audio_loop(bgm_clip, duration=combined_video_clip.duration)
+            audio_clip = CompositeAudioClip([audio_clip, bgm_clip])
+        except Exception as e:
+            logger.error(f"添加背景音乐失败: {str(e)}")
+
+    combined_video_clip = combined_video_clip.set_audio(audio_clip)
+
+    # 再在前面拼接split_video_paths中的第一个视频片段
+    if split_video_paths:
+        split_video_file = split_video_paths[0]
+        split_clip = await create_video_clip_async(split_video_file)
+        if split_clip.duration > 15:
+            split_clip = await subclip_async(split_clip, 0, 15)  # 只截取前 15 秒
+
+        # 处理分辨率不同的情况，使用画中画效果
+        split_clip_w, split_clip_h = split_clip.size
+        if split_clip_w != video_width or split_clip_h != video_height:
+            # 背景模糊处理
+            logger.info("# 处理分辨率不同的情况，使用画中画效果")
+            background_clip = split_clip.resize(newsize=(video_width, video_height))
+            background_clip = apply_blur(background_clip, blur_radius=70)
+            # 缩放原始片段高度一致
+            split_clip = split_clip.resize(height=video_height)
+            split_clip = split_clip.set_position(("center", "center"))
+            split_clip = CompositeVideoClip([background_clip, split_clip])
+        # 设置前面片段的音量与后续一致
+        split_clip = split_clip.volumex(params.voice_volume)
+
+        # 在前面的片段上应用声音淡出效果
+        fadeout_duration = 3  # 3秒的声音淡出效果
+        split_clip = split_clip.audio_fadeout(fadeout_duration)
+
+        # 拼接前面的视频片段
+        logger.info(" # 拼接前面的视频片段split_clip")
+        final_clip = concatenate_videoclips([split_clip, combined_video_clip])
+        logger.info(f"在视频开头拼接 split_video_paths 中的第一个视频片段，时长 {split_clip.duration} 秒")
+    else:
+        final_clip = combined_video_clip
+
+    # 最后再拼接title_clip
+    final_clip = concatenate_videoclips([title_clip, final_clip])
+
+    write_start_time = time.time()
+    await write_videofile_async(final_clip, filename=output_file, audio_codec="aac", temp_audiofile_path=output_dir,
+                                logger=None, fps=30)
+    final_clip.close()
+    logger.success(f"写入视频文件耗时: {time.time() - write_start_time:.2f} 秒")
+    logger.success(f"生成视频总耗时: {time.time() - start_timestamp:.2f} 秒")
+
+    # 确保所有打开的资源都关闭
+    combined_video_clip.close()
+    audio_clip.close()
+    if 'bgm_clip' in locals():
+        bgm_clip.close()
+    if 'text_clips' in locals():
+        for clip in text_clips:
+            clip.close()
+    final_clip.close()
+
+    loop = asyncio.get_event_loop()
+    frame = await loop.run_in_executor(executor, lambda: VideoFileClip(output_file).get_frame(0))
+    cover_image_path = os.path.join(utils.task_dir(), task_id, "cover.png")
+    image = Image.fromarray(frame)
+    await loop.run_in_executor(executor, image.save, cover_image_path)
+
+    logger.success("封面图片已保存", cover_image_path)
+    draft.add_material("cover", {"path": cover_image_path,
+                                 "cover_mode": cover_mode,
+                                 "text": title
+                                 }
+                       )
+
+
+async def add_image_clips(image_paths, video_width, video_height, clip_duration):
+    image_clips = []
+    loop = asyncio.get_event_loop()
+    for image_path in image_paths:
+        img_clip = await loop.run_in_executor(executor, ImageClip, image_path)
+        img_clip = img_clip.resize(height=video_height * 0.9)
+        img_clip = img_clip.set_position(("center", "center"))
+        img_clip = img_clip.set_duration(clip_duration).fadeout(1).resize(lambda t: 1 + 0.03 * t)
+        image_clips.append(img_clip)
+
+    return image_clips
+
+
+async def get_duration(video_path):
+    try:
+        with VideoFileClip(video_path) as video:
+            return video.duration
+    except Exception as e:
+        logger.error(f"Failed to get duration for video {video_path}: {str(e)}")
+        return 0
 
 
 def wrap_text(text, max_width, font="Arial", fontsize=60):
@@ -279,130 +485,3 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     result = "\n".join(_wrapped_lines_).strip()
     height = len(_wrapped_lines_) * height
     return result, height
-
-
-async def generate_video(task_id, title, video_path, images_path, audio_path, bgm_path, subtitle_path, output_file,
-                         params, draft):
-    start_time = datetime.now()
-    start_timestamp = time.time()
-    logger.info(f"开始生成视频任务: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-
-    aspect = VideoAspect(params.video_aspect)
-    video_width, video_height = aspect.to_resolution()
-
-    logger.info(f"开始生成视频，视频尺寸: {video_width} x {video_height}")
-    logger.info(f"  ① 视频文件: {video_path}")
-    logger.info(f"  ② 人声文件: {audio_path}")
-    logger.info(f"  ③ 背景音乐: {bgm_path}")
-    logger.info(f"  ④ 字幕文件: {subtitle_path}")
-    logger.info(f"  ⑤ 目标输出视频: {output_file}")
-    output_dir = os.path.dirname(output_file)
-
-    font_path = get_font_path(params)
-
-    cover_mode = "video_frame"
-    random_bg = True
-    title_clip = create_title_clip(params, title, video_width, video_height, images_path, font_path,
-                                   video_path=video_path,
-                                   cover_mode=cover_mode, random_bg=random_bg)
-
-    def create_text_clip(subtitle_item):
-        phrase = subtitle_item[1]
-        max_width = video_width * 0.9
-        wrapped_txt, txt_height = wrap_text(phrase, max_width=max_width, font=font_path, fontsize=params.font_size)
-
-        _clip = TextClip(
-            wrapped_txt,
-            font=font_path,
-            fontsize=params.font_size,
-            color=params.text_fore_color,
-            bg_color=params.text_background_color,
-            stroke_color=params.stroke_color,
-            stroke_width=params.stroke_width,
-            print_cmd=False,
-        )
-
-        duration = subtitle_item[0][1] - subtitle_item[0][0]
-        _clip = _clip.set_start(subtitle_item[0][0])
-        _clip = _clip.set_end(subtitle_item[0][1])
-        _clip = _clip.set_duration(duration)
-
-        if params.subtitle_position == "bottom":
-            _clip = _clip.set_position(("center", video_height * 0.95 - _clip.h))
-        elif params.subtitle_position == "top":
-            _clip = _clip.set_position(("center", video_height * 0.1))
-        else:
-            _clip = _clip.set_position(("center", "center"))
-
-        return _clip
-
-    video_clip = await create_video_clip_async(video_path)
-    audio_clip = await create_audio_clip_async(audio_path)
-    audio_clip = audio_clip.volumex(params.voice_volume)
-
-    if subtitle_path and os.path.exists(subtitle_path):
-        sub = SubtitlesClip(subtitles=subtitle_path, encoding="utf-8")
-        text_clips = [create_text_clip(item) for item in sub.subtitles]
-        video_clip = CompositeVideoClip([video_clip, *text_clips])
-
-    if bgm_path:
-        try:
-            bgm_clip = await create_audio_clip_async(bgm_path)
-            bgm_clip = bgm_clip.volumex(params.bgm_volume).audio_fadeout(3)
-            bgm_clip = afx.audio_loop(bgm_clip, duration=video_clip.duration)
-            audio_clip = CompositeAudioClip([audio_clip, bgm_clip])
-        except Exception as e:
-            logger.error(f"failed to add bgm: {str(e)}")
-
-    video_clip = video_clip.set_audio(audio_clip)
-    final_clip = concatenate_videoclips([title_clip, video_clip])
-
-    write_start_time = time.time()
-    await write_videofile_async(final_clip, filename=output_file, audio_codec="aac", temp_audiofile_path=output_dir,
-                                logger=None, fps=30)
-    final_clip.close()
-    logger.success(f"写入视频文件耗时: {time.time() - write_start_time:.2f} 秒")
-    logger.success(f"生成视频总耗时: {time.time() - start_timestamp:.2f} 秒")
-
-    # 确保所有打开的资源都关闭
-    video_clip.close()
-    audio_clip.close()
-    if 'bgm_clip' in locals():
-        bgm_clip.close()
-    if 'text_clips' in locals():
-        for clip in text_clips:
-            clip.close()
-    final_clip.close()
-
-    loop = asyncio.get_event_loop()
-    frame = await loop.run_in_executor(executor, lambda: VideoFileClip(output_file).get_frame(0))
-    cover_image_path = os.path.join(utils.task_dir(), task_id, "cover.png")
-    image = Image.fromarray(frame)
-    await loop.run_in_executor(executor, image.save, cover_image_path)
-
-    logger.success("封面图片已保存", cover_image_path)
-    draft.add_material("cover", {"path": cover_image_path,
-                                 "cover_mode": cover_mode,
-                                 "text": title
-                                 }
-                       )
-
-
-async def add_image_clips(image_paths, video_width, video_height, clip_duration):
-    image_clips = []
-    loop = asyncio.get_event_loop()
-    for image_path in image_paths:
-        img_clip = await loop.run_in_executor(executor, ImageClip, image_path)
-        img_clip = img_clip.resize(height=video_height * 0.9)
-        img_clip = img_clip.set_position(("center", "center"))
-        img_clip = img_clip.set_duration(clip_duration).fadeout(1).resize(lambda t: 1 + 0.03 * t)
-        image_clips.append(img_clip)
-
-    return image_clips
-async def get_duration(video_path):
-    try:
-        with VideoFileClip(video_path) as video:
-            return video.duration
-    except Exception as e:
-        logger.error(f"Failed to get duration for video {video_path}: {str(e)}")
-        return 0

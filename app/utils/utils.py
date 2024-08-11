@@ -8,9 +8,9 @@ from uuid import uuid4
 
 import urllib3
 from loguru import logger
+from moviepy.editor import VideoFileClip
 
 from app.constant import video_const
-from app.constant.redis_const import RedisKeyPrefix
 
 urllib3.disable_warnings()
 import hashlib
@@ -97,6 +97,14 @@ def cache_videos_dir(sub_dir: str = ""):
         os.makedirs(d)
     return d
 
+def cache_weibo_videos_dir(sub_dir: str = ""):
+    d = os.path.join(root_dir(), storage_dir(), "cache_weibo_videos")
+    if sub_dir:
+        d = os.path.join(d, sub_dir)
+    if not os.path.exists(d):
+        os.makedirs(d)
+    return d
+
 
 def cache_browser_info_dir(sub_dir: str = ""):
     d = os.path.join(root_dir(), storage_dir(), "cache_browser_material")
@@ -168,6 +176,8 @@ def voice_dir(sub_dir: str = ""):
     if not os.path.exists(d):
         os.makedirs(d)
     return d
+
+
 def image_dir(sub_dir: str = ""):
     d = resource_dir(f"image")
     if sub_dir:
@@ -175,6 +185,7 @@ def image_dir(sub_dir: str = ""):
     if not os.path.exists(d):
         os.makedirs(d)
     return d
+
 
 def public_dir(sub_dir: str = ""):
     d = resource_dir(f"public")
@@ -313,6 +324,16 @@ def generate_md5_id(url: str) -> str:
     md5.update(url.encode('utf-8'))
     # 返回UUID和MD5编码组合的字符串
     return f"{md5.hexdigest()}"
+
+
+def get_video_length(video_path):
+    """获取视频文件的长度（秒）"""
+    try:
+        with VideoFileClip(str(video_path)) as video:
+            return video.duration
+    except Exception as e:
+        print(f"无法获取视频长度: {e}")
+        return 0
 
 
 if __name__ == '__main__':

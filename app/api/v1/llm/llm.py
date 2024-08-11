@@ -13,12 +13,13 @@ from loguru import logger
 from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
 from app.constant.video_const import CollectStatus
 from app.schemas import Success
-from app.schemas.movies import VideoScriptResponse, VideoScriptRequest, HotSearchItem, WeiboArticle, WeiboArticleData
+from app.schemas.movies import VideoScriptResponse, VideoScriptRequest, HotSearchItem, WeiboArticleData
 from app.services.factory import llm_generator
-from app.services.hotspot.weibo_article import fetch_hot_article, generate_weibo_summary, \
+from app.utils.crawler.weibo_crawler.weibo_article import fetch_hot_article, generate_weibo_summary, \
     save_weibo_article_and_update_data
-from app.services.hotspot.weibo_hotsearch import get_weibo_hotsearch
+from app.utils.crawler.weibo_crawler.weibo_hotsearch import get_weibo_hotsearch
 from app.services.redis_service import redis_instance
+from app.utils.utils import generate_md5_id
 
 router = APIRouter()
 
@@ -35,9 +36,15 @@ async def generate_video_script_and_terms(request: Request, body: VideoScriptReq
             weibo_article_data = json.loads(cached_data)
             weibo_article_data = WeiboArticleData(**weibo_article_data)
         else:
-            weibo_article_data: WeiboArticleData = await fetch_hot_article(body.weibo_url)
+            weibo_mid = generate_md5_id(body.weibo_url)
+            target_url = f'{body.weibo_url}'
+            weibo_article_data = WeiboArticleData(
+                weibo_mid=weibo_mid,
+                url=target_url,
+            )
+            weibo_article_data: WeiboArticleData = await fetch_hot_article(weibo_article_data,weibo_mid,body.weibo_url)
             logger.success(f"实时获取微博热搜话题成功--{body.weibo_title}")
-            await save_weibo_article_and_update_data(body.weibo_title, weibo_article_data)
+            await save_weibo_article_and_update_data(body.weibo_title, weibo_article_data,CollectStatus.OK)
 
             logger.success(f"微博热搜话题 {body.weibo_title} 保存redis成功.")
 

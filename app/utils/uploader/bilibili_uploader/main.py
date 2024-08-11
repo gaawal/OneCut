@@ -12,7 +12,7 @@ def extract_keys_from_json(data):
     extracted_data = {}
 
     # Extracting cookie data
-    for cookie in data['cookie_info']['weibo_uploader']:
+    for cookie in data['cookie_info']['weibo_crawler']:
         if cookie['name'] in keys_to_extract:
             extracted_data[cookie['name']] = cookie['value']
 

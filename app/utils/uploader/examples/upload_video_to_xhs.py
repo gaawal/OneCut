@@ -20,7 +20,7 @@ if __name__ == '__main__':
     files = list(folder_path.glob("*.mp4"))
     file_num = len(files)
 
-    cookies = config['account1']['weibo_uploader']
+    cookies = config['account1']['weibo_crawler']
     xhs_client = XhsClient(cookies, sign=sign_local, timeout=60)
     # auth cookie
     # 注意：该校验cookie方式可能并没那么准确

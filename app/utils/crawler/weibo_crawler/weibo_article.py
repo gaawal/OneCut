@@ -1,36 +1,29 @@
 import asyncio
 import json
 import os.path
-import random
 import traceback
 from datetime import datetime
-from pathlib import Path
 from typing import List, Tuple
 
 from loguru import logger
 from playwright.async_api import async_playwright
+import random
 
-from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
 from app.constant.video_const import CollectStatus
-from app.schemas.movies import WeiboArticleData, WeiboArticle
-from app.services.hotspot.get_weibo_cookie import get_weibo_cookies
-from app.services.hotspot.main import weibo_setup
 from app.services.redis_service import redis_instance
+from app.constant.redis_const import RedisExpireTime, RedisKeyPrefix
+from app.schemas.movies import WeiboArticleData, WeiboArticle
 from app.utils import utils
-from app.utils.uploader.conf import BASE_DIR
-from app.utils.utils import generate_md5_id
+from app.utils.crawler.weibo_crawler.main import weibo_setup
+from pathlib import Path
 
 
 async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path: str) -> Tuple[str, List[WeiboArticle]]:
+    BASE_DIR = Path(__file__).parent.resolve()
     base_dir = Path(BASE_DIR)
     cookie_file = 'WeiboCookie.json'
-    cookie_file = os.path.join(base_dir, "weibo_uploader", cookie_file)
-    if not await weibo_setup(cookie_file, handle=False):
-        logger.warning("微博cookie已失效，需要重新扫码登陆")
-        if await get_weibo_cookies():
-            logger.success("微博cookie已获取成功")
-        else:
-            raise RuntimeError("微博cookies设置失败，无法获取数据，任务退出")
+    cookie_file = os.path.join(base_dir, cookie_file)
+    await weibo_setup(str(cookie_file), handle=False)
     logger.info(f"开始采集微博热搜链接： {url}")
     article_max = 20
     current_time = datetime.now()
@@ -41,7 +34,7 @@ async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path:
             viewport={"width": 1920, "height": 1080},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
             record_video_size={"width": 1920, "height": 1080},
-            storage_state=f"{cookie_file}"
+            storage_state=cookie_file
         )
         await context.add_init_script(path="libs/stealth.min.js")
         page = await context.new_page()
@@ -144,45 +137,41 @@ async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path:
         return introduction, articles
 
 
-async def fetch_hot_article(hot_url: str) -> WeiboArticleData:
-    weibo_mid = generate_md5_id(hot_url)
-    target_url = f'{hot_url}'
+async def fetch_hot_article(weibo_article_data: WeiboArticleData, weibo_mid, target_url) -> WeiboArticleData:
+    articles = []
+    introduction = ''
     video_dir = utils.cache_browser_info_dir()
-    weibo_article_data = []
-    introduction, articles = await fetch_article_content_and_record(weibo_mid, target_url, video_dir)
+    try:
+        introduction, articles = await fetch_article_content_and_record(weibo_mid, target_url, video_dir)
+    except Exception as ex:
+        logger.error(f"fetch_article_content_and_record error ,because {traceback.format_exc()}")
     if articles:
-        weibo_article_data = WeiboArticleData(
-            weibo_mid=weibo_mid,
-            url=target_url,
-            introduction=introduction,
-            articles=articles
-        )
+        weibo_article_data.articles = articles
+        weibo_article_data.introduction = introduction
     else:
         logger.warning("获取微博文章内容信息缺失")
     return weibo_article_data
 
 
-def generate_weibo_summary(data: WeiboArticleData):
-    # 获取微博数据内容条数 影响ai分析微博内容
-    num_comments = 10
+def generate_weibo_summary(data: WeiboArticleData ):
+    num_comments = 7
     introduction = data.introduction if hasattr(data, 'introduction') else None
     articles = data.articles
     summary = ""
     if introduction:
         summary += introduction + "\n\n"
-    summary += "视频话题相关网友评论：\n"
+    summary += "主题相关信息：\n"
     for i, article in enumerate(articles[:num_comments]):
         summary += f"{i + 1}.{article.comment}\n"
     return summary
 
 
-async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cache: WeiboArticleData):
+async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cache: WeiboArticleData,collect_status=CollectStatus.COLLECTING):
     """
     保存话题内容到缓存中，同时刷新微博已采集的话题数据
     """
     if weibo_article_cache:
         weibo_article_json = json.dumps(weibo_article_cache.dict(), ensure_ascii=False)
-        logger.info(f"保存话题内容成功【{weibo_title}】")
         await redis_instance.set(
             RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title),
             weibo_article_json,
@@ -193,14 +182,12 @@ async def save_weibo_article_and_update_data(weibo_title: str, weibo_article_cac
             hot_data = json.loads(hot_data)
             for i, item in enumerate(hot_data):
                 if weibo_title == item.get('title'):
-                    logger.info("微博热搜刷新已采集状态")
-                    hot_data[i]["collect_status"] = CollectStatus.COLLECT_OK
+                    hot_data[i]["collect_status"] = collect_status
             await redis_instance.set(
                 RedisKeyPrefix.WEIBO_HOT_SEARCH,
                 json.dumps(hot_data, ensure_ascii=False),
                 expire=RedisExpireTime.THIRTY_MINUTES
             )
-        logger.success("刷新已采集的微博数据成功！", hot_data)
         return True
     return False
 
@@ -222,7 +209,7 @@ async def main():
     hot_url = 'https://s.weibo.com/weibo?q=%23%E5%86%85%E9%A9%AC%E5%B0%94%23'
     weibo_article_data = await fetch_hot_article(hot_url)
 
-    print(generate_weibo_summary(weibo_article_data))
+    print(generate_weibo_summary(weibo_article_data, 10))
 
 
 if __name__ == '__main__':

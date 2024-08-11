@@ -20,12 +20,12 @@ def register_scheduler_job(app):
     # scheduler.add_job(SchedulerTasks.show_most_common_types, 'interval', seconds=37)
     # 刷新微博热搜榜单
     scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=15)
-    # # # 获取微博热搜内容图片评论信息
-    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=2,
-                      next_run_time=datetime.now() + timedelta(seconds=25))
-    # # # 自动生成微博热搜视频的定时任务
-    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=3,
-                      next_run_time=datetime.now() + timedelta(seconds=45))
+    # 获取微博热搜内容图片评论视频等素材
+    # scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=3,
+    #                   next_run_time=datetime.now() + timedelta(seconds=25))
+    # 自动生成微博热搜视频的定时任务
+    # scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=3,
+    #                   next_run_time=datetime.now() + timedelta(seconds=45))
     # 发布视频的账号  随机选择进行发布，同一个task不可多个账号发布同个平台
     account_list = [
         {"account_name": "account-jiahua.json",
@@ -48,9 +48,9 @@ def register_scheduler_job(app):
          },
     ]
 
-    # 自动发布视频的定时任务
-    scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=1,
-                      next_run_time=datetime.now() + timedelta(seconds=25), args=[account_list])
+    # # 自动发布视频的定时任务
+    # scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=1,
+    #                   next_run_time=datetime.now() + timedelta(seconds=25), args=[account_list])
     # # 自动填入发布定时任务
     scheduler.add_job(SchedulerTasks.enqueue_tasks, CronTrigger(hour=8, minute=50),
                       next_run_time=datetime.now() + timedelta(seconds=20))
