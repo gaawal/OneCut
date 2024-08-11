@@ -52,9 +52,9 @@ async def auto_upload_douyin(task_id,account_name):
             app = DouYinVideo(title, video_file, tags, 0, account_file)
             return await app.main()
         else:
-            raise Exception(f"draft.json 或 final-1.mp4 在目录 {task_folder} 中不存在")
-
-
+            raise ValueError(f"draft.json 或 final-1.mp4 在目录 {task_folder} 中不存在")
+    except ValueError as ex:
+        logger.warning(f"[Douyin] 上传视频失败 {str(ex)}")
     except Exception as e:
         logger.warning(f"[Douyin] 上传视频失败 {str(e)}")
         raise Exception(f"[Douyin] 上传视频失败 {str(e)}")

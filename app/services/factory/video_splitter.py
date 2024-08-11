@@ -16,7 +16,8 @@ from app.utils import utils
 
 
 class VideoSplitter:
-    def __init__(self, min_segment_length=5, pause_duration=1, save_dir=utils.cache_weibo_videos_dir(), max_video_length=60,
+    def __init__(self, min_segment_length=5, pause_duration=1, save_dir=utils.cache_weibo_videos_dir(),
+                 max_video_length=60,
                  include_audio=True, min_db_level=-45, max_segment_length=15):
         self.min_segment_length = min_segment_length
         self.pause_duration = pause_duration
@@ -56,7 +57,8 @@ class VideoSplitter:
 
     async def detect_speech(self, audio_path, frame_duration_ms=30):
         logger.info(f"检测音频中的人声活动: {audio_path}")
-        return await asyncio.get_event_loop().run_in_executor(self.executor, self._detect_speech_sync, audio_path, frame_duration_ms)
+        return await asyncio.get_event_loop().run_in_executor(self.executor, self._detect_speech_sync, audio_path,
+                                                              frame_duration_ms)
 
     def _detect_speech_sync(self, audio_path, frame_duration_ms=30):
         audio = AudioSegment.from_wav(audio_path)
@@ -126,7 +128,8 @@ class VideoSplitter:
 
     async def save_video_segments(self, video_path, segments):
         logger.info(f"保存视频片段，视频路径为: {video_path}")
-        return await asyncio.get_event_loop().run_in_executor(self.executor, self._save_video_segments_sync, video_path, segments)
+        return await asyncio.get_event_loop().run_in_executor(self.executor, self._save_video_segments_sync, video_path,
+                                                              segments)
 
     def _save_video_segments_sync(self, video_path, segments):
         video = VideoFileClip(str(video_path))
@@ -146,7 +149,7 @@ class VideoSplitter:
             segment = video.subclip(start, end)
             if not self.include_audio:
                 segment = segment.without_audio()
-            segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac",logger=None)
+            segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac", logger=None)
             logger.info(f"视频片段: {segment_path}, 时长: {end - start:.2f}秒, 时间段: {start:.2f}秒 - {end:.2f}秒")
             segment_paths.append(str(segment_path))
             os.remove(audio_path)
@@ -155,7 +158,8 @@ class VideoSplitter:
 
     async def split_video_by_volume(self, audio_path):
         logger.info(f"根据音量变化分割视频: {audio_path}")
-        return await asyncio.get_event_loop().run_in_executor(self.executor, self._split_video_by_volume_sync, audio_path)
+        return await asyncio.get_event_loop().run_in_executor(self.executor, self._split_video_by_volume_sync,
+                                                              audio_path)
 
     def _split_video_by_volume_sync(self, audio_path):
         y, sr = librosa.load(audio_path, sr=None)
@@ -191,7 +195,8 @@ class VideoSplitter:
             if self.min_segment_length <= duration - start_time:
                 segments.append((start_time, duration))
             else:
-                logger.warning(f"不符合时长片段，不进行保存: 开始时间：{start_time}，时长：{duration}")
+                segments.append((start_time, start_time + self.min_segment_length))
+                logger.warning(f"不符合时长片段，保存默认时长: 开始时间：{start_time}，时长：{self.min_segment_length}")
             logger.info(f"音量分割的时间段: {segments}")
 
         return segments
@@ -205,7 +210,8 @@ class VideoSplitter:
             trimmed_video_path = self.save_dir / trimmed_video_filename
             trimmed_video = video.subclip(0, self.max_video_length)
             # 使用 partial 封装函数调用以传递 fps 参数
-            write_videofile_partial = partial(trimmed_video.write_videofile, str(trimmed_video_path), codec="libx264", audio_codec="aac", fps=video.fps)
+            write_videofile_partial = partial(trimmed_video.write_videofile, str(trimmed_video_path), codec="libx264",
+                                              audio_codec="aac", fps=video.fps)
             await asyncio.get_event_loop().run_in_executor(self.executor, write_videofile_partial)
             video_path = trimmed_video_path
             video = await asyncio.get_event_loop().run_in_executor(self.executor, VideoFileClip, str(video_path))
