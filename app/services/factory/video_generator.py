@@ -177,7 +177,7 @@ async def combine_videos(
 
         clips.append(first_split_clip)
         video_duration += first_split_clip.duration
-        logger.info(f"添加 split_video_paths 的第一个片段前 {MIN_DURATION} 秒，当前视频时长 {video_duration:.2f} 秒")
+        logger.info(f"添加微博视频片段前 {MIN_DURATION} 秒，当前片段时长 {video_duration:.2f} 秒")
 
     # Step 2: 处理其他 video_paths 的视频片段
     raw_clips = []

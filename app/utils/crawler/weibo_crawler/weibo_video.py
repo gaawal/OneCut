@@ -9,6 +9,7 @@ import aiohttp
 from loguru import logger
 from moviepy.editor import VideoFileClip
 
+from app.services.factory.video_generator import write_videofile_async
 from app.utils import utils
 
 
@@ -61,7 +62,8 @@ class WeiboCrawler:
                 formatted_time_str = current_time.strftime("%Y%m%d%H%M")
                 segment_path = self.save_dir / f"{formatted_time_str}-video-segment-{idx + 1}.mp4"
                 segment = video.subclip(start, end)
-                segment.write_videofile(str(segment_path), codec="libx264")
+                await write_videofile_async(segment, filename=str(segment_path), audio_codec="aac",
+                                            logger=None, fps=30)
                 segment_paths.append(segment_path)
                 logger.info(f"视频片段 {segment_path}，时长 {segment_duration:.2f} 秒")
 
@@ -158,7 +160,8 @@ class WeiboCrawler:
             logger.info(f"视频长度 {video.duration} 秒，超过最大限制 {self.max_video_length} 秒，截取前 {self.max_video_length} 秒")
             truncated_path = str(video_path).replace(".mp4", "_truncated.mp4")
             truncated_video = video.subclip(0, self.max_video_length)
-            truncated_video.write_videofile(truncated_path, codec="libx264")
+            await write_videofile_async(truncated_video, filename=truncated_path,
+                                        logger=None, audio_codec="aac", fps=30)
             os.remove(video_path)  # 删除原始超长视频
             logger.info(f"截取后的视频已保存到 {truncated_path}")
             return truncated_path

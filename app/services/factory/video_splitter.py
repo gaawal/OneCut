@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from loguru import logger
 from functools import partial
 
+from app.services.factory.video_generator import get_ffmpeg_params
 from app.utils import utils
 
 
@@ -149,7 +150,8 @@ class VideoSplitter:
             segment = video.subclip(start, end)
             if not self.include_audio:
                 segment = segment.without_audio()
-            segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac", logger=None)
+            segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac", logger=None,
+                                    ffmpeg_params=get_ffmpeg_params())
             logger.info(f"视频片段: {segment_path}, 时长: {end - start:.2f}秒, 时间段: {start:.2f}秒 - {end:.2f}秒")
             segment_paths.append(str(segment_path))
             os.remove(audio_path)
