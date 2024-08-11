@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from loguru import logger
 from functools import partial
 
+from app.settings.base_config import base_settings
 from app.services.factory.video_generator import get_ffmpeg_params
 from app.utils import utils
 
@@ -20,6 +21,7 @@ class VideoSplitter:
     def __init__(self, min_segment_length=5, pause_duration=1, save_dir=utils.cache_weibo_videos_dir(),
                  max_video_length=60,
                  include_audio=True, min_db_level=-45, max_segment_length=15):
+        self.semaphore = asyncio.Semaphore(base_settings.max_concurrent_tasks)
         self.min_segment_length = min_segment_length
         self.pause_duration = pause_duration
         self.max_video_length = max_video_length
@@ -204,6 +206,9 @@ class VideoSplitter:
         return segments
 
     async def process_video(self, video_path):
+        async with self.semaphore:
+            return await self._process_video(video_path)
+    async def _process_video(self, video_path):
         logger.info(f"开始处理视频: {video_path}")
         video = await asyncio.get_event_loop().run_in_executor(self.executor, VideoFileClip, str(video_path))
         if video.duration > self.max_video_length:
