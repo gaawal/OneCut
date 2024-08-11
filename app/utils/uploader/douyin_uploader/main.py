@@ -90,7 +90,7 @@ class DouYinVideo(object):
     async def upload(self, playwright: Playwright) -> bool:
         # 使用 Chromium 浏览器启动一个浏览器实例
         if self.local_executable_path:
-            browser = await playwright.chromium.launch(headless=False, executable_path=self.local_executable_path)
+            browser = await playwright.chromium.launch(headless=True, executable_path=self.local_executable_path)
         else:
             browser = await playwright.chromium.launch(headless=True)
         # 创建一个浏览器上下文，使用指定的 cookie 文件

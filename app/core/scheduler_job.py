@@ -31,20 +31,15 @@ def register_scheduler_job(app):
         {"account_name": "account-jiahua.json",
          "platform": ["douyin"],
          },
-        {"account_name": "account-zhuzhu.json",
-         "platform": ["douyin"],
-         },
-        {"account_name": "account-yangnian.json",
-         "platform": ["douyin"],
-         },
-        {"account_name": "account-jiajia.json",
+
+        {"account_name": "account-chao.json",
          "platform": ["xigua"],
          },
     ]
 
     # # 自动发布视频的定时任务
     scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=2,
-                      next_run_time=datetime.now() + timedelta(seconds=25), args=[account_list])
+                      next_run_time=datetime.now() + timedelta(seconds=35), args=[account_list])
     # # 自动填入发布定时任务
     # scheduler.add_job(SchedulerTasks.enqueue_tasks, CronTrigger(hour=8, minute=50),
     #                   next_run_time=datetime.now() + timedelta(seconds=20))
@@ -52,13 +47,13 @@ def register_scheduler_job(app):
     # scheduler.add_job(SchedulerTasks.clear_tasks, CronTrigger(hour=8, minute=49),
     #                   next_run_time=datetime.now() + timedelta(seconds=15))
     # 更新抖音cookies
-    # account_list = ["account-jiahua.json","account-zhuzhu.json","account-yangnian.json"]
-    # scheduler.add_job(SchedulerTasks.get_douoyin_cookies, CronTrigger(hour=8, minute=49),
-    #                   next_run_time=datetime.now() + timedelta(seconds=30), args=[account_list])
+    account_list = [i.get('account_name') for i in account_list if i.get('platform') == 'douyin']
+    scheduler.add_job(SchedulerTasks.get_douoyin_cookies, CronTrigger(hour=8, minute=49),
+                      next_run_time=datetime.now() + timedelta(seconds=15), args=[account_list])
     # 更新西瓜cookies
-    # account_list = ["account-ameng.json"]
-    # scheduler.add_job(SchedulerTasks.get_xigua_cookies, CronTrigger(hour=8, minute=49),
-    #                   next_run_time=datetime.now() + timedelta(seconds=15), args=[account_list])
+    account_list = [i.get('account_name') for i in account_list if i.get('platform') == 'xigua']
+    scheduler.add_job(SchedulerTasks.get_xigua_cookies, CronTrigger(hour=8, minute=49),
+                      next_run_time=datetime.now() + timedelta(seconds=15), args=[account_list])
     # 更新视频号cookies
     # scheduler.add_job(SchedulerTasks.get_tencent_cookie, 'interval', inutes=3,
     #                                         next_run_time=datetime.now() + timedelta(seconds=15))
