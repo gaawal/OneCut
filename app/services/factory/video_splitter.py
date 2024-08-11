@@ -197,8 +197,8 @@ class VideoSplitter:
             if self.min_segment_length <= duration - start_time:
                 segments.append((start_time, duration))
             else:
-                segments.append((start_time, start_time + self.min_segment_length))
-                logger.warning(f"不符合时长片段，保存默认时长: 开始时间：{start_time}，时长：{self.min_segment_length}")
+
+                logger.warning(f"不符合时长片段，不进行保存 开始时间：{start_time}，时长：{duration}")
             logger.info(f"音量分割的时间段: {segments}")
 
         return segments
