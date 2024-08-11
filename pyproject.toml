@@ -45,6 +45,7 @@ xhs = "^0.2.13"
 biliup = "^0.4.72"
 webrtcvad = "^2.0.10"
 librosa = "^0.10.2.post1"
+pylint = "^3.2.6"
 
 [tool.black]
 line-length = 120

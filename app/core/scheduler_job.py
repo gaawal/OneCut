@@ -21,17 +21,14 @@ def register_scheduler_job(app):
     # 刷新微博热搜榜单
     scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=15)
     # 获取微博热搜内容图片评论视频等素材
-    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=6,
-                      next_run_time=datetime.now() + timedelta(seconds=301))
+    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=5,
+                      next_run_time=datetime.now() + timedelta(seconds=25))
     # 自动生成微博热搜视频的定时任务
-    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=10,
+    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=6,
                       next_run_time=datetime.now() + timedelta(seconds=121))
     # 发布视频的账号  随机选择进行发布，同一个task不可多个账号发布同个平台
     account_list = [
         {"account_name": "account-jiahua.json",
-         "platform": ["douyin"],
-         },
-        {"account_name": "account-mama.json",
          "platform": ["douyin"],
          },
         {"account_name": "account-zhuzhu.json",
@@ -51,7 +48,7 @@ def register_scheduler_job(app):
     # 更新抖音cookies
     account_list = ["account-jiahua.json","account-zhuzhu.json"]
     scheduler.add_job(SchedulerTasks.get_douoyin_cookies, CronTrigger(hour=8, minute=49),
-                      next_run_time=datetime.now() + timedelta(seconds=15), args=[account_list])
+                      next_run_time=datetime.now() + timedelta(seconds=30), args=[account_list])
     # 更新西瓜cookies
     # account_list = ["account-ameng.json"]
     # scheduler.add_job(SchedulerTasks.get_xigua_cookies, CronTrigger(hour=8, minute=49),
