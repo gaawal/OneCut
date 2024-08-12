@@ -1,9 +1,9 @@
 import asyncio
+import random
 import traceback
 from typing import List
 
 import requests
-import random
 from loguru import logger
 
 from app.schemas.movies import HotSearchItem
@@ -30,15 +30,16 @@ async def get_weibo_hotsearch() -> List[HotSearchItem]:
             # 生成 hotsearch_data 列表
             hotsearch_data = []
             for item in raw_data.get('realtime', []):
-                url = f"https://s.weibo.com/weibo?q=%23{item.get('note')}%23"
-                hotsearch_item = HotSearchItem(
-                    mid=generate_md5_id(url),
-                    category=item.get("category"),
-                    title=item.get("note"),
-                    hot=item.get("num"),
-                    url=url
-                )
-                hotsearch_data.append(hotsearch_item)
+                if item.get('icon_desc') != '商':
+                    url = f"https://s.weibo.com/weibo?q=%23{item.get('note')}%23"
+                    hotsearch_item = HotSearchItem(
+                        mid=generate_md5_id(url),
+                        category=item.get("category"),
+                        title=item.get("note"),
+                        hot=item.get("num"),
+                        url=url
+                    )
+                    hotsearch_data.append(hotsearch_item)
             logger.success("刷新微博热搜排行榜成功.")
         else:
             logger.error("Failed to retrieve data.")

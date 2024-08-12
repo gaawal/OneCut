@@ -1,3 +1,4 @@
+import subprocess
 import tracemalloc
 
 import jieba
@@ -23,6 +24,9 @@ except ImportError:
     raise SettingNotFound("Can not import settings")
 
 
+
+
+
 def create_app() -> FastAPI:
     logger.warning("开始创建app")
     app = FastAPI(
@@ -37,9 +41,12 @@ def create_app() -> FastAPI:
     register_routers(app, prefix="/api")
     logger.success("创建app成功")
     return app
-
-
-app = create_app()
+try:
+    subprocess.run(["ffmpeg", "-version"], check=True)
+    logger.info("ffmpeg 可用")
+    app = create_app()
+except subprocess.CalledProcessError:
+    logger.error("ffmpeg 不可用，请检查安装和配置")
 
 
 @app.on_event("startup")

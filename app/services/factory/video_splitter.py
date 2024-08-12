@@ -53,8 +53,8 @@ class VideoSplitter:
     def _extract_audio_sync(self, video_path):
         audio_filename = self.generate_temp_filename(has_speech=True).replace(".mp4", ".wav")
         audio_path = self.save_dir / audio_filename
-        video = VideoFileClip(str(video_path))
-        video.audio.write_audiofile(str(audio_path), codec='pcm_s16le')
+        with VideoFileClip(str(video_path)) as video:  # 使用上下文管理器确保资源关闭
+            video.audio.write_audiofile(str(audio_path), codec='pcm_s16le')
         logger.info(f"音频提取完成，保存路径为: {audio_path}")
         return audio_path
 
@@ -135,28 +135,28 @@ class VideoSplitter:
                                                               segments)
 
     def _save_video_segments_sync(self, video_path, segments):
-        video = VideoFileClip(str(video_path))
         segment_paths = []
 
-        for idx, (start, end) in enumerate(segments, start=1):
-            segment_audio = video.audio.subclip(start, end)
-            audio_filename = self.generate_temp_filename(has_speech=True).replace(".mp4", ".wav")
-            audio_path = self.save_dir / audio_filename
-            segment_audio.write_audiofile(str(audio_path), codec='pcm_s16le')
+        with VideoFileClip(str(video_path)) as video:  # 使用上下文管理器
+            for idx, (start, end) in enumerate(segments, start=1):
+                segment_audio = video.audio.subclip(start, end)
+                audio_filename = self.generate_temp_filename(has_speech=True).replace(".mp4", ".wav")
+                audio_path = self.save_dir / audio_filename
+                segment_audio.write_audiofile(str(audio_path), codec='pcm_s16le')
 
-            audio_segment = AudioSegment.from_wav(audio_path)
-            has_speech = self.has_human_voice(audio_segment)
+                audio_segment = AudioSegment.from_wav(audio_path)
+                has_speech = self.has_human_voice(audio_segment)
 
-            segment_filename = self.generate_temp_filename(has_speech=has_speech, index=idx)
-            segment_path = self.save_dir / segment_filename
-            segment = video.subclip(start, end)
-            if not self.include_audio:
-                segment = segment.without_audio()
-            segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac", logger=None,
-                                    ffmpeg_params=get_ffmpeg_params())
-            logger.info(f"视频片段: {segment_path}, 时长: {end - start:.2f}秒, 时间段: {start:.2f}秒 - {end:.2f}秒")
-            segment_paths.append(str(segment_path))
-            os.remove(audio_path)
+                segment_filename = self.generate_temp_filename(has_speech=has_speech, index=idx)
+                segment_path = self.save_dir / segment_filename
+                with video.subclip(start, end) as segment:  # 使用上下文管理器
+                    if not self.include_audio:
+                        segment = segment.without_audio()
+                    segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac", logger=None,
+                                            ffmpeg_params=get_ffmpeg_params())
+                    logger.info(f"视频片段: {segment_path}, 时长: {end - start:.2f}秒, 时间段: {start:.2f}秒 - {end:.2f}秒")
+                    segment_paths.append(str(segment_path))
+                os.remove(audio_path)
 
         return segment_paths
 
@@ -208,32 +208,41 @@ class VideoSplitter:
     async def process_video(self, video_path):
         async with self.semaphore:
             return await self._process_video(video_path)
+
     async def _process_video(self, video_path):
         logger.info(f"开始处理视频: {video_path}")
-        video = await asyncio.get_event_loop().run_in_executor(self.executor, VideoFileClip, str(video_path))
-        if video.duration > self.max_video_length:
-            logger.info(f"视频长度超过{self.max_video_length}秒，只保留前{self.max_video_length}秒")
-            trimmed_video_filename = self.generate_temp_filename(has_speech=True)
-            trimmed_video_path = self.save_dir / trimmed_video_filename
-            trimmed_video = video.subclip(0, self.max_video_length)
-            # 使用 partial 封装函数调用以传递 fps 参数
-            write_videofile_partial = partial(trimmed_video.write_videofile, str(trimmed_video_path), codec="libx264",
-                                              audio_codec="aac", fps=video.fps)
-            await asyncio.get_event_loop().run_in_executor(self.executor, write_videofile_partial)
-            video_path = trimmed_video_path
+        saved_segments = []  # 初始化 saved_segments
+        try:
             video = await asyncio.get_event_loop().run_in_executor(self.executor, VideoFileClip, str(video_path))
+            if video.duration > self.max_video_length:
+                logger.info(f"视频长度超过{self.max_video_length}秒，只保留前{self.max_video_length}秒")
+                trimmed_video_filename = self.generate_temp_filename(has_speech=True)
+                trimmed_video_path = self.save_dir / trimmed_video_filename
+                trimmed_video = video.subclip(0, self.max_video_length)
+                # 使用 partial 封装函数调用以传递 fps 参数
+                write_videofile_partial = partial(trimmed_video.write_videofile, str(trimmed_video_path),
+                                                  codec="libx264",
+                                                  audio_codec="aac", fps=video.fps)
+                await asyncio.get_event_loop().run_in_executor(self.executor, write_videofile_partial)
+                video_path = trimmed_video_path
+                video = await asyncio.get_event_loop().run_in_executor(self.executor, VideoFileClip, str(video_path))
 
-        audio_path = await self.extract_audio(video_path)
-        segments = await self.detect_speech(audio_path)
+            audio_path = await self.extract_audio(video_path)
+            segments = await self.detect_speech(audio_path)
 
-        if not segments:
-            segments = await self.split_video_by_volume(audio_path)
-            os.remove(audio_path)
+            if not segments:
+                segments = await self.split_video_by_volume(audio_path)
+                os.remove(audio_path)
 
-        saved_segments = await self.save_video_segments(video_path, segments)
+            saved_segments = await self.save_video_segments(video_path, segments)
 
-        if video.duration > self.max_video_length:
-            os.remove(video_path)
+            if video.duration > self.max_video_length:
+                os.remove(video_path)
 
-        logger.success("视频片段智能分割处理完成")
+            logger.success("视频片段智能分割处理完成")
+        except Exception as e:
+            logger.error(f"处理视频时出现错误: {str(e)}")
+            raise e
+
         return saved_segments
+
