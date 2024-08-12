@@ -217,13 +217,13 @@ async def combine_videos(
 
     if split_video_paths:
         split_clips = []
-        for split_video_path in split_video_paths[1:]:  # 跳过第一个片段，因为它已经被添加
+        for split_video_path in split_video_paths:  # 跳过第一个片段，因为它已经被添加
             split_clip = await create_video_clip_async(split_video_path)
             split_clip = resize_clip(split_clip, video_width, video_height)
             # 如果分辨率不同，也应用模糊背景处理
             if split_clip.size != (video_width, video_height):
                 background_clip = split_clip.resize(newsize=(video_width, video_height))
-                background_clip = apply_blur(background_clip, blur_radius=70)
+                background_clip = apply_blur(background_clip, blur_radius=65)
                 split_clip = split_clip.resize(height=video_height)
                 split_clip = split_clip.set_position(("center", "center"))
                 split_clip = CompositeVideoClip([background_clip, split_clip])
@@ -232,7 +232,7 @@ async def combine_videos(
 
         combined_clips = []
         for clip in raw_clips:
-            if split_clips and random.random() > 0.6:  # 60% 概率插入 split_clip
+            if split_clips and random.random() > 0.7:  # 70% 概率插入 split_clip
                 combined_clips.append(split_clips.pop(0))
             combined_clips.append(clip)
         raw_clips = combined_clips

@@ -1,19 +1,20 @@
+import asyncio
 import os
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from functools import partial
 from pathlib import Path
-import webrtcvad
+
+import librosa
 import numpy as np
+import webrtcvad
+from loguru import logger
 from moviepy.editor import VideoFileClip
 from pydub import AudioSegment
-from datetime import datetime
-import uuid
-import librosa
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from loguru import logger
-from functools import partial
 
-from app.settings.base_config import base_settings
 from app.services.factory.video_generator import get_ffmpeg_params
+from app.settings.base_config import base_settings
 from app.utils import utils
 
 
@@ -53,9 +54,16 @@ class VideoSplitter:
     def _extract_audio_sync(self, video_path):
         audio_filename = self.generate_temp_filename(has_speech=True).replace(".mp4", ".wav")
         audio_path = self.save_dir / audio_filename
-        with VideoFileClip(str(video_path)) as video:  # 使用上下文管理器确保资源关闭
-            video.audio.write_audiofile(str(audio_path), codec='pcm_s16le')
-        logger.info(f"音频提取完成，保存路径为: {audio_path}")
+
+        try:
+            with VideoFileClip(str(video_path)) as video:
+                if video.audio is None:
+                    raise ValueError("视频中不包含音频轨道")
+                video.audio.write_audiofile(str(audio_path), codec='pcm_s16le')
+            logger.info(f"音频提取完成，保存路径为: {audio_path}")
+        except Exception as e:
+            logger.error(f"提取音频时出错: {e}")
+            raise
         return audio_path
 
     async def detect_speech(self, audio_path, frame_duration_ms=30):
@@ -64,7 +72,12 @@ class VideoSplitter:
                                                               frame_duration_ms)
 
     def _detect_speech_sync(self, audio_path, frame_duration_ms=30):
-        audio = AudioSegment.from_wav(audio_path)
+        try:
+            audio = AudioSegment.from_wav(audio_path)
+        except Exception as e:
+            logger.error(f"加载音频文件失败: {e}")
+            return []
+
         audio = audio.set_frame_rate(16000).set_channels(1)
         samples = np.array(audio.get_array_of_samples())
         sample_rate = audio.frame_rate
@@ -113,21 +126,25 @@ class VideoSplitter:
         return segments
 
     def has_human_voice(self, audio_segment):
-        y = np.array(audio_segment.get_array_of_samples())
-        y = y.astype(np.float32) / np.iinfo(y.dtype).max
-        sr = audio_segment.frame_rate
-        S = np.abs(librosa.stft(y, n_fft=2048))
-        freqs = librosa.fft_frequencies(sr=sr)
+        try:
+            y = np.array(audio_segment.get_array_of_samples())
+            y = y.astype(np.float32) / np.iinfo(y.dtype).max
+            sr = audio_segment.frame_rate
+            S = np.abs(librosa.stft(y, n_fft=2048))
+            freqs = librosa.fft_frequencies(sr=sr)
 
-        min_voice_freq = 85
-        max_voice_freq = 255
+            min_voice_freq = 85
+            max_voice_freq = 255
 
-        for i in range(S.shape[1]):
-            spectrum = S[:, i]
-            max_freq = freqs[np.argmax(spectrum)]
-            if min_voice_freq <= max_freq <= max_voice_freq:
-                return True
-        return False
+            for i in range(S.shape[1]):
+                spectrum = S[:, i]
+                max_freq = freqs[np.argmax(spectrum)]
+                if min_voice_freq <= max_freq <= max_voice_freq:
+                    return True
+            return False
+        except Exception as e:
+            logger.error(f"检测人声时出错: {e}")
+            return False
 
     async def save_video_segments(self, video_path, segments):
         logger.info(f"保存视频片段，视频路径为: {video_path}")
@@ -137,26 +154,33 @@ class VideoSplitter:
     def _save_video_segments_sync(self, video_path, segments):
         segment_paths = []
 
-        with VideoFileClip(str(video_path)) as video:  # 使用上下文管理器
-            for idx, (start, end) in enumerate(segments, start=1):
-                segment_audio = video.audio.subclip(start, end)
-                audio_filename = self.generate_temp_filename(has_speech=True).replace(".mp4", ".wav")
-                audio_path = self.save_dir / audio_filename
-                segment_audio.write_audiofile(str(audio_path), codec='pcm_s16le')
+        try:
+            with VideoFileClip(str(video_path)) as video:
+                if video.audio is None:
+                    raise ValueError("视频中不包含音频轨道")
 
-                audio_segment = AudioSegment.from_wav(audio_path)
-                has_speech = self.has_human_voice(audio_segment)
+                for idx, (start, end) in enumerate(segments, start=1):
+                    segment_audio = video.audio.subclip(start, end)
+                    audio_filename = self.generate_temp_filename(has_speech=True).replace(".mp4", ".wav")
+                    audio_path = self.save_dir / audio_filename
+                    segment_audio.write_audiofile(str(audio_path), codec='pcm_s16le')
 
-                segment_filename = self.generate_temp_filename(has_speech=has_speech, index=idx)
-                segment_path = self.save_dir / segment_filename
-                with video.subclip(start, end) as segment:  # 使用上下文管理器
-                    if not self.include_audio:
-                        segment = segment.without_audio()
-                    segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac", logger=None,
-                                            ffmpeg_params=get_ffmpeg_params())
-                    logger.info(f"视频片段: {segment_path}, 时长: {end - start:.2f}秒, 时间段: {start:.2f}秒 - {end:.2f}秒")
-                    segment_paths.append(str(segment_path))
-                os.remove(audio_path)
+                    audio_segment = AudioSegment.from_wav(audio_path)
+                    has_speech = self.has_human_voice(audio_segment)
+
+                    segment_filename = self.generate_temp_filename(has_speech=has_speech, index=idx)
+                    segment_path = self.save_dir / segment_filename
+                    with video.subclip(start, end) as segment:
+                        if not self.include_audio:
+                            segment = segment.without_audio()
+                        segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac", logger=None,
+                                                ffmpeg_params=get_ffmpeg_params())
+                        logger.info(f"视频片段: {segment_path}, 时长: {end - start:.2f}秒, 时间段: {start:.2f}秒 - {end:.2f}秒")
+                        segment_paths.append(str(segment_path))
+                    os.remove(audio_path)
+        except Exception as e:
+            logger.error(f"保存视频片段时出错: {e}")
+            raise
 
         return segment_paths
 
@@ -166,7 +190,12 @@ class VideoSplitter:
                                                               audio_path)
 
     def _split_video_by_volume_sync(self, audio_path):
-        y, sr = librosa.load(audio_path, sr=None)
+        try:
+            y, sr = librosa.load(audio_path, sr=None)
+        except Exception as e:
+            logger.error(f"加载音频文件失败: {e}")
+            return []
+
         hop_length = 512
         frame_length = 2048
         energy = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length)[0]
@@ -199,7 +228,6 @@ class VideoSplitter:
             if self.min_segment_length <= duration - start_time:
                 segments.append((start_time, duration))
             else:
-
                 logger.warning(f"不符合时长片段，不进行保存 开始时间：{start_time}，时长：{duration}")
             logger.info(f"音量分割的时间段: {segments}")
 
@@ -219,10 +247,8 @@ class VideoSplitter:
                 trimmed_video_filename = self.generate_temp_filename(has_speech=True)
                 trimmed_video_path = self.save_dir / trimmed_video_filename
                 trimmed_video = video.subclip(0, self.max_video_length)
-                # 使用 partial 封装函数调用以传递 fps 参数
                 write_videofile_partial = partial(trimmed_video.write_videofile, str(trimmed_video_path),
-                                                  codec="libx264",
-                                                  audio_codec="aac", fps=video.fps)
+                                                  codec="libx264", audio_codec="aac", fps=video.fps)
                 await asyncio.get_event_loop().run_in_executor(self.executor, write_videofile_partial)
                 video_path = trimmed_video_path
                 video = await asyncio.get_event_loop().run_in_executor(self.executor, VideoFileClip, str(video_path))
@@ -245,4 +271,3 @@ class VideoSplitter:
             raise e
 
         return saved_segments
-
