@@ -263,7 +263,7 @@ def get_local_videos(audio_duration, video_clip_duration):
 
 
 async def get_weibo_split_videos(weibo_title, audio_duration, video_clip_duration):
-    logger.info(f"{weibo_title} => 获取缓存中微博视频分割片段")
+    logger.info(f" 获取缓存中微博视频分割片段 => {weibo_title} ")
     if cached_data := await redis_instance.get(RedisKeyPrefix.WEIBO_HOT_ARTICLE.format(weibo_title)):
         weibo_article_cache = json.loads(cached_data)
         weibo_article_cache = WeiboArticleData(**weibo_article_cache)

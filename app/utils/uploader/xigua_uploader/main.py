@@ -223,7 +223,7 @@ class XiguaVideo(object):
             async with async_playwright() as playwright:
                 return await self.upload(playwright)
         except Exception as e:
-            logger.warning(f"  [Douyin] 发布出现异常,{str(e)}")
+            logger.warning(f"  [Xigua] 发布出现异常,{str(e)}")
             return False
 
 

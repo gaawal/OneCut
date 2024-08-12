@@ -185,7 +185,7 @@ async def combine_videos(
 
         clips.append(first_split_clip)
         video_duration += first_split_clip.duration
-        logger.info(f"添加 split_video_paths 的第一个片段前 {MIN_DURATION} 秒，当前视频时长 {video_duration:.2f} 秒")
+        logger.info(f"添加钩子微博视频开头截取 {MIN_DURATION} 秒，当前视频时长 {video_duration:.2f} 秒")
 
     # Step 2: 处理其他 video_paths 的视频片段
     raw_clips = []
@@ -401,9 +401,8 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
         split_clip = split_clip.audio_fadeout(fadeout_duration)
 
         # 拼接前面的视频片段
-        logger.info(" # 拼接前面的视频片段 split_clip")
         final_clip = concatenate_videoclips([split_clip, combined_video_clip])
-        logger.info(f"在视频开头拼接 split_video_paths 中的第一个视频片段，时长 {split_clip.duration} 秒")
+        logger.info(f"视频开头拼接微博视频首个片段，时长 {split_clip.duration} 秒")
     else:
         final_clip = combined_video_clip
 

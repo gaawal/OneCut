@@ -46,7 +46,7 @@ weibo_crawler = WeiboCrawler()
 class SchedulerTasks:
     @staticmethod
     def get_xigua_cookies(account_list):
-        logger.info("检测西瓜账号cookie")
+        logger.info(f"检测西瓜账号cookie,{account_list}")
         get_xigua_cookies(account_list)
 
     @staticmethod
@@ -126,7 +126,6 @@ class SchedulerTasks:
                         if xigua_status != TaskDetailState.UPLOAD_OK and 'xigua' in platform:
                             try:
                                 logger.info(f"发布视频至西瓜")
-
                                 is_uploaded = await auto_upload_xigua(task_id, account_name)
                             except Exception as e:
                                 is_uploaded = False
@@ -302,7 +301,7 @@ class SchedulerTasks:
     @staticmethod
     def get_douoyin_cookies(account_list):
 
-        logger.info("检测抖音账号cookie")
+        logger.info("检测抖音账号cookie,{}".format(account_list))
         get_douoyin_cookies(account_list)
 
     @staticmethod
