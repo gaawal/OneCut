@@ -13,7 +13,7 @@ from loguru import logger
 from functools import partial
 
 from app.settings.base_config import base_settings
-from app.services.factory.video_generator import get_ffmpeg_params
+from app.services.factory.video_generator import get_ffmpeg_params, ffmpeg_params
 from app.utils import utils
 
 
@@ -53,8 +53,8 @@ class VideoSplitter:
     def _extract_audio_sync(self, video_path):
         audio_filename = self.generate_temp_filename(has_speech=True).replace(".mp4", ".wav")
         audio_path = self.save_dir / audio_filename
-        video = VideoFileClip(str(video_path))
-        video.audio.write_audiofile(str(audio_path), codec='pcm_s16le')
+        with VideoFileClip(str(video_path)) as video:
+            video.audio.write_audiofile(str(audio_path), codec='pcm_s16le')
         logger.info(f"音频提取完成，保存路径为: {audio_path}")
         return audio_path
 
@@ -130,35 +130,39 @@ class VideoSplitter:
         return False
 
     async def save_video_segments(self, video_path, segments):
-        logger.info(f"保存视频片段，视频路径为: {video_path}")
+        logger.info(f"保存视频片段，原始视频素材文件为: {segments}")
         return await asyncio.get_event_loop().run_in_executor(self.executor, self._save_video_segments_sync, video_path,
                                                               segments)
 
     def _save_video_segments_sync(self, video_path, segments):
-        video = VideoFileClip(str(video_path))
-        segment_paths = []
+        logger.info("开始分割原素材视频文件")
+        with VideoFileClip(str(video_path)) as video:
 
-        for idx, (start, end) in enumerate(segments, start=1):
-            segment_audio = video.audio.subclip(start, end)
-            audio_filename = self.generate_temp_filename(has_speech=True).replace(".mp4", ".wav")
-            audio_path = self.save_dir / audio_filename
-            segment_audio.write_audiofile(str(audio_path), codec='pcm_s16le')
+            segment_paths = []
 
-            audio_segment = AudioSegment.from_wav(audio_path)
-            has_speech = self.has_human_voice(audio_segment)
+            for idx, (start, end) in enumerate(segments, start=1):
+                segment_audio = video.audio.subclip(start, end)
+                audio_filename = self.generate_temp_filename(has_speech=True).replace(".mp4", ".wav")
+                audio_path = self.save_dir / audio_filename
+                segment_audio.write_audiofile(str(audio_path), codec='pcm_s16le')
 
-            segment_filename = self.generate_temp_filename(has_speech=has_speech, index=idx)
-            segment_path = self.save_dir / segment_filename
-            segment = video.subclip(start, end)
-            if not self.include_audio:
-                segment = segment.without_audio()
-            segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac", logger=None,
-                                    ffmpeg_params=get_ffmpeg_params())
-            logger.info(f"视频片段: {segment_path}, 时长: {end - start:.2f}秒, 时间段: {start:.2f}秒 - {end:.2f}秒")
-            segment_paths.append(str(segment_path))
-            os.remove(audio_path)
+                audio_segment = AudioSegment.from_wav(audio_path)
+                has_speech = self.has_human_voice(audio_segment)
 
-        return segment_paths
+                segment_filename = self.generate_temp_filename(has_speech=has_speech, index=idx)
+                segment_path = self.save_dir / segment_filename
+                segment = video.subclip(start, end)
+                if not self.include_audio:
+                    logger.warning("不保存原声")
+                    segment = segment.without_audio()
+                segment.write_videofile(str(segment_path), codec="libx264", audio_codec="aac", logger=None,
+                                        ffmpeg_params=ffmpeg_params)
+                logger.info(f"[{idx}]分割视频片段成功: {segment_path}, 时长: {end - start:.2f}秒, 时间段: {start:.2f}秒 - {end:.2f}秒")
+                segment_paths.append(str(segment_path))
+                os.remove(audio_path)
+                logger.info(f"[{idx}]清理音频缓存ok:{audio_path}")
+
+            return segment_paths
 
     async def split_video_by_volume(self, audio_path):
         logger.info(f"根据音量变化分割视频: {audio_path}")
@@ -208,6 +212,7 @@ class VideoSplitter:
     async def process_video(self, video_path):
         async with self.semaphore:
             return await self._process_video(video_path)
+
     async def _process_video(self, video_path):
         logger.info(f"开始处理视频: {video_path}")
         video = await asyncio.get_event_loop().run_in_executor(self.executor, VideoFileClip, str(video_path))
@@ -218,7 +223,7 @@ class VideoSplitter:
             trimmed_video = video.subclip(0, self.max_video_length)
             # 使用 partial 封装函数调用以传递 fps 参数
             write_videofile_partial = partial(trimmed_video.write_videofile, str(trimmed_video_path), codec="libx264",
-                                              audio_codec="aac", fps=video.fps)
+                                              audio_codec="aac", fps=video.fps,ffmpeg_params=ffmpeg_params)
             await asyncio.get_event_loop().run_in_executor(self.executor, write_videofile_partial)
             video_path = trimmed_video_path
             video = await asyncio.get_event_loop().run_in_executor(self.executor, VideoFileClip, str(video_path))
@@ -237,4 +242,3 @@ class VideoSplitter:
 
         logger.success("视频片段智能分割处理完成")
         return saved_segments
-

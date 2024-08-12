@@ -75,6 +75,9 @@ def get_ffmpeg_params():
         ]
 
 
+ffmpeg_params = get_ffmpeg_params()
+
+
 async def create_video_clip_async(video_path):
     async with semaphore:
         loop = asyncio.get_event_loop()
@@ -100,7 +103,6 @@ async def resize_clip_async(clip, video_width, video_height):
 
 
 async def write_videofile_async(video_clip, filename, **kwargs):
-    ffmpeg_params = get_ffmpeg_params()
     async with semaphore:
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(executor, lambda: video_clip.write_videofile(
@@ -268,7 +270,8 @@ async def combine_videos(
 
     write_start_time = time.time()
     await write_videofile_async(video_clip, filename=combined_video_path,
-                                logger=None, temp_audiofile_path=output_dir, audio_codec="aac", fps=30)
+                                logger=None, temp_audiofile_path=output_dir, audio_codec="aac", fps=30,
+                                ffmpeg_params=ffmpeg_params)
 
     # 确保所有打开的资源都关闭
     for clip in raw_clips:
@@ -282,7 +285,6 @@ async def combine_videos(
     logger.success(f"合并视频总耗时: {time.time() - start_timestamp:.2f} 秒")
 
     return combined_video_path
-
 
 
 def apply_blur(clip, blur_radius=70):
@@ -343,7 +345,6 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
             _clip = _clip.set_position(("center", video_height * 0.1))
         else:
             _clip = _clip.set_position(("center", "center"))
-
 
         return _clip
 
@@ -411,7 +412,7 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
 
     write_start_time = time.time()
     await write_videofile_async(final_clip, filename=output_file, audio_codec="aac", temp_audiofile_path=output_dir,
-                                logger=None, fps=30)
+                                logger=None, fps=30,ffmpeg_params=ffmpeg_params)
     final_clip.close()
     logger.success(f"写入视频文件耗时: {time.time() - write_start_time:.2f} 秒")
     logger.success(f"生成视频总耗时: {time.time() - start_timestamp:.2f} 秒")
@@ -439,8 +440,6 @@ async def generate_video(task_id, title, combined_video_path, images_path, audio
     draft.add_material("cover", {"path": cover_image_path,
                                  "cover_mode": cover_mode,
                                  "text": title})
-
-
 
 
 async def add_image_clips(image_paths, video_width, video_height, clip_duration):

@@ -1,6 +1,6 @@
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip, ImageClip
 
-from app.services.factory.video_generator import write_videofile_async
+from app.services.factory.video_generator import write_videofile_async, get_ffmpeg_params, ffmpeg_params
 
 
 def generate_subtitle_preview(
@@ -17,48 +17,48 @@ def generate_subtitle_preview(
     subtitle_opacity=1.0
 ):
     # 创建视频剪辑对象
-    video_clip = VideoFileClip(input_video_path)
 
-    # 打印调试信息
-    print(f"视频分辨率: {video_clip.size}")
-    print(f"视频帧率: {video_clip.fps}")
+    with VideoFileClip(input_video_path) as video_clip:
+        # 打印调试信息
+        print(f"视频分辨率: {video_clip.size}")
+        print(f"视频帧率: {video_clip.fps}")
 
-    # 创建文本剪辑对象
-    text_clip = TextClip(
-        subtitle_text,
-        font=subtitle_font_path,
-        fontsize=subtitle_size,
-        color=subtitle_color,
-        stroke_color=subtitle_stroke_color,
-        stroke_width=subtitle_stroke_width,
-        bg_color=subtitle_background_color,
-    )
+        # 创建文本剪辑对象
+        text_clip = TextClip(
+            subtitle_text,
+            font=subtitle_font_path,
+            fontsize=subtitle_size,
+            color=subtitle_color,
+            stroke_color=subtitle_stroke_color,
+            stroke_width=subtitle_stroke_width,
+            bg_color=subtitle_background_color,
+        )
 
-    # 设置字幕透明度
-    text_clip = text_clip.set_opacity(subtitle_opacity)
+        # 设置字幕透明度
+        text_clip = text_clip.set_opacity(subtitle_opacity)
 
-    # 设置字幕位置
-    if subtitle_position == "top":
-        text_clip = text_clip.set_position(("center", "10%"))
-    elif subtitle_position == "bottom":
-        text_clip = text_clip.set_position(("center", "10%"))
-    elif subtitle_position == "center":
-        text_clip = text_clip.set_position("center")
+        # 设置字幕位置
+        if subtitle_position == "top":
+            text_clip = text_clip.set_position(("center", "10%"))
+        elif subtitle_position == "bottom":
+            text_clip = text_clip.set_position(("center", "10%"))
+        elif subtitle_position == "center":
+            text_clip = text_clip.set_position("center")
 
-    # 打印字幕剪辑信息
-    print(f"字幕剪辑信息: {text_clip.size}")
+        # 打印字幕剪辑信息
+        print(f"字幕剪辑信息: {text_clip.size}")
 
-    # 截取第一帧视频并添加字幕
-    frame = video_clip.get_frame(0)
-    frame_duration = 1.0 / video_clip.fps
-    frame_clip = ImageClip(frame).set_duration(frame_duration)
-    result = CompositeVideoClip([frame_clip, text_clip.set_duration(frame_duration)])
+        # 截取第一帧视频并添加字幕
+        frame = video_clip.get_frame(0)
+        frame_duration = 1.0 / video_clip.fps
+        frame_clip = ImageClip(frame).set_duration(frame_duration)
+        result = CompositeVideoClip([frame_clip, text_clip.set_duration(frame_duration)])
 
-    # 保存输出视频
-    result.write_videofile(output_video_path, codec="libx264", fps=video_clip.fps)
-    await write_videofile_async(result, filename=output_video_path, audio_codec="aac",
-                                logger=None, fps=30)
-    print("视频生成完成！")
+        # 保存输出视频
+        result.write_videofile(output_video_path, codec="libx264", fps=video_clip.fps)
+        await write_videofile_async(result, filename=output_video_path, audio_codec="aac",
+                                    logger=None, fps=30,ffmpeg_params=ffmpeg_params)
+        print("视频生成完成！")
 
 # 示例调用
 generate_subtitle_preview(

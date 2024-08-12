@@ -42,6 +42,7 @@ def create_app() -> FastAPI:
     logger.success("创建app成功")
     return app
 try:
+    logger.info("ffmpeg 版本检测")
     subprocess.run(["ffmpeg", "-version"], check=True)
     logger.info("ffmpeg 可用")
     app = create_app()

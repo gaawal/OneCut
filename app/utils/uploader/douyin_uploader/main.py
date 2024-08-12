@@ -101,7 +101,7 @@ class DouYinVideo(object):
         page = await context.new_page()
         # 访问指定的 URL
         await page.goto("https://creator.douyin.com/creator-micro/content/upload")
-        logger.info(f'[Douyin]正在上传-------{self.title}.mp4')
+        logger.info(f'[Douyin]正在上传-------{self.title}')
         # 等待页面跳转到指定的 URL，没进入，则自动等待到超时
         logger.info(f'[Douyin] 正在打开主页...')
         await page.wait_for_url("https://creator.douyin.com/creator-micro/content/upload")
@@ -223,5 +223,6 @@ class DouYinVideo(object):
             async with async_playwright() as playwright:
                 return await self.upload(playwright)
         except Exception as e:
-            logger.warning(f" [Douyin] 发布出现异常,{str(e)}")
-            return False
+            error_str = f" [Douyin] 发布出现异常,{str(e)}"
+            logger.warning(error_str)
+            raise Exception(error_str)
