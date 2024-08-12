@@ -1,3 +1,4 @@
+import asyncio
 import os
 from pathlib import Path
 
@@ -13,4 +14,4 @@ async def get_weibo_cookies():
 
 
 if __name__ == '__main__':
-    get_weibo_cookies()
+    asyncio.run(get_weibo_cookies())

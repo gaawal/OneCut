@@ -1,7 +1,12 @@
 import random
 from pathlib import Path
+
+from app.utils.utils import root_dir
+
+
 async def set_init_script(context):
-    stealth_js_path = Path("libs/stealth.min.js")
+
+    stealth_js_path = Path(f"{root_dir()}/libs/stealth.min.js")
     await context.add_init_script(path=stealth_js_path)
     return context
 

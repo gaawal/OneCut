@@ -17,6 +17,7 @@ from moviepy.video.tools.subtitles import SubtitlesClip
 
 from app.schemas.movies import VideoAspect, VideoConcatMode
 from app.services.factory.cover_generator import create_title_clip
+from app.settings.movies_config import app
 from app.utils import utils
 from app.utils.utils import get_font_path
 
@@ -33,6 +34,13 @@ semaphore = asyncio.Semaphore(50)
 
 
 def get_ffmpeg_params():
+    if app.get("is_default_ffmpeg_params", ""):
+        return [
+            '-c:v', 'libx264',  # 使用软件编码
+            '-preset', 'fast',
+            '-crf', '20',  # 固定速率因子20，较高质量
+            '-movflags', 'faststart'
+        ]
     system = platform.system().lower()
     if system == "darwin":  # macOS
         return [
