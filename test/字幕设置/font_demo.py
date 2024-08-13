@@ -57,7 +57,7 @@ def generate_subtitle_preview(
         # 保存输出视频
         result.write_videofile(output_video_path, codec="libx264", fps=video_clip.fps)
         await write_videofile_async(result, filename=output_video_path, audio_codec="aac",
-                                    logger=None, fps=30,ffmpeg_params=ffmpeg_params)
+                                    logger=None, fps=30)
         print("视频生成完成！")
 
 # 示例调用

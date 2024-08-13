@@ -16,7 +16,7 @@ from app.utils import utils
 class WeiboCrawler:
     """微博采集器"""
     def __init__(self, video_counts=5, max_video_length=60, save_dir=utils.cache_weibo_videos_dir(), target_types=None,
-                 retry_attempts=5):
+                 retry_attempts=5, max_open_files=10):
         if target_types is None:
             target_types = ['mp4_720p_mp4', 'mp4_ld_mp4', 'mp4_hd_mp4']
         cookie_file = 'WeiboCookie.json'
@@ -30,6 +30,7 @@ class WeiboCrawler:
         self.max_video_length = max_video_length
         self.retry_attempts = retry_attempts
         self.semaphore = asyncio.Semaphore(5)  # 限制同时进行的任务数
+        self.file_semaphore = asyncio.Semaphore(max_open_files)  # 限制同时打开的文件数量
 
     def load_cookies(self, cookie_file):
         """从JSON文件中加载Cookies"""
@@ -56,21 +57,22 @@ class WeiboCrawler:
         """根据分割时间点保存视频片段"""
         segment_paths = []
 
-        with VideoFileClip(str(video_path)) as video:  # 使用上下文管理器确保资源关闭
-            for idx, (start, end) in enumerate(segments):
-                segment_duration = end - start
-                if segment_duration <= self.max_video_length:
-                    current_time = datetime.now()
-                    formatted_time_str = current_time.strftime("%Y%m%d%H%M")
-                    segment_path = self.save_dir / f"{formatted_time_str}-video-segment-{idx + 1}.mp4"
-                    segment = video.subclip(start, end)
-                    await write_videofile_async(segment, filename=str(segment_path), audio_codec="aac",
-                                                logger=None, fps=30,ffmpeg_params=ffmpeg_params)
-                    segment_paths.append(segment_path)
-                    logger.info(f"视频片段 {segment_path}，时长 {segment_duration:.2f} 秒")
+        async with self.file_semaphore:  # 使用信号量限制同时打开的文件数量
+            with VideoFileClip(str(video_path)) as video:  # 使用上下文管理器确保资源关闭
+                for idx, (start, end) in enumerate(segments):
+                    segment_duration = end - start
+                    if segment_duration <= self.max_video_length:
+                        current_time = datetime.now()
+                        formatted_time_str = current_time.strftime("%Y%m%d%H%M")
+                        segment_path = self.save_dir / f"{formatted_time_str}-video-segment-{idx + 1}.mp4"
+                        segment = video.subclip(start, end)
+                        await write_videofile_async(segment, filename=str(segment_path), audio_codec="aac",
+                                                    logger=None, fps=30)
+                        segment_paths.append(segment_path)
+                        logger.info(f"视频片段 {segment_path}，时长 {segment_duration:.2f} 秒")
 
-                if len(segment_paths) >= self.video_counts:
-                    break  # 达到最大视频数量，停止保存
+                    if len(segment_paths) >= self.video_counts:
+                        break  # 达到最大视频数量，停止保存
 
         return segment_paths
 
@@ -159,16 +161,17 @@ class WeiboCrawler:
     async def truncate_video(self, video_path):
         """截取视频至最大长度"""
         try:
-            with VideoFileClip(str(video_path)) as video:  # 使用上下文管理器确保资源关闭
-                if video.duration > self.max_video_length:
-                    logger.info(f"视频长度 {video.duration} 秒，超过最大限制 {self.max_video_length} 秒，截取前 {self.max_video_length} 秒")
-                    truncated_path = str(video_path).replace(".mp4", "_truncated.mp4")
-                    truncated_video = video.subclip(0, self.max_video_length)
-                    await write_videofile_async(truncated_video, filename=truncated_path,
-                                                logger=None, audio_codec="aac", fps=30,ffmpeg_params=ffmpeg_params)
-                    os.remove(video_path)  # 删除原始超长视频
-                    logger.info(f"截取后的视频已保存到 {truncated_path}")
-                    return truncated_path
+            async with self.file_semaphore:  # 使用信号量限制同时打开的文件数量
+                with VideoFileClip(str(video_path)) as video:  # 使用上下文管理器确保资源关闭
+                    if video.duration > self.max_video_length:
+                        logger.info(f"视频长度 {video.duration} 秒，超过最大限制 {self.max_video_length} 秒，截取前 {self.max_video_length} 秒")
+                        truncated_path = str(video_path).replace(".mp4", "_truncated.mp4")
+                        truncated_video = video.subclip(0, self.max_video_length)
+                        await write_videofile_async(truncated_video, filename=truncated_path,
+                                                    logger=None, audio_codec="aac", fps=30)
+                        os.remove(video_path)  # 删除原始超长视频
+                        logger.info(f"截取后的视频已保存到 {truncated_path}")
+                        return truncated_path
             return video_path
         except Exception as e:
             logger.error(f"截取视频失败: {str(e)}")
