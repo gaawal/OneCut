@@ -1,23 +1,23 @@
 import os
 import time
 import traceback
+import warnings
 from os import path
 
 from loguru import logger
 
 from app.constant.video_const import TaskState, TaskDetailState, TaskFailureReason
+from app.controllers.video_task import task_controller
 from app.core.ctx import CTX_USER_ID
 from app.schemas.drafts import Draft
 from app.schemas.movies import VideoParams, VideoConcatMode, TaskProgress
+from app.schemas.video_task import TaskCreate, TaskUpdate
 from app.services.factory import llm_generator, material_generator, subtitle_generator, video_generator, \
     voice_generator, images_generator, audio_generator
-from app.utils.crawler.weibo_crawler.weibo_article import update_weibo_generated_state
-from app.utils import utils
-from app.utils.utils import calculate_duration
 from app.services.redis_service import redis_instance
-from app.controllers.video_task import task_controller
-from app.schemas.video_task import TaskCreate, TaskUpdate
-import warnings
+from app.utils import utils
+from app.utils.crawler.weibo_crawler.weibo_article import update_weibo_generated_state
+from app.utils.utils import calculate_duration
 
 # 忽略 moviepy 模块中的 UserWarning 警告
 warnings.filterwarnings("ignore", category=UserWarning, module="moviepy")

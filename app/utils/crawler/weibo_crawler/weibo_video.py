@@ -9,14 +9,14 @@ import aiohttp
 from loguru import logger
 from moviepy.editor import VideoFileClip
 
-from app.services.factory.video_generator import write_videofile_async, ffmpeg_params
+from app.services.factory.video_generator import write_videofile_async
 from app.utils import utils
 
 
 class WeiboCrawler:
     """微博采集器"""
     def __init__(self, video_counts=5, max_video_length=60, save_dir=utils.cache_weibo_videos_dir(), target_types=None,
-                 retry_attempts=5, max_open_files=10):
+                 retry_attempts=5, max_open_files=30):
         if target_types is None:
             target_types = ['mp4_720p_mp4', 'mp4_ld_mp4', 'mp4_hd_mp4']
         cookie_file = 'WeiboCookie.json'
