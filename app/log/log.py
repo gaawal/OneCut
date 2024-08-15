@@ -15,7 +15,13 @@ class Loggin:
 
     def setup_logger(self):
         loguru_logger.remove()
-        loguru_logger.add(sink=sys.stdout, level=self.level)
+        loguru_logger.add(sink=sys.stdout, level=self.level,
+                          format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> "
+                                 "| <level>{level}</level> "
+                                 "| <cyan>{name}</cyan> "
+                                 "| <blue>{function}</blue> "
+                                 "| <yellow>{line}</yellow> "
+                                 "\n - <level>{message}</level>")
 
         # logger.add("my_project.log", level=level, rotation="100 MB")  # Output log messages to a file
         return loguru_logger
