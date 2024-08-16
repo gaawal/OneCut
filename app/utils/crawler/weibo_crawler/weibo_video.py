@@ -169,6 +169,7 @@ class WeiboCrawler:
                         truncated_video = video.subclip(0, self.max_video_length)
                         await write_videofile_async(truncated_video, filename=truncated_path,
                                                     logger=None, audio_codec="aac", fps=30)
+                        video.close()
                         os.remove(video_path)  # 删除原始超长视频
                         logger.info(f"截取后的视频已保存到 {truncated_path}")
                         return truncated_path
