@@ -21,9 +21,9 @@ class Loggin:
                                  "| <cyan>{name}</cyan> "
                                  "| <blue>{function}</blue> "
                                  "| <yellow>{line}</yellow> "
-                                 "\n - <level>{message}</level>")
+                                 " - <level>{message}</level>")
 
-        # logger.add("my_project.log", level=level, rotation="100 MB")  # Output log messages to a file
+        logger.add("cut.log", level=self.level, rotation="100 MB")  # Output log messages to a file
         return loguru_logger
 
 
