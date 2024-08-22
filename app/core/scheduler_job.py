@@ -9,6 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.services.scheduler_tasks import SchedulerTasks
+from app.utils.utils import load_account_list
 
 scheduler = AsyncIOScheduler()
 
@@ -21,27 +22,14 @@ def register_scheduler_job(app):
     # 刷新微博热搜榜单
     scheduler.add_job(SchedulerTasks.get_weibo_hotsearch, 'interval', minutes=15)
     # # 获取微博热搜内容图片评论视频等素材
-    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=5,
+    scheduler.add_job(SchedulerTasks.get_weibo_articles_to_cache, 'interval', minutes=3,
                       next_run_time=datetime.now() + timedelta(seconds=25))
     # 自动生成微博热搜视频的定时任务
-    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=6,
+    scheduler.add_job(SchedulerTasks.generate_video_by_weibo_hotspot, 'interval', minutes=4,
                       next_run_time=datetime.now() + timedelta(seconds=55))
     # 发布视频的账号  随机选择进行发布，同一个task不可多个账号发布同个平台
-    account_list = [
-        {"account_name": "account-jiahua.json",
-         "platform": ["douyin"],
-         },
-        {"account_name": "account-zhuzhu.json",
-         "platform": ["douyin"],
-         },
-        # {"account_name": "account-yangnian.json",
-        #  "platform": ["douyin"],
-        #  },
-        # {"account_name": "account-chao.json",
-        #  "platform": ["xigua"],
-        #  },
-    ]
 
+    account_list = load_account_list()
     # # 自动发布视频的定时任务
     scheduler.add_job(SchedulerTasks.publish_videos, 'interval', minutes=2,
                       next_run_time=datetime.now() + timedelta(seconds=35), args=[account_list])
@@ -59,6 +47,10 @@ def register_scheduler_job(app):
     accounts = [i.get('account_name') for i in account_list if 'xigua' in i.get('platform')]
     scheduler.add_job(SchedulerTasks.get_xigua_cookies, CronTrigger(hour=8, minute=49),
                       next_run_time=datetime.now() + timedelta(seconds=15), args=[accounts])
+    # 更新微博cookies
+
+    scheduler.add_job(SchedulerTasks.get_weibo_cookie, CronTrigger(hour=8, minute=49),
+                      next_run_time=datetime.now() + timedelta(seconds=15), )
     # 更新视频号cookies
     # scheduler.add_job(SchedulerTasks.get_tencent_cookie, 'interval', inutes=3,
     #                                         next_run_time=datetime.now() + timedelta(seconds=15))

@@ -26,7 +26,7 @@ async def cookie_auth(account_file):
             logger.warning("[+]   [Douyin] 等待5秒 cookie 失效")
             return False
         else:
-            logger.success("[+]   [Douyin] cookie 有效")
+            logger.success(f"[+]   [Douyin] {account_file} cookie 有效")
             return True
 
 

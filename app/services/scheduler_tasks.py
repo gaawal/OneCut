@@ -23,6 +23,7 @@ from app.schemas.movies import HotSearchItem, VideoParams, WeiboArticleData
 from app.services import video_controller
 from app.services.factory import llm_generator, video_splitter
 from app.services.factory.video_splitter import VideoSplitter
+from app.utils.crawler.weibo_crawler.get_weibo_cookie import get_weibo_cookies
 from app.utils.crawler.weibo_crawler.weibo_article import fetch_hot_article, save_weibo_article_and_update_data, \
     generate_weibo_summary
 
@@ -46,7 +47,7 @@ weibo_crawler = WeiboCrawler()
 class SchedulerTasks:
     @staticmethod
     def get_xigua_cookies(account_list):
-        logger.info(f"检测西瓜账号cookie,{account_list}")
+        logger.info(f"检测西瓜账号cookie {account_list}")
         get_xigua_cookies(account_list)
 
     @staticmethod
@@ -193,21 +194,23 @@ class SchedulerTasks:
                         if weibo_video_paths:
                             logger.success(f"微博热搜视频采集成功：{weibo_video_paths} ")
                             weibo_article_data.videos = weibo_video_paths
-                            await save_weibo_article_and_update_data(title, weibo_article_data,CollectStatus.COLLECTING)
+                            await save_weibo_article_and_update_data(title, weibo_article_data,
+                                                                     CollectStatus.COLLECTING)
                             for video_path in weibo_video_paths:
                                 logger.info(f"微博热搜视频开始智能分割片段：{video_path} ")
                                 saved_paths = await video_splitter.process_video(video_path)
                                 if saved_paths:
                                     logger.info(f"保存智能分割片段结果：{saved_paths} ")
                                     weibo_article_data.split_videos.extend(saved_paths)
-                            await save_weibo_article_and_update_data(title, weibo_article_data,CollectStatus.COLLECTING)
+                            await save_weibo_article_and_update_data(title, weibo_article_data,
+                                                                     CollectStatus.COLLECTING)
                         else:
                             logger.warning(f"微博热搜视频采集结果为空：{title}")
                         await save_weibo_article_and_update_data(title, weibo_article_data)
                         logger.info(f"采集微博热搜图片评论素材：{title} ")
                         weibo_article_data: WeiboArticleData = await fetch_hot_article(weibo_article_data, weibo_mid,
                                                                                        target_url)
-                        await save_weibo_article_and_update_data(title, weibo_article_data,CollectStatus.COLLECT_OK)
+                        await save_weibo_article_and_update_data(title, weibo_article_data, CollectStatus.COLLECT_OK)
                         logger.success(f"采集微博热搜图片评论素材成功！话题：{title} ")
                         break
         except Exception as e:
@@ -226,7 +229,8 @@ class SchedulerTasks:
             weibo_article_cache = await redis_instance.get(weibo_artcle_title)
             weibo_article_data = WeiboArticleData(**json.loads(weibo_article_cache))
             # 检查是否有 'is_generated' 属性且其值为 False
-            if hasattr(weibo_article_data, "is_generated") and not getattr(weibo_article_data, "is_generated") and weibo_article_data.articles:
+            if hasattr(weibo_article_data, "is_generated") and not getattr(weibo_article_data,
+                                                                           "is_generated") and weibo_article_data.articles:
                 # 取其中第一个未生成热门视频的热搜话题进行生成文案
                 # 获取微博数据内容条数 影响ai分析微博内容
                 logger.info(f"启动自动生成视频任务：{weibo_artcle_title}")
@@ -234,6 +238,7 @@ class SchedulerTasks:
                 weibo_summary = generate_weibo_summary(weibo_article_data)  # 假设需要获取5条评论
                 # 随机选择发布的视频文案风格
                 choose_categorys = list(VIDEO_STYLE_MAP.keys())
+                choose_bgms = ['麦克阿瑟进行曲', "i'll Do It"]
                 # 把微博热搜作为视频主题输入
                 params = {"video_subject": weibo_summary,
                           "word_count": 300,
@@ -250,8 +255,8 @@ class SchedulerTasks:
                           "voice_name": "zh-CN-YunjianNeural",
                           "voice_volume": 1,
                           "bgm_type": "random",
-                          "bgm_file": "麦克阿瑟进行曲",
-                          "bgm_volume": 0.1,
+                          "bgm_file": random.choice(choose_bgms),
+                          "bgm_volume": 0.3,
                           "subtitle_enabled": True,
                           "subtitle_position": "bottom",
                           "font_name": "MicrosoftYaHeiBold.ttc",
@@ -308,6 +313,11 @@ class SchedulerTasks:
     def get_tencent_cookie():
         logger.info("检测微信视频号cookie")
         get_tencent_cookie()
+
+    @staticmethod
+    async def get_weibo_cookie():
+        logger.info("检测微博cookie")
+        await get_weibo_cookies()
 
     @staticmethod
     def log_memory_usage():

@@ -23,7 +23,9 @@ async def fetch_article_content_and_record(weibo_mid: str, url: str, video_path:
     base_dir = Path(BASE_DIR)
     cookie_file = 'WeiboCookie.json'
     cookie_file = os.path.join(base_dir, cookie_file)
-    await weibo_setup(str(cookie_file), handle=False)
+    if not await weibo_setup(str(cookie_file), handle=False):
+        logger.error("微博未登录，无法获取数据")
+        return
     logger.info(f"开始采集微博热搜链接： {url}")
     article_max = 20
     current_time = datetime.now()

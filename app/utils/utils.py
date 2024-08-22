@@ -97,6 +97,7 @@ def cache_videos_dir(sub_dir: str = ""):
         os.makedirs(d)
     return d
 
+
 def cache_weibo_videos_dir(sub_dir: str = ""):
     d = os.path.join(root_dir(), storage_dir(), "cache_weibo_videos")
     if sub_dir:
@@ -176,6 +177,22 @@ def voice_dir(sub_dir: str = ""):
     if not os.path.exists(d):
         os.makedirs(d)
     return d
+
+
+def account_dir(sub_dir: str = ""):
+    d = resource_dir(f"accounts")
+    if sub_dir:
+        d = os.path.join(d, sub_dir)
+    if not os.path.exists(d):
+        os.makedirs(d)
+    return d
+
+
+def load_account_list():
+    file_path = os.path.join(account_dir(), 'accounts.json')
+    with open(file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data
 
 
 def image_dir(sub_dir: str = ""):

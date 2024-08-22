@@ -16,7 +16,7 @@ from app.utils import utils
 class WeiboCrawler:
     """微博采集器"""
     def __init__(self, video_counts=5, max_video_length=60, save_dir=utils.cache_weibo_videos_dir(), target_types=None,
-                 retry_attempts=5, max_open_files=30):
+                 retry_attempts=5, max_open_files=10):
         if target_types is None:
             target_types = ['mp4_720p_mp4', 'mp4_ld_mp4', 'mp4_hd_mp4']
         cookie_file = 'WeiboCookie.json'
@@ -171,7 +171,6 @@ class WeiboCrawler:
                                                     logger=None, audio_codec="aac", fps=30)
                         video.close()
                         os.remove(video_path)  # 删除原始超长视频
-                        logger.info(f"截取后的视频已保存到 {truncated_path}")
                         return truncated_path
             return video_path
         except Exception as e:
