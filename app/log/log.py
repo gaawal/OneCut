@@ -23,7 +23,7 @@ class Loggin:
                                  "| <yellow>{line}</yellow> "
                                  " - <level>{message}</level>")
 
-        logger.add("cut.log", level=self.level, rotation="100 MB")  # Output log messages to a file
+        loguru_logger.add("cut.log", level=self.level, rotation="100 MB")  # Output log messages to a file
         return loguru_logger
 
 
